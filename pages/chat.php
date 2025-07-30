@@ -1,5 +1,5 @@
 <?php
-requireValidSession();
+requireAuth();
 
 $aeiId = $_GET['aei'] ?? '';
 if (empty($aeiId)) {

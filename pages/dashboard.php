@@ -1,9 +1,9 @@
 <?php
-requireValidSession();
+requireAuth();
 
 $userId = getUserSession();
 if (!$userId) {
-    redirectTo('home');
+    redirectTo('login');
 }
 
 try {

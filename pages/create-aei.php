@@ -1,5 +1,5 @@
 <?php
-requireValidSession();
+requireAuth();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {

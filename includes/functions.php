@@ -72,7 +72,7 @@ function verifyCSRFToken($token) {
 
 function requireValidSession() {
     if (!getUserSession()) {
-        redirectTo('home');
+        redirectTo('login');
     }
 }
 ?>
