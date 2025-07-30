@@ -6,42 +6,65 @@ $page = $_GET['page'] ?? 'home';
 include_once 'config/database.php';
 include_once 'includes/functions.php';
 
-$allowed_pages = ['home', 'onboarding', 'create-aei', 'chat', 'dashboard'];
+$allowed_pages = ['home', 'login', 'register', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
 
 $page_title = match($page) {
+    'login' => 'Sign In - Ayuni Beta',
+    'register' => 'Join Beta - Ayuni Beta',
     'onboarding' => 'Welcome to Ayuni',
     'create-aei' => 'Create Your AEI',
     'chat' => 'Chat with AEI',
-    'dashboard' => 'Your AEIs',
+    'dashboard' => 'Dashboard',
+    'profile' => 'Profile Settings',
+    'admin' => 'Admin Panel',
     default => 'Ayuni Beta'
 };
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($page_title) ?></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'media',
             theme: {
                 extend: {
                     colors: {
-                        'ayuni-aqua': '#39D2DF',
-                        'ayuni-blue': '#546BEC',
-                        'ayuni-dark': '#10142B',
-                        'ayuni-white': '#FFFFFF'
+                        'ayuni': {
+                            'aqua': '#39D2DF',
+                            'blue': '#546BEC', 
+                            'dark': '#10142B',
+                            'white': '#FFFFFF'
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', '-apple-system', 'sans-serif']
                     }
                 }
             }
         }
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Theme detection and management
+        function initTheme() {
+            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.toggle('dark', isDark);
+        }
+        initTheme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', initTheme);
+    </script>
 </head>
-<body class="bg-ayuni-dark min-h-screen text-ayuni-white">
+<body class="min-h-screen bg-white dark:bg-ayuni-dark text-gray-900 dark:text-white font-sans antialiased">
     <?php include "pages/{$page}.php"; ?>
 </body>
 </html>

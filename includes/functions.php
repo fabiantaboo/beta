@@ -19,6 +19,37 @@ function clearUserSession() {
     session_destroy();
 }
 
+function isLoggedIn() {
+    return getUserSession() !== null;
+}
+
+function isAdmin() {
+    global $pdo;
+    if (!isLoggedIn()) return false;
+    
+    try {
+        $stmt = $pdo->prepare("SELECT is_admin FROM users WHERE id = ?");
+        $stmt->execute([getUserSession()]);
+        $user = $stmt->fetch();
+        return $user && $user['is_admin'];
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+function requireAuth() {
+    if (!isLoggedIn()) {
+        redirectTo('login');
+    }
+}
+
+function requireAdmin() {
+    requireAuth();
+    if (!isAdmin()) {
+        redirectTo('dashboard');
+    }
+}
+
 function getCurrentTimestamp() {
     return date('Y-m-d H:i:s');
 }

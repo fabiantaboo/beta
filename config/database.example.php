@@ -21,11 +21,25 @@ function createDatabaseIfNotExists() {
 
 function createTablesIfNotExist($pdo) {
     $tables = [
+        'beta_codes' => "CREATE TABLE IF NOT EXISTS beta_codes (
+            code VARCHAR(20) PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            used_at TIMESTAMP NULL,
+            used_by VARCHAR(32) NULL,
+            is_active BOOLEAN DEFAULT TRUE
+        )",
         'users' => "CREATE TABLE IF NOT EXISTS users (
             id VARCHAR(32) PRIMARY KEY,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            first_name VARCHAR(100) NOT NULL,
+            last_name VARCHAR(100) NOT NULL,
+            beta_code VARCHAR(20) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            is_onboarded BOOLEAN DEFAULT FALSE
+            is_onboarded BOOLEAN DEFAULT FALSE,
+            is_admin BOOLEAN DEFAULT FALSE,
+            FOREIGN KEY (beta_code) REFERENCES beta_codes(code)
         )",
         'aeis' => "CREATE TABLE IF NOT EXISTS aeis (
             id VARCHAR(32) PRIMARY KEY,
