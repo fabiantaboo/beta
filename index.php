@@ -55,12 +55,56 @@ $page_title = match($page) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         // Theme detection and management
-        function initTheme() {
-            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            document.documentElement.classList.toggle('dark', isDark);
+        function getStoredTheme() {
+            return localStorage.getItem('theme');
         }
-        initTheme();
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', initTheme);
+        
+        function setStoredTheme(theme) {
+            localStorage.setItem('theme', theme);
+        }
+        
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        
+        function updateTheme() {
+            const storedTheme = getStoredTheme();
+            const theme = storedTheme || getSystemTheme();
+            document.documentElement.classList.toggle('dark', theme === 'dark');
+            
+            // Update toggle button icons
+            const sunIcon = document.querySelector('#theme-toggle .sun-icon');
+            const moonIcon = document.querySelector('#theme-toggle .moon-icon');
+            if (sunIcon && moonIcon) {
+                if (theme === 'dark') {
+                    sunIcon.classList.remove('hidden');
+                    moonIcon.classList.add('hidden');
+                } else {
+                    sunIcon.classList.add('hidden');
+                    moonIcon.classList.remove('hidden');
+                }
+            }
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setStoredTheme(newTheme);
+            updateTheme();
+        }
+        
+        // Initialize theme
+        updateTheme();
+        
+        // Listen for system theme changes if no stored preference
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (!getStoredTheme()) {
+                updateTheme();
+            }
+        });
+        
+        // Update theme toggle after page load
+        document.addEventListener('DOMContentLoaded', updateTheme);
     </script>
 </head>
 <?php

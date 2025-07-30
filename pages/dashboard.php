@@ -23,9 +23,20 @@ try {
                 <div class="flex items-center">
                     <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-10 w-auto">
                 </div>
-                <a href="?page=create-aei" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-ayuni-dark font-semibold py-2 px-4 rounded-lg hover:scale-105 transform transition-all duration-200">
-                    + Create AEI
-                </a>
+                <div class="flex items-center space-x-4">
+                    <button 
+                        id="theme-toggle" 
+                        onclick="toggleTheme()" 
+                        class="p-2 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white transition-all duration-200"
+                        title="Toggle theme"
+                    >
+                        <i class="fas fa-sun sun-icon hidden text-lg"></i>
+                        <i class="fas fa-moon moon-icon text-lg"></i>
+                    </button>
+                    <a href="?page=create-aei" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-ayuni-dark font-semibold py-2 px-4 rounded-lg hover:scale-105 transform transition-all duration-200">
+                        + Create AEI
+                    </a>
+                </div>
             </div>
         </div>
     </nav>

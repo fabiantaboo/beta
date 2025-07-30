@@ -69,18 +69,30 @@ $messages = $stmt->fetchAll();
                 <a href="?page=dashboard" class="text-ayuni-aqua hover:text-ayuni-blue transition-colors">
                     ← Back to Dashboard
                 </a>
-                <div class="flex items-center space-x-3">
-                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-8 w-auto">
-                    <div class="w-8 h-8 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
-                        <span class="text-sm text-ayuni-dark font-bold">
-                            <?= strtoupper(substr($aei['name'], 0, 1)) ?>
-                        </span>
-                    </div>
-                    <div>
-                        <h1 class="text-lg font-semibold text-ayuni-white"><?= htmlspecialchars($aei['name']) ?></h1>
-                        <div class="flex items-center space-x-1">
-                            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
-                            <span class="text-xs text-gray-400">Online</span>
+                <div class="flex items-center space-x-4">
+                    <button 
+                        id="theme-toggle" 
+                        onclick="toggleTheme()" 
+                        class="p-2 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white transition-all duration-200"
+                        title="Toggle theme"
+                    >
+                        <i class="fas fa-sun sun-icon hidden text-lg"></i>
+                        <i class="fas fa-moon moon-icon text-lg"></i>
+                    </button>
+                        <div class="flex items-center space-x-3">
+                            <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-8 w-auto">
+                            <div class="w-8 h-8 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
+                                <span class="text-sm text-ayuni-dark font-bold">
+                                    <?= strtoupper(substr($aei['name'], 0, 1)) ?>
+                                </span>
+                            </div>
+                            <div>
+                                <h1 class="text-lg font-semibold text-ayuni-white"><?= htmlspecialchars($aei['name']) ?></h1>
+                                <div class="flex items-center space-x-1">
+                                    <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                    <span class="text-xs text-gray-400">Online</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

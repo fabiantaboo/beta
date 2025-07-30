@@ -47,6 +47,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
             
+            <div class="flex justify-between items-center mb-8">
+                <div class="flex-1"></div>
+                <button 
+                    id="theme-toggle" 
+                    onclick="toggleTheme()" 
+                    class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
+                    title="Toggle theme"
+                >
+                    <i class="fas fa-sun sun-icon hidden text-lg"></i>
+                    <i class="fas fa-moon moon-icon text-lg"></i>
+                </button>
+            </div>
+            
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Admin Sign In</h2>
             <p class="text-gray-600 dark:text-gray-400 mb-8">
                 For administrative access only
