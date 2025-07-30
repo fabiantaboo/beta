@@ -12,6 +12,7 @@ function getUserSession() {
 }
 
 function setUserSession($userId) {
+    session_regenerate_id(true);
     $_SESSION['user_id'] = $userId;
 }
 
@@ -39,7 +40,7 @@ function isAdmin() {
 
 function requireAuth() {
     if (!isLoggedIn()) {
-        redirectTo('login');
+        redirectTo('home');
     }
 }
 
@@ -72,7 +73,7 @@ function verifyCSRFToken($token) {
 
 function requireValidSession() {
     if (!getUserSession()) {
-        redirectTo('login');
+        redirectTo('home');
     }
 }
 ?>

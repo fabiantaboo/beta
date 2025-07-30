@@ -8,22 +8,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'] ?? '';
         
         if ($action === 'generate_codes') {
-            $count = (int)($_POST['count'] ?? 1);
-            $count = min(max($count, 1), 100); // Limit between 1-100
+            $firstName = sanitizeInput($_POST['first_name'] ?? '');
+            $email = sanitizeInput($_POST['email'] ?? '');
             
-            try {
-                $codes = [];
-                for ($i = 0; $i < $count; $i++) {
+            if (empty($firstName) || empty($email)) {
+                $error = "Please fill in all fields for the beta code.";
+            } else {
+                try {
                     $code = strtoupper(bin2hex(random_bytes(4)) . '-' . bin2hex(random_bytes(4)));
-                    $codes[] = $code;
                     
-                    $stmt = $pdo->prepare("INSERT INTO beta_codes (code) VALUES (?)");
-                    $stmt->execute([$code]);
+                    $stmt = $pdo->prepare("INSERT INTO beta_codes (code, first_name, email) VALUES (?, ?, ?)");
+                    $stmt->execute([$code, $firstName, $email]);
+                    
+                    $success = "Generated beta code '$code' for $firstName ($email).";
+                } catch (PDOException $e) {
+                    error_log("Database error generating beta code: " . $e->getMessage());
+                    $error = "Failed to generate beta code.";
                 }
-                $success = "Generated $count beta codes successfully.";
-            } catch (PDOException $e) {
-                error_log("Database error generating beta codes: " . $e->getMessage());
-                $error = "Failed to generate beta codes.";
             }
         }
         
@@ -153,38 +154,55 @@ try {
             </div>
         </div>
 
-        <!-- Generate Beta Codes -->
+        <!-- Generate Beta Code -->
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
             <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Generate Beta Codes</h3>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Generate Beta Code</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Create a personalized beta code with pre-filled user information</p>
             </div>
             <div class="p-6">
-                <form method="POST" class="flex items-end space-x-4">
+                <form method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     <input type="hidden" name="action" value="generate_codes">
                     
-                    <div class="flex-1 max-w-xs">
-                        <label for="count" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Number of codes
+                    <div>
+                        <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            First Name
                         </label>
                         <input 
-                            type="number" 
-                            id="count" 
-                            name="count" 
-                            min="1" 
-                            max="100" 
-                            value="10"
+                            type="text" 
+                            id="first_name" 
+                            name="first_name" 
+                            required
+                            maxlength="100"
                             class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent"
+                            placeholder="First name"
                         />
                     </div>
                     
-                    <button 
-                        type="submit" 
-                        class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white px-6 py-2 rounded-lg font-medium hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-colors"
-                    >
-                        <i class="fas fa-plus mr-2"></i>
-                        Generate
-                    </button>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Email Address
+                        </label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            required
+                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent"
+                            placeholder="email@example.com"
+                        />
+                    </div>
+                    
+                    <div>
+                        <button 
+                            type="submit" 
+                            class="w-full bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white px-6 py-2 rounded-lg font-medium hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-colors"
+                        >
+                            <i class="fas fa-plus mr-2"></i>
+                            Generate Code
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -199,6 +217,7 @@ try {
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User Info</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Used</th>
@@ -210,6 +229,14 @@ try {
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td class="px-6 py-4 text-sm font-mono text-gray-900 dark:text-white">
                                     <?= htmlspecialchars($code['code']) ?>
+                                </td>
+                                <td class="px-6 py-4 text-sm">
+                                    <div class="text-gray-900 dark:text-white font-medium">
+                                        <?= htmlspecialchars($code['first_name']) ?>
+                                    </div>
+                                    <div class="text-gray-500 dark:text-gray-400 text-xs">
+                                        <?= htmlspecialchars($code['email']) ?>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm">
                                     <?php if (!$code['is_active']): ?>

@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['message'])) {
             $stmt->execute([$messageId, $sessionId, $message]);
             
             $aeiResponseId = generateId();
-            $aeiResponse = "Hello! I'm " . $aei['name'] . ". Thanks for your message: \"" . $message . "\". This is a simulated response for the MVP version.";
+            $aeiResponse = "Hello! I'm " . htmlspecialchars($aei['name']) . ". Thanks for your message: \"" . htmlspecialchars($message) . "\". This is a simulated response for the MVP version.";
             
             $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'aei', ?)");
             $stmt->execute([$aeiResponseId, $sessionId, $aeiResponse]);

@@ -6,14 +6,13 @@ $page = $_GET['page'] ?? 'home';
 include_once 'config/database.php';
 include_once 'includes/functions.php';
 
-$allowed_pages = ['home', 'login', 'register', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin'];
+$allowed_pages = ['home', 'login', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
 
 $page_title = match($page) {
-    'login' => 'Sign In - Ayuni Beta',
-    'register' => 'Join Beta - Ayuni Beta',
+    'login' => 'Admin Login - Ayuni Beta',
     'onboarding' => 'Welcome to Ayuni',
     'create-aei' => 'Create Your AEI',
     'chat' => 'Chat with AEI',
@@ -64,6 +63,15 @@ $page_title = match($page) {
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', initTheme);
     </script>
 </head>
+<?php
+// Set secure session cookies
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_httponly', 1);
+    ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) ? 1 : 0);
+    ini_set('session.cookie_samesite', 'Strict');
+    ini_set('session.use_strict_mode', 1);
+}
+?>
 <body class="min-h-screen bg-white dark:bg-ayuni-dark text-gray-900 dark:text-white font-sans antialiased">
     <?php include "pages/{$page}.php"; ?>
 </body>

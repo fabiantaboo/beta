@@ -3,7 +3,7 @@ requireAuth();
 
 $userId = getUserSession();
 if (!$userId) {
-    redirectTo('login');
+    redirectTo('home');
 }
 
 try {

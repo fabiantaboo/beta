@@ -23,6 +23,8 @@ function createTablesIfNotExist($pdo) {
     $tables = [
         'beta_codes' => "CREATE TABLE IF NOT EXISTS beta_codes (
             code VARCHAR(20) PRIMARY KEY,
+            first_name VARCHAR(100) NOT NULL,
+            email VARCHAR(255) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             used_at TIMESTAMP NULL,
             used_by VARCHAR(32) NULL,
@@ -31,10 +33,9 @@ function createTablesIfNotExist($pdo) {
         'users' => "CREATE TABLE IF NOT EXISTS users (
             id VARCHAR(32) PRIMARY KEY,
             email VARCHAR(255) UNIQUE NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
+            password_hash VARCHAR(255) NULL,
             first_name VARCHAR(100) NOT NULL,
-            last_name VARCHAR(100) NOT NULL,
-            beta_code VARCHAR(20) NOT NULL,
+            beta_code VARCHAR(20) NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             is_onboarded BOOLEAN DEFAULT FALSE,
@@ -97,6 +98,21 @@ try {
     );
     
     createTablesIfNotExist($pdo);
+    
+    // Create admin account if it doesn't exist
+    try {
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->execute(['fabian.budde@nexinnovations.us']);
+        if (!$stmt->fetch()) {
+            $adminId = bin2hex(random_bytes(16));
+            $passwordHash = password_hash('Fabian,123', PASSWORD_DEFAULT);
+            
+            $stmt = $pdo->prepare("INSERT INTO users (id, email, password_hash, first_name, is_admin, is_onboarded) VALUES (?, ?, ?, ?, TRUE, TRUE)");
+            $stmt->execute([$adminId, 'fabian.budde@nexinnovations.us', $passwordHash, 'Fabian']);
+        }
+    } catch (PDOException $e) {
+        error_log("Failed to create admin account: " . $e->getMessage());
+    }
     
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());

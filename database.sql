@@ -3,12 +3,30 @@
 CREATE DATABASE IF NOT EXISTS ayuni_beta CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE ayuni_beta;
 
+-- Beta codes table for invitation system
+CREATE TABLE beta_codes (
+    code VARCHAR(20) PRIMARY KEY,
+    first_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    used_at TIMESTAMP NULL,
+    used_by VARCHAR(32) NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
 -- Users table for basic user management
 CREATE TABLE users (
     id VARCHAR(32) PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NULL,
+    first_name VARCHAR(100) NOT NULL,
+    beta_code VARCHAR(20) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    is_onboarded BOOLEAN DEFAULT FALSE
+    is_onboarded BOOLEAN DEFAULT FALSE,
+    is_admin BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (beta_code) REFERENCES beta_codes(code),
+    INDEX idx_email (email)
 );
 
 -- AEIs table - the AI companions
