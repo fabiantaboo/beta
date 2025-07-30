@@ -1,0 +1,90 @@
+<?php
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'ayuni_beta');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+
+function createDatabaseIfNotExists() {
+    try {
+        $pdo_temp = new PDO(
+            "mysql:host=" . DB_HOST . ";charset=utf8mb4",
+            DB_USER,
+            DB_PASS,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+        
+        $pdo_temp->exec("CREATE DATABASE IF NOT EXISTS " . DB_NAME . " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+    } catch (PDOException $e) {
+        error_log("Failed to create database: " . $e->getMessage());
+    }
+}
+
+function createTablesIfNotExist($pdo) {
+    $tables = [
+        'users' => "CREATE TABLE IF NOT EXISTS users (
+            id VARCHAR(32) PRIMARY KEY,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            is_onboarded BOOLEAN DEFAULT FALSE
+        )",
+        'aeis' => "CREATE TABLE IF NOT EXISTS aeis (
+            id VARCHAR(32) PRIMARY KEY,
+            user_id VARCHAR(32) NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            personality TEXT,
+            appearance_description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_active BOOLEAN DEFAULT TRUE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_user_id (user_id)
+        )",
+        'chat_sessions' => "CREATE TABLE IF NOT EXISTS chat_sessions (
+            id VARCHAR(32) PRIMARY KEY,
+            user_id VARCHAR(32) NOT NULL,
+            aei_id VARCHAR(32) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            INDEX idx_user_aei (user_id, aei_id)
+        )",
+        'chat_messages' => "CREATE TABLE IF NOT EXISTS chat_messages (
+            id VARCHAR(32) PRIMARY KEY,
+            session_id VARCHAR(32) NOT NULL,
+            sender_type ENUM('user', 'aei') NOT NULL,
+            message_text TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
+            INDEX idx_session_time (session_id, created_at)
+        )"
+    ];
+
+    foreach ($tables as $tableName => $sql) {
+        try {
+            $pdo->exec($sql);
+        } catch (PDOException $e) {
+            error_log("Failed to create table $tableName: " . $e->getMessage());
+        }
+    }
+}
+
+createDatabaseIfNotExists();
+
+try {
+    $pdo = new PDO(
+        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+        DB_USER,
+        DB_PASS,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]
+    );
+    
+    createTablesIfNotExist($pdo);
+    
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+?>
