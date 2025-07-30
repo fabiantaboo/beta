@@ -32,7 +32,7 @@ $page_title = match($page) {
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'media',
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -70,16 +70,29 @@ $page_title = match($page) {
         function updateTheme() {
             const storedTheme = getStoredTheme();
             const theme = storedTheme || getSystemTheme();
-            document.documentElement.classList.toggle('dark', theme === 'dark');
+            
+            // Apply theme to document
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
             
             // Update toggle button icons
+            updateThemeIcons(theme);
+        }
+        
+        function updateThemeIcons(theme) {
             const sunIcon = document.querySelector('#theme-toggle .sun-icon');
             const moonIcon = document.querySelector('#theme-toggle .moon-icon');
+            
             if (sunIcon && moonIcon) {
                 if (theme === 'dark') {
+                    // In dark mode, show sun icon (to switch to light)
                     sunIcon.classList.remove('hidden');
                     moonIcon.classList.add('hidden');
                 } else {
+                    // In light mode, show moon icon (to switch to dark)
                     sunIcon.classList.add('hidden');
                     moonIcon.classList.remove('hidden');
                 }
@@ -93,8 +106,17 @@ $page_title = match($page) {
             updateTheme();
         }
         
-        // Initialize theme
-        updateTheme();
+        // Initialize theme immediately
+        (function() {
+            const storedTheme = localStorage.getItem('theme');
+            const theme = storedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
         
         // Listen for system theme changes if no stored preference
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
@@ -103,8 +125,10 @@ $page_title = match($page) {
             }
         });
         
-        // Update theme toggle after page load
-        document.addEventListener('DOMContentLoaded', updateTheme);
+        // Update theme icons after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTheme();
+        });
     </script>
 </head>
 <?php

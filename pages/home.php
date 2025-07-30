@@ -61,26 +61,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-ayuni-dark dark:to-gray-900 flex items-center justify-center px-4">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-ayuni-dark dark:to-gray-900 flex items-center justify-center px-4 relative">
+    <div class="absolute top-4 right-4">
+        <button 
+            id="theme-toggle" 
+            onclick="toggleTheme()" 
+            class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
+            title="Toggle theme"
+        >
+            <i class="fas fa-sun sun-icon text-lg"></i>
+            <i class="fas fa-moon moon-icon text-lg"></i>
+        </button>
+    </div>
+    
     <div class="max-w-md w-full space-y-8">
         <div class="text-center">
             <div class="mb-8">
                 <div class="flex justify-center mb-6">
                     <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-24 w-auto">
                 </div>
-            </div>
-            
-            <div class="flex justify-between items-center mb-8">
-                <div class="flex-1"></div>
-                <button 
-                    id="theme-toggle" 
-                    onclick="toggleTheme()" 
-                    class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
-                    title="Toggle theme"
-                >
-                    <i class="fas fa-sun sun-icon hidden text-lg"></i>
-                    <i class="fas fa-moon moon-icon text-lg"></i>
-                </button>
             </div>
             
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome to the Future</h2>

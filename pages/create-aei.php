@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     class="p-2 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-white transition-all duration-200"
                     title="Toggle theme"
                 >
-                    <i class="fas fa-sun sun-icon hidden text-lg"></i>
+                    <i class="fas fa-sun sun-icon text-lg"></i>
                     <i class="fas fa-moon moon-icon text-lg"></i>
                 </button>
             </div>

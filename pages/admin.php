@@ -87,7 +87,7 @@ try {
                         class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
                         title="Toggle theme"
                     >
-                        <i class="fas fa-sun sun-icon hidden text-lg"></i>
+                        <i class="fas fa-sun sun-icon text-lg"></i>
                         <i class="fas fa-moon moon-icon text-lg"></i>
                     </button>
                     <a href="?page=dashboard" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
