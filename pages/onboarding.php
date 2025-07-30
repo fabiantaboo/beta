@@ -21,13 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="max-w-4xl w-full">
         <div class="text-center mb-12">
             <div class="flex justify-center mb-8">
-                <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-20 w-auto">
+                <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-32 w-auto">
             </div>
             <h1 class="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-                Welcome to 
-                <span class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent">
-                    Ayuni
-                </span>
+                Welcome to the Future
             </h1>
             <p class="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-3xl mx-auto">
                 You're now part of the future of Artificial Emotional Intelligence. 

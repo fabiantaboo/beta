@@ -66,14 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="text-center">
             <div class="mb-8">
                 <div class="flex justify-center mb-6">
-                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-16 w-auto">
+                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-24 w-auto">
                 </div>
-                <h1 class="text-4xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-2">
-                    Ayuni Beta
-                </h1>
-                <p class="text-gray-600 dark:text-gray-400">
-                    Artificial Emotional Intelligence
-                </p>
             </div>
             
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome to the Future</h2>

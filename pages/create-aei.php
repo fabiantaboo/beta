@@ -30,10 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <nav class="bg-ayuni-dark/80 backdrop-blur-sm border-b border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <a href="?page=dashboard" class="flex items-center space-x-3 text-2xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent hover:opacity-80 transition-opacity">
+                <a href="?page=dashboard" class="flex items-center space-x-3 hover:opacity-80 transition-opacity">
                     <i class="fas fa-arrow-left text-ayuni-aqua"></i>
-                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-8 w-auto">
-                    <span>Ayuni Beta</span>
+                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-10 w-auto">
                 </a>
             </div>
         </div>
