@@ -20,9 +20,12 @@ try {
     <nav class="bg-ayuni-dark/80 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <h1 class="text-2xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent">
-                    Ayuni Beta
-                </h1>
+                <div class="flex items-center space-x-3">
+                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-8 w-auto">
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent">
+                        Ayuni Beta
+                    </h1>
+                </div>
                 <a href="?page=create-aei" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-ayuni-dark font-semibold py-2 px-4 rounded-lg hover:scale-105 transform transition-all duration-200">
                     + Create AEI
                 </a>

@@ -70,6 +70,7 @@ $messages = $stmt->fetchAll();
                     ← Back to Dashboard
                 </a>
                 <div class="flex items-center space-x-3">
+                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-8 w-auto">
                     <div class="w-8 h-8 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
                         <span class="text-sm text-ayuni-dark font-bold">
                             <?= strtoupper(substr($aei['name'], 0, 1)) ?>

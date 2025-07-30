@@ -42,6 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="max-w-md w-full space-y-8">
         <div class="text-center">
             <div class="mb-8">
+                <div class="flex justify-center mb-6">
+                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-16 w-auto">
+                </div>
                 <h1 class="text-4xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-2">
                     Ayuni Beta
                 </h1>

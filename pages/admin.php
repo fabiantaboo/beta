@@ -77,6 +77,7 @@ try {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-4">
+                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-8 w-auto">
                     <h1 class="text-2xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent">
                         Ayuni Admin
                     </h1>

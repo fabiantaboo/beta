@@ -20,6 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-ayuni-dark dark:to-gray-900 flex items-center justify-center px-4">
     <div class="max-w-4xl w-full">
         <div class="text-center mb-12">
+            <div class="flex justify-center mb-8">
+                <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-20 w-auto">
+            </div>
             <h1 class="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
                 Welcome to 
                 <span class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent">
