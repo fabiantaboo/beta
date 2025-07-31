@@ -314,6 +314,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="/beta-access" class="text-ayuni-blue hover:text-ayuni-aqua font-semibold transition-colors">
                     Get beta access
                 </a>
+                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <a href="/admin/login" class="text-xs text-gray-500 dark:text-gray-400 hover:text-ayuni-blue transition-colors">
+                        Admin Login
+                    </a>
+                </div>
             </div>
             
         <?php else: ?>
