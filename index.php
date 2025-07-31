@@ -11,6 +11,11 @@ if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
 
+// Execute page logic FIRST (before any HTML output) to allow redirects
+ob_start(); // Start output buffering to capture page content
+include "pages/{$page}.php";
+$page_content = ob_get_clean(); // Get the page content
+
 $page_title = match($page) {
     'login' => 'Admin Login - Ayuni Beta',
     'onboarding' => 'Welcome to Ayuni',
@@ -141,6 +146,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 ?>
 <body class="min-h-screen bg-white dark:bg-ayuni-dark text-gray-900 dark:text-white font-sans antialiased">
-    <?php include "pages/{$page}.php"; ?>
+    <?php echo $page_content; ?>
 </body>
 </html>
