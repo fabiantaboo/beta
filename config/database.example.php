@@ -125,13 +125,21 @@ try {
         if (!$stmt->fetch()) {
             $pdo->exec("CREATE TABLE beta_codes (
                 code VARCHAR(20) PRIMARY KEY,
-                first_name VARCHAR(100) NOT NULL,
-                email VARCHAR(255) NOT NULL,
+                first_name VARCHAR(100) NULL,
+                email VARCHAR(255) NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 used_at TIMESTAMP NULL,
                 used_by VARCHAR(32) NULL,
                 is_active BOOLEAN DEFAULT TRUE
             )");
+        } else {
+            // Fix existing beta_codes table columns to allow NULL
+            try {
+                $pdo->exec("ALTER TABLE beta_codes MODIFY COLUMN first_name VARCHAR(100) NULL");
+                $pdo->exec("ALTER TABLE beta_codes MODIFY COLUMN email VARCHAR(255) NULL");
+            } catch (PDOException $e) {
+                // Columns might already be nullable, ignore error
+            }
         }
         
         // 2. Check and migrate users table
