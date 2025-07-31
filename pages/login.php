@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare("UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?");
                     $stmt->execute([$user['id']]);
                     
-                    redirectTo('dashboard');
+                    redirectTo('admin');
                 } else {
                     $error = "Invalid email or password.";
                 }
