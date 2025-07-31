@@ -9,6 +9,8 @@ $betaCodeData = null;
 // If we have temp beta code data and step is register, load it
 if ($step === 'register' && isset($_SESSION['temp_beta_code'])) {
     $betaCodeData = $_SESSION['temp_beta_code'];
+    // Debug: Show what data we have
+    error_log("Pre-fill data: " . print_r($betaCodeData, true));
 } elseif ($step === 'register' && !isset($_SESSION['temp_beta_code'])) {
     // No beta code data, redirect back to step 1
     $step = 'beta_code';
@@ -36,7 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } else {
                         // Store beta code data in session temporarily
                         $_SESSION['temp_beta_code'] = $validCode;
-                        $step = 'register';
+                        header("Location: index.php?page=home&step=register");
+                        exit;
                     }
                 } catch (PDOException $e) {
                     error_log("Database error validating beta code: " . $e->getMessage());
@@ -226,6 +229,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             placeholder="Your first name"
                             value="<?= htmlspecialchars($_POST['first_name'] ?? ($betaCodeData['first_name'] ?? '')) ?>"
                         />
+                        <?php if ($betaCodeData): ?>
+                            <p class="text-xs text-blue-600 mt-1">Debug: Prefilling name with "<?= htmlspecialchars($betaCodeData['first_name'] ?? 'null') ?>"</p>
+                        <?php endif; ?>
                     </div>
                     
                     <div>
