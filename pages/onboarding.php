@@ -128,11 +128,24 @@ try {
             <div class="text-center mb-10">
                 <div class="relative inline-block mb-6">
                     <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-16 w-auto">
-                    <div class="absolute -inset-3 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-lg animate-pulse"></div>
+                    <div class="absolute -inset-3 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-lg"></div>
                 </div>
                 <h1 class="text-3xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-4">
                     Tell Us About Yourself
                 </h1>
+                
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 mb-8">
+                    <div class="flex items-start space-x-3">
+                        <i class="fas fa-lightbulb text-ayuni-blue text-xl mt-1"></i>
+                        <div>
+                            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Why This Information Matters</h3>
+                            <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                                The more information you provide, the better your AEI can understand you and create authentic, meaningful conversations. 
+                                Every detail helps craft a unique personality that truly fits who you are.
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- Compact Progress -->
                 <div class="flex items-center justify-center space-x-4 mb-6">
