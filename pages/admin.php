@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $success = "Generated beta code '$code' for $firstName ($email).";
                 } catch (PDOException $e) {
                     error_log("Database error generating beta code: " . $e->getMessage());
-                    $error = "Failed to generate beta code.";
+                    $error = "Failed to generate beta code: " . $e->getMessage();
                 }
             }
         }

@@ -1,4 +1,9 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'ayuni_beta');
 define('DB_USER', 'root');
@@ -99,38 +104,103 @@ try {
     
     createTablesIfNotExist($pdo);
     
-    // Migrate existing tables to add missing columns
+    // Comprehensive migration - ensure ALL tables and columns exist
     try {
-        // Check if users table needs migration
+        // 1. Check and create beta_codes table first (no dependencies)
+        $stmt = $pdo->query("SHOW TABLES LIKE 'beta_codes'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("CREATE TABLE beta_codes (
+                code VARCHAR(20) PRIMARY KEY,
+                first_name VARCHAR(100) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                used_at TIMESTAMP NULL,
+                used_by VARCHAR(32) NULL,
+                is_active BOOLEAN DEFAULT TRUE
+            )");
+        }
+        
+        // 2. Check and migrate users table
         $stmt = $pdo->query("DESCRIBE users");
-        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        $userColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
         
-        $requiredColumns = ['email', 'password_hash', 'first_name', 'beta_code', 'is_admin'];
-        $missingColumns = array_diff($requiredColumns, $columns);
+        $requiredUserColumns = ['email', 'password_hash', 'first_name', 'beta_code', 'is_admin'];
+        $missingUserColumns = array_diff($requiredUserColumns, $userColumns);
         
-        if (!empty($missingColumns)) {
-            foreach ($missingColumns as $column) {
-                switch ($column) {
-                    case 'email':
-                        $pdo->exec("ALTER TABLE users ADD COLUMN email VARCHAR(255) UNIQUE");
-                        break;
-                    case 'password_hash':
-                        $pdo->exec("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255) NULL");
-                        break;
-                    case 'first_name':
-                        $pdo->exec("ALTER TABLE users ADD COLUMN first_name VARCHAR(100)");
-                        break;
-                    case 'beta_code':
-                        $pdo->exec("ALTER TABLE users ADD COLUMN beta_code VARCHAR(20) NULL");
-                        break;
-                    case 'is_admin':
-                        $pdo->exec("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE");
-                        break;
-                }
+        foreach ($missingUserColumns as $column) {
+            switch ($column) {
+                case 'email':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN email VARCHAR(255) UNIQUE");
+                    break;
+                case 'password_hash':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255) NULL");
+                    break;
+                case 'first_name':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN first_name VARCHAR(100) DEFAULT ''");
+                    break;
+                case 'beta_code':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN beta_code VARCHAR(20) NULL");
+                    break;
+                case 'is_admin':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE");
+                    break;
             }
         }
+        
+        // 3. Add foreign key constraint if it doesn't exist (safely)
+        try {
+            $pdo->exec("ALTER TABLE users ADD CONSTRAINT fk_users_beta_code FOREIGN KEY (beta_code) REFERENCES beta_codes(code)");
+        } catch (PDOException $e) {
+            // Constraint might already exist, ignore
+        }
+        
+        // 4. Check and migrate aeis table
+        $stmt = $pdo->query("SHOW TABLES LIKE 'aeis'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("CREATE TABLE aeis (
+                id VARCHAR(32) PRIMARY KEY,
+                user_id VARCHAR(32) NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                personality TEXT,
+                appearance_description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                is_active BOOLEAN DEFAULT TRUE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                INDEX idx_user_id (user_id)
+            )");
+        }
+        
+        // 5. Check and migrate chat_sessions table
+        $stmt = $pdo->query("SHOW TABLES LIKE 'chat_sessions'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("CREATE TABLE chat_sessions (
+                id VARCHAR(32) PRIMARY KEY,
+                user_id VARCHAR(32) NOT NULL,
+                aei_id VARCHAR(32) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+                INDEX idx_user_aei (user_id, aei_id)
+            )");
+        }
+        
+        // 6. Check and migrate chat_messages table
+        $stmt = $pdo->query("SHOW TABLES LIKE 'chat_messages'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("CREATE TABLE chat_messages (
+                id VARCHAR(32) PRIMARY KEY,
+                session_id VARCHAR(32) NOT NULL,
+                sender_type ENUM('user', 'aei') NOT NULL,
+                message_text TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
+                INDEX idx_session_time (session_id, created_at)
+            )");
+        }
+        
     } catch (PDOException $e) {
-        error_log("Migration error: " . $e->getMessage());
+        error_log("Comprehensive migration error: " . $e->getMessage());
     }
     
     // Create admin account if it doesn't exist
