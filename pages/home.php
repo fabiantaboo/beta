@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "Please fill in all fields.";
             } else {
                 try {
-                    $stmt = $pdo->prepare("SELECT id, password_hash FROM users WHERE email = ? AND password_hash IS NOT NULL AND is_admin = FALSE");
+                    $stmt = $pdo->prepare("SELECT id, password_hash, is_admin FROM users WHERE email = ? AND password_hash IS NOT NULL");
                     $stmt->execute([$email]);
                     $user = $stmt->fetch();
                     
@@ -130,7 +130,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt = $pdo->prepare("UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?");
                         $stmt->execute([$user['id']]);
                         
-                        redirectTo('dashboard');
+                        // Redirect based on user type
+                        if ($user['is_admin']) {
+                            redirectTo('admin');
+                        } else {
+                            redirectTo('dashboard');
+                        }
                     } else {
                         $error = "Invalid email or password.";
                     }
@@ -314,11 +319,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="/beta-access" class="text-ayuni-blue hover:text-ayuni-aqua font-semibold transition-colors">
                     Get beta access
                 </a>
-                <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <a href="/admin/login" class="text-xs text-gray-500 dark:text-gray-400 hover:text-ayuni-blue transition-colors">
-                        Admin Login
-                    </a>
-                </div>
             </div>
             
         <?php else: ?>
