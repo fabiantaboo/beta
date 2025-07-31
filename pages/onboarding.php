@@ -114,84 +114,54 @@ try {
 }
 ?>
 
-<div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 dark:from-ayuni-dark dark:via-gray-900 dark:to-blue-900 relative overflow-hidden">
-    <!-- Animated Background Elements -->
-    <div class="absolute inset-0 opacity-20">
-        <div class="absolute top-10 left-10 w-32 h-32 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div class="absolute top-40 right-20 w-40 h-40 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-2000"></div>
-        <div class="absolute bottom-20 left-20 w-36 h-36 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-4000"></div>
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-ayuni-dark dark:via-blue-900 dark:to-indigo-900 relative overflow-hidden">
+    <!-- Subtle Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-20 left-1/4 w-64 h-64 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full filter blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-20 right-1/4 w-80 h-80 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full filter blur-3xl animate-pulse animation-delay-2000"></div>
     </div>
 
-    <!-- Header with Logo and Progress -->
-    <div class="relative z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50">
-        <div class="max-w-4xl mx-auto px-4 py-8">
-            <!-- Logo and Welcome -->
-            <div class="text-center mb-8">
-                <div class="flex justify-center mb-6">
-                    <div class="relative">
-                        <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-20 w-auto drop-shadow-lg">
-                        <div class="absolute -inset-2 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-lg"></div>
-                    </div>
+    <!-- Unified Header -->
+    <div class="relative z-10">
+        <div class="max-w-3xl mx-auto px-4 py-12">
+            <!-- Logo Section -->
+            <div class="text-center mb-10">
+                <div class="relative inline-block mb-6">
+                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-16 w-auto">
+                    <div class="absolute -inset-3 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-lg animate-pulse"></div>
                 </div>
-                <h1 class="text-4xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-3">
-                    Let's Get to Know You Better
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-4">
+                    Tell Us About Yourself
                 </h1>
-                <p class="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                    Help us create AEI companions that truly understand your unique personality and preferences
-                </p>
-            </div>
-            
-            <!-- Enhanced Progress Section -->
-            <div class="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-gray-600/20 shadow-xl">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center shadow-lg">
-                            <span class="text-white font-bold text-lg"><?= $step ?></span>
-                        </div>
-                        <div>
-                            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-                                <?php
-                                $stepTitles = [
-                                    1 => "Basic Information",
-                                    2 => "Your Professional Life", 
-                                    3 => "Values & Lifestyle",
-                                    4 => "Relationships & More"
-                                ];
-                                echo $stepTitles[$step];
-                                ?>
-                            </h2>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Step <?= $step ?> of <?= $maxSteps ?></p>
-                        </div>
-                    </div>
-                    
-                    <!-- Progress Steps Visualization -->
+                
+                <!-- Compact Progress -->
+                <div class="flex items-center justify-center space-x-4 mb-6">
                     <div class="flex space-x-2">
                         <?php for ($i = 1; $i <= $maxSteps; $i++): ?>
-                            <div class="w-3 h-3 rounded-full transition-all duration-300 <?= $i <= $step ? 'bg-gradient-to-r from-ayuni-aqua to-ayuni-blue shadow-lg scale-110' : 'bg-gray-300 dark:bg-gray-600' ?>"></div>
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 <?= $i <= $step ? 'bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white shadow-lg' : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400' ?>">
+                                <?= $i ?>
+                            </div>
                         <?php endfor; ?>
                     </div>
                 </div>
                 
-                <!-- Animated Progress Bar -->
-                <div class="relative w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
-                    <div class="bg-gradient-to-r from-ayuni-aqua via-blue-500 to-ayuni-blue h-3 rounded-full transition-all duration-700 ease-out shadow-lg relative overflow-hidden" 
-                         style="width: <?= ($step / $maxSteps) * 100 ?>%">
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
-                    </div>
+                <div class="w-full max-w-md mx-auto bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-4">
+                    <div class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue h-2 rounded-full transition-all duration-500" 
+                         style="width: <?= ($step / $maxSteps) * 100 ?>%"></div>
                 </div>
                 
-                <div class="mt-4 text-center">
-                    <p class="text-sm text-gray-600 dark:text-gray-300 flex items-center justify-center">
-                        <i class="fas fa-sparkles mr-2 text-ayuni-blue animate-pulse"></i>
-                        <span class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent font-medium">
-                            Every detail helps us create more meaningful connections
-                        </span>
-                    </p>
-                </div>
+                <p class="text-gray-600 dark:text-gray-300 text-sm">
+                    <?php
+                    $stepDescriptions = [
+                        1 => "Essential details for personalized interactions",
+                        2 => "Your interests shape meaningful conversations", 
+                        3 => "Values create deeper understanding",
+                        4 => "Final touches for perfect compatibility"
+                    ];
+                    echo $stepDescriptions[$step];
+                    ?>
+                </p>
             </div>
-        </div>
-    </div>
 
     <div class="max-w-2xl mx-auto px-4 py-8">
         <?php if (isset($error)): ?>
@@ -203,33 +173,12 @@ try {
             </div>
         <?php endif; ?>
 
-        <div class="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl border border-white/20 dark:border-gray-600/20 shadow-2xl p-8 overflow-hidden">
-            <!-- Decorative Elements -->
-            <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-ayuni-aqua/10 to-ayuni-blue/10 rounded-full -translate-y-16 translate-x-16"></div>
-            <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400/10 to-pink-400/10 rounded-full translate-y-12 -translate-x-12"></div>
-            <form method="POST" class="space-y-6">
-                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                
-                <?php if ($step === 1): ?>
-                    <!-- Step 1: Basic Demographics -->
-                    <div class="text-center mb-8 relative z-10">
-                        <div class="relative inline-block mb-6">
-                            <div class="w-20 h-20 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full mx-auto flex items-center justify-center shadow-xl transform hover:scale-105 transition-transform duration-300">
-                                <i class="fas fa-user text-3xl text-white"></i>
-                            </div>
-                            <div class="absolute -inset-3 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-lg animate-pulse"></div>
-                        </div>
-                        <h2 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-3">
-                            Let's Start with the Basics
-                        </h2>
-                        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-md mx-auto">
-                            These essential details help us create AEI companions that feel truly personal to you
-                        </p>
-                        <div class="mt-4 inline-flex items-center space-x-2 text-sm text-ayuni-blue bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-full">
-                            <i class="fas fa-shield-alt"></i>
-                            <span>Your data is private and secure</span>
-                        </div>
-                    </div>
+            <!-- Main Form Card -->
+            <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl border border-white/30 dark:border-gray-600/30 shadow-xl p-8">
+                <form method="POST" class="space-y-6">
+                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                    
+                    <?php if ($step === 1): ?>
 
                     <div>
                         <label for="gender" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -293,25 +242,6 @@ try {
                     </div>
 
                 <?php elseif ($step === 2): ?>
-                    <!-- Step 2: Professional & Personal -->
-                    <div class="text-center mb-8 relative z-10">
-                        <div class="relative inline-block mb-6">
-                            <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto flex items-center justify-center shadow-xl transform hover:scale-105 transition-transform duration-300">
-                                <i class="fas fa-briefcase text-3xl text-white"></i>
-                            </div>
-                            <div class="absolute -inset-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-lg animate-pulse"></div>
-                        </div>
-                        <h2 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-3">
-                            Your World & Passions
-                        </h2>
-                        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-md mx-auto">
-                            Share what drives you professionally and personally - this helps your AEI understand your daily life
-                        </p>
-                        <div class="mt-4 inline-flex items-center space-x-2 text-sm text-purple-600 bg-purple-50 dark:bg-purple-900/20 px-4 py-2 rounded-full">
-                            <i class="fas fa-heart"></i>
-                            <span>Optional but valuable</span>
-                        </div>
-                    </div>
 
                     <div>
                         <label for="profession" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -344,25 +274,6 @@ try {
                     </div>
 
                 <?php elseif ($step === 3): ?>
-                    <!-- Step 3: Lifestyle & Values -->
-                    <div class="text-center mb-8 relative z-10">
-                        <div class="relative inline-block mb-6">
-                            <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full mx-auto flex items-center justify-center shadow-xl transform hover:scale-105 transition-transform duration-300">
-                                <i class="fas fa-heart text-3xl text-white"></i>
-                            </div>
-                            <div class="absolute -inset-3 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-full blur-lg animate-pulse"></div>
-                        </div>
-                        <h2 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-3">
-                            Your Inner Self
-                        </h2>
-                        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-md mx-auto">
-                            These deeper insights help your AEI understand your values, beliefs, and what makes you unique
-                        </p>
-                        <div class="mt-4 inline-flex items-center space-x-2 text-sm text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2 rounded-full">
-                            <i class="fas fa-leaf"></i>
-                            <span>Shape meaningful connections</span>
-                        </div>
-                    </div>
 
                     <div>
                         <label for="sexual_orientation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -428,25 +339,6 @@ try {
                     </div>
 
                 <?php else: ?>
-                    <!-- Step 4: Relationship & Additional -->
-                    <div class="text-center mb-8 relative z-10">
-                        <div class="relative inline-block mb-6">
-                            <div class="w-20 h-20 bg-gradient-to-br from-rose-500 to-pink-500 rounded-full mx-auto flex items-center justify-center shadow-xl transform hover:scale-105 transition-transform duration-300">
-                                <i class="fas fa-users text-3xl text-white"></i>
-                            </div>
-                            <div class="absolute -inset-3 bg-gradient-to-r from-rose-500/20 to-pink-500/20 rounded-full blur-lg animate-pulse"></div>
-                        </div>
-                        <h2 class="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-3">
-                            Almost There!
-                        </h2>
-                        <p class="text-lg text-gray-600 dark:text-gray-300 max-w-md mx-auto">
-                            These final touches will help your AEI understand how you connect with others and what makes you special
-                        </p>
-                        <div class="mt-4 inline-flex items-center space-x-2 text-sm text-rose-600 bg-rose-50 dark:bg-rose-900/20 px-4 py-2 rounded-full">
-                            <i class="fas fa-magic"></i>
-                            <span>Complete your unique profile</span>
-                        </div>
-                    </div>
 
                     <div>
                         <label for="partner_qualities" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -492,39 +384,33 @@ try {
                     </div>
                 <?php endif; ?>
 
-                <div class="flex justify-between pt-8 relative z-10">
-                    <?php if ($step > 1): ?>
-                        <a href="/onboarding?step=<?= $step - 1 ?>" class="group flex items-center px-6 py-4 bg-white/60 dark:bg-gray-600/60 backdrop-blur-sm border border-gray-200 dark:border-gray-500 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-white dark:hover:bg-gray-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105">
-                            <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform duration-300"></i>
-                            Previous
-                        </a>
-                    <?php else: ?>
-                        <div></div>
-                    <?php endif; ?>
-
-                    <button 
-                        type="submit" 
-                        class="group relative overflow-hidden flex items-center px-8 py-4 bg-gradient-to-r from-ayuni-aqua via-blue-500 to-ayuni-blue text-white font-bold rounded-xl hover:from-ayuni-aqua/90 hover:via-blue-500/90 hover:to-ayuni-blue/90 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 focus:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300/50"
-                    >
-                        <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                        <?php if ($step < $maxSteps): ?>
-                            <span class="relative z-10">Continue Journey</span>
-                            <i class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform duration-300 relative z-10"></i>
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between pt-8">
+                        <?php if ($step > 1): ?>
+                            <a href="/onboarding?step=<?= $step - 1 ?>" class="flex items-center px-6 py-3 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-all duration-200">
+                                <i class="fas fa-arrow-left mr-2"></i>
+                                Back
+                            </a>
                         <?php else: ?>
-                            <i class="fas fa-sparkles mr-2 animate-pulse relative z-10"></i>
-                            <span class="relative z-10">Complete My Profile</span>
+                            <div></div>
                         <?php endif; ?>
-                    </button>
-                </div>
+
+                        <button 
+                            type="submit" 
+                            class="flex items-center px-8 py-3 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-lg hover:shadow-xl"
+                        >
+                            <?php if ($step < $maxSteps): ?>
+                                Continue
+                                <i class="fas fa-arrow-right ml-2"></i>
+                            <?php else: ?>
+                                <i class="fas fa-check mr-2"></i>
+                                Complete Profile
+                            <?php endif; ?>
+                        </button>
+                    </div>
             </form>
         </div>
 
-        <?php if ($step < $maxSteps): ?>
-            <div class="text-center mt-6">
-                <button type="button" onclick="document.querySelector('form').submit()" class="text-ayuni-blue hover:text-ayuni-aqua font-medium transition-colors">
-                    Skip this step
-                </button>
-            </div>
-        <?php endif; ?>
+        </div>
     </div>
 </div>
