@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             
                             $pdo->beginTransaction();
                             
-                            $stmt = $pdo->prepare("INSERT INTO users (id, email, password_hash, first_name, beta_code, is_onboarded) VALUES (?, ?, ?, ?, ?, TRUE)");
+                            $stmt = $pdo->prepare("INSERT INTO users (id, email, password_hash, first_name, beta_code, is_onboarded) VALUES (?, ?, ?, ?, ?, FALSE)");
                             $stmt->execute([$userId, $email, $passwordHash, $firstName, $betaCodeInfo['code']]);
                             
                             // Mark beta code as used
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             unset($_SESSION['temp_beta_code']);
                             
                             setUserSession($userId);
-                            redirectTo('dashboard');
+                            redirectTo('onboarding');
                         }
                     }
                 } catch (PDOException $e) {

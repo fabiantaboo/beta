@@ -45,6 +45,20 @@ function createTablesIfNotExist($pdo) {
             last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             is_onboarded BOOLEAN DEFAULT FALSE,
             is_admin BOOLEAN DEFAULT FALSE,
+            
+            -- Onboarding profile data
+            gender VARCHAR(50) NULL,
+            birth_date DATE NULL,
+            profession VARCHAR(255) NULL,
+            hobbies TEXT NULL,
+            sexual_orientation VARCHAR(100) NULL,
+            daily_rituals TEXT NULL,
+            life_goals TEXT NULL,
+            beliefs TEXT NULL,
+            partner_qualities TEXT NULL,
+            additional_info TEXT NULL,
+            timezone VARCHAR(100) DEFAULT 'UTC',
+            
             FOREIGN KEY (beta_code) REFERENCES beta_codes(code)
         )",
         'aeis' => "CREATE TABLE IF NOT EXISTS aeis (
@@ -124,7 +138,12 @@ try {
         $stmt = $pdo->query("DESCRIBE users");
         $userColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
         
-        $requiredUserColumns = ['email', 'password_hash', 'first_name', 'beta_code', 'is_admin'];
+        $requiredUserColumns = [
+            'email', 'password_hash', 'first_name', 'beta_code', 'is_admin',
+            'gender', 'birth_date', 'profession', 'hobbies', 'sexual_orientation',
+            'daily_rituals', 'life_goals', 'beliefs', 'partner_qualities', 
+            'additional_info', 'timezone'
+        ];
         $missingUserColumns = array_diff($requiredUserColumns, $userColumns);
         
         foreach ($missingUserColumns as $column) {
@@ -143,6 +162,39 @@ try {
                     break;
                 case 'is_admin':
                     $pdo->exec("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE");
+                    break;
+                case 'gender':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN gender VARCHAR(50) NULL");
+                    break;
+                case 'birth_date':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN birth_date DATE NULL");
+                    break;
+                case 'profession':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN profession VARCHAR(255) NULL");
+                    break;
+                case 'hobbies':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN hobbies TEXT NULL");
+                    break;
+                case 'sexual_orientation':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN sexual_orientation VARCHAR(100) NULL");
+                    break;
+                case 'daily_rituals':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN daily_rituals TEXT NULL");
+                    break;
+                case 'life_goals':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN life_goals TEXT NULL");
+                    break;
+                case 'beliefs':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN beliefs TEXT NULL");
+                    break;
+                case 'partner_qualities':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN partner_qualities TEXT NULL");
+                    break;
+                case 'additional_info':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN additional_info TEXT NULL");
+                    break;
+                case 'timezone':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN timezone VARCHAR(100) DEFAULT 'UTC'");
                     break;
             }
         }

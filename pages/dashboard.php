@@ -39,6 +39,12 @@ try {
                         <i class="fas fa-plus mr-2"></i>
                         Create AEI
                     </a>
+                    <?php if (isAdmin()): ?>
+                        <a href="/admin" class="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium transition-colors border border-orange-300 dark:border-orange-600 px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20">
+                            <i class="fas fa-cog mr-2"></i>
+                            Admin Panel
+                        </a>
+                    <?php endif; ?>
                     <a href="/profile" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
                         <i class="fas fa-user mr-2"></i>
                         Profile
