@@ -14,7 +14,7 @@ if (isset($_GET['action'])) {
     }
 }
 
-$allowed_pages = ['home', 'login', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin'];
+$allowed_pages = ['home', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
@@ -25,7 +25,6 @@ include "pages/{$page}.php";
 $page_content = ob_get_clean(); // Get the page content
 
 $page_title = match($page) {
-    'login' => 'Admin Login - Ayuni Beta',
     'onboarding' => 'Welcome to Ayuni',
     'create-aei' => 'Create Your AEI',
     'chat' => 'Chat with AEI',

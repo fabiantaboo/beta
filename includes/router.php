@@ -19,7 +19,6 @@ class Router {
             'register' => ['page' => 'home', 'step' => 'register'],
             'beta-access' => ['page' => 'home', 'step' => 'beta_code'],
             'admin' => ['page' => 'admin'],
-            'admin/login' => ['page' => 'login'],
             'dashboard' => ['page' => 'dashboard'],
             'create-aei' => ['page' => 'create-aei'],
             'chat' => ['page' => 'chat'],
