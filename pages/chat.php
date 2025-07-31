@@ -68,7 +68,7 @@ $messages = $stmt->fetchAll();
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-4">
-                    <a href="?page=dashboard" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors">
+                    <a href="/dashboard" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors">
                         <i class="fas fa-arrow-left"></i>
                         <span class="font-medium">Back to Dashboard</span>
                     </a>

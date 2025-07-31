@@ -1,0 +1,18 @@
+RewriteEngine On
+
+# Force HTTPS (optional - uncomment for production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Remove trailing slashes
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)/$  /$1 [R=301,L]
+
+# Handle static files (CSS, JS, images)
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule .* - [L]
+
+# Route everything else to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]

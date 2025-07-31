@@ -91,7 +91,7 @@ try {
                         <i class="fas fa-sun sun-icon text-lg"></i>
                         <i class="fas fa-moon moon-icon text-lg"></i>
                     </button>
-                    <a href="?page=dashboard" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
+                    <a href="/dashboard" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>
                         Back to Dashboard
                     </a>

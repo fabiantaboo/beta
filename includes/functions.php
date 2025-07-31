@@ -55,8 +55,27 @@ function getCurrentTimestamp() {
     return date('Y-m-d H:i:s');
 }
 
-function redirectTo($page) {
-    header("Location: index.php?page=" . urlencode($page));
+function redirectTo($route, $params = []) {
+    global $router;
+    
+    // Handle old-style page redirects for backward compatibility
+    $routeMap = [
+        'home' => '',
+        'login' => 'admin/login',
+        'dashboard' => 'dashboard',
+        'admin' => 'admin',
+        'create-aei' => 'create-aei',
+        'chat' => 'chat',
+        'profile' => 'profile',
+        'onboarding' => 'onboarding'
+    ];
+    
+    if (isset($routeMap[$route])) {
+        $route = $routeMap[$route];
+    }
+    
+    $url = $router->url($route, $params);
+    header("Location: " . $url);
     exit;
 }
 

@@ -35,15 +35,15 @@ try {
                         <i class="fas fa-sun sun-icon text-lg"></i>
                         <i class="fas fa-moon moon-icon text-lg"></i>
                     </button>
-                    <a href="?page=create-aei" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-2 px-4 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200">
+                    <a href="/create-aei" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-2 px-4 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200">
                         <i class="fas fa-plus mr-2"></i>
                         Create AEI
                     </a>
-                    <a href="?page=profile" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
+                    <a href="/profile" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
                         <i class="fas fa-user mr-2"></i>
                         Profile
                     </a>
-                    <a href="?page=logout" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
+                    <a href="/logout" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
                         <i class="fas fa-sign-out-alt mr-2"></i>
                         Logout
                     </a>
@@ -64,7 +64,7 @@ try {
                         Start your journey by creating your first Advanced Electronic Intelligence companion
                     </p>
                 </div>
-                <a href="?page=create-aei" class="inline-flex items-center bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-6 rounded-xl text-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl">
+                <a href="/create-aei" class="inline-flex items-center bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-6 rounded-xl text-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl">
                     <i class="fas fa-plus mr-2"></i>
                     Create Your First AEI
                 </a>
@@ -94,7 +94,7 @@ try {
                             <p class="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3"><?= htmlspecialchars(substr($aei['personality'], 0, 120)) ?>...</p>
                         <?php endif; ?>
                         
-                        <a href="?page=chat&aei=<?= urlencode($aei['id']) ?>" class="block w-full bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-2 px-4 rounded-lg text-center hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
+                        <a href="/chat/<?= urlencode($aei['id']) ?>" class="block w-full bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-2 px-4 rounded-lg text-center hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
                             <i class="fas fa-comments mr-2"></i>
                             Start Conversation
                         </a>

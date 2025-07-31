@@ -1,10 +1,18 @@
 <?php
 session_start();
 
-$page = $_GET['page'] ?? 'home';
-
 include_once 'config/database.php';
 include_once 'includes/functions.php';
+include_once 'includes/router.php';
+
+// Handle special actions
+if (isset($_GET['action'])) {
+    if ($_GET['action'] === 'logout') {
+        session_destroy();
+        header("Location: /");
+        exit;
+    }
+}
 
 $allowed_pages = ['home', 'login', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin'];
 if (!in_array($page, $allowed_pages)) {
