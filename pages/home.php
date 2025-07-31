@@ -90,17 +90,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             redirectTo('dashboard');
                         }
                     }
-                }
-            } catch (PDOException $e) {
-                try {
-                    if ($pdo->inTransaction()) {
-                        $pdo->rollBack();
+                } catch (PDOException $e) {
+                    try {
+                        if ($pdo->inTransaction()) {
+                            $pdo->rollBack();
+                        }
+                    } catch (PDOException $rollbackException) {
+                        error_log("Rollback failed: " . $rollbackException->getMessage());
                     }
-                } catch (PDOException $rollbackException) {
-                    error_log("Rollback failed: " . $rollbackException->getMessage());
+                    error_log("Database error during account creation: " . $e->getMessage());
+                    $error = "An error occurred. Please try again.";
                 }
-                error_log("Database error during beta code verification: " . $e->getMessage());
-                $error = "An error occurred. Please try again.";
             }
         }
     }
