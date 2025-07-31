@@ -128,7 +128,6 @@ try {
             <div class="text-center mb-10">
                 <div class="relative inline-block mb-6">
                     <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-16 w-auto">
-                    <div class="absolute -inset-3 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-lg"></div>
                 </div>
                 <h1 class="text-3xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-4">
                     Tell Us About Yourself
