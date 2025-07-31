@@ -99,6 +99,40 @@ try {
     
     createTablesIfNotExist($pdo);
     
+    // Migrate existing tables to add missing columns
+    try {
+        // Check if users table needs migration
+        $stmt = $pdo->query("DESCRIBE users");
+        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        $requiredColumns = ['email', 'password_hash', 'first_name', 'beta_code', 'is_admin'];
+        $missingColumns = array_diff($requiredColumns, $columns);
+        
+        if (!empty($missingColumns)) {
+            foreach ($missingColumns as $column) {
+                switch ($column) {
+                    case 'email':
+                        $pdo->exec("ALTER TABLE users ADD COLUMN email VARCHAR(255) UNIQUE");
+                        break;
+                    case 'password_hash':
+                        $pdo->exec("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255) NULL");
+                        break;
+                    case 'first_name':
+                        $pdo->exec("ALTER TABLE users ADD COLUMN first_name VARCHAR(100)");
+                        break;
+                    case 'beta_code':
+                        $pdo->exec("ALTER TABLE users ADD COLUMN beta_code VARCHAR(20) NULL");
+                        break;
+                    case 'is_admin':
+                        $pdo->exec("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE");
+                        break;
+                }
+            }
+        }
+    } catch (PDOException $e) {
+        error_log("Migration error: " . $e->getMessage());
+    }
+    
     // Create admin account if it doesn't exist
     try {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
