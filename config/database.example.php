@@ -28,8 +28,8 @@ function createTablesIfNotExist($pdo) {
     $tables = [
         'beta_codes' => "CREATE TABLE IF NOT EXISTS beta_codes (
             code VARCHAR(20) PRIMARY KEY,
-            first_name VARCHAR(100) NOT NULL,
-            email VARCHAR(255) NOT NULL,
+            first_name VARCHAR(100) NULL,
+            email VARCHAR(255) NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             used_at TIMESTAMP NULL,
             used_by VARCHAR(32) NULL,

@@ -11,20 +11,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $firstName = sanitizeInput($_POST['first_name'] ?? '');
             $email = sanitizeInput($_POST['email'] ?? '');
             
-            if (empty($firstName) || empty($email)) {
-                $error = "Please fill in all fields for the beta code.";
-            } else {
-                try {
-                    $code = strtoupper(bin2hex(random_bytes(4)) . '-' . bin2hex(random_bytes(4)));
-                    
-                    $stmt = $pdo->prepare("INSERT INTO beta_codes (code, first_name, email) VALUES (?, ?, ?)");
-                    $stmt->execute([$code, $firstName, $email]);
-                    
+            try {
+                $code = strtoupper(bin2hex(random_bytes(4)) . '-' . bin2hex(random_bytes(4)));
+                
+                // Insert with optional name and email
+                $stmt = $pdo->prepare("INSERT INTO beta_codes (code, first_name, email) VALUES (?, ?, ?)");
+                $stmt->execute([$code, $firstName ?: null, $email ?: null]);
+                
+                if ($firstName && $email) {
                     $success = "Generated beta code '$code' for $firstName ($email).";
-                } catch (PDOException $e) {
-                    error_log("Database error generating beta code: " . $e->getMessage());
-                    $error = "Failed to generate beta code: " . $e->getMessage();
+                } else {
+                    $success = "Generated beta code '$code' (no pre-filled user data).";
                 }
+            } catch (PDOException $e) {
+                error_log("Database error generating beta code: " . $e->getMessage());
+                $error = "Failed to generate beta code: " . $e->getMessage();
             }
         }
         
@@ -166,7 +167,7 @@ try {
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
             <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Generate Beta Code</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Create a personalized beta code with pre-filled user information</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Create a beta code with optional pre-filled user information</p>
             </div>
             <div class="p-6">
                 <form method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -175,30 +176,28 @@ try {
                     
                     <div>
                         <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            First Name
+                            First Name <span class="text-gray-500 text-xs">(Optional)</span>
                         </label>
                         <input 
                             type="text" 
                             id="first_name" 
                             name="first_name" 
-                            required
                             maxlength="100"
                             class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent"
-                            placeholder="First name"
+                            placeholder="First name (optional)"
                         />
                     </div>
                     
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Email Address
+                            Email Address <span class="text-gray-500 text-xs">(Optional)</span>
                         </label>
                         <input 
                             type="email" 
                             id="email" 
                             name="email" 
-                            required
                             class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent"
-                            placeholder="email@example.com"
+                            placeholder="email@example.com (optional)"
                         />
                     </div>
                     
@@ -212,6 +211,10 @@ try {
                         </button>
                     </div>
                 </form>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    If name and email are provided, they will be pre-filled during account creation
+                </p>
             </div>
         </div>
 
