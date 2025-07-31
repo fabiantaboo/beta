@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Please fill in all fields.";
         } else {
             try {
-                $stmt = $pdo->prepare("SELECT id, password_hash FROM users WHERE email = ? AND password_hash IS NOT NULL");
+                $stmt = $pdo->prepare("SELECT id, password_hash FROM users WHERE email = ? AND password_hash IS NOT NULL AND is_admin = TRUE");
                 $stmt->execute([$email]);
                 $user = $stmt->fetch();
                 
