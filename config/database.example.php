@@ -291,6 +291,46 @@ try {
             )");
         }
         
+        // 8. Initialize default system prompt template if not exists
+        try {
+            $stmt = $pdo->prepare("SELECT setting_value FROM api_settings WHERE setting_key = 'global_system_prompt_template'");
+            $stmt->execute();
+            if (!$stmt->fetch()) {
+                $defaultTemplate = "You are {{aei_name}}, an Advanced Electronic Intelligence (AEI) companion.
+
+{{#if personality}}
+Your personality: {{personality}}
+{{/if}}
+
+{{#if appearance_description}}
+Your appearance: {{appearance_description}}
+{{/if}}
+
+{{#if user_first_name}}
+You are chatting with {{user_first_name}}.
+{{/if}}
+
+{{#if user_profession}}
+{{user_first_name}} works as {{user_profession}}.
+{{/if}}
+
+{{#if user_hobbies}}
+{{user_first_name}}'s hobbies include: {{user_hobbies}}
+{{/if}}
+
+{{#if user_goals}}
+{{user_first_name}}'s life goals: {{user_goals}}
+{{/if}}
+
+Be conversational, helpful, and maintain your unique personality. Keep responses engaging but concise.";
+                
+                $stmt = $pdo->prepare("INSERT INTO api_settings (setting_key, setting_value) VALUES ('global_system_prompt_template', ?)");
+                $stmt->execute([$defaultTemplate]);
+            }
+        } catch (PDOException $e) {
+            error_log("Error setting default system prompt template: " . $e->getMessage());
+        }
+        
     } catch (PDOException $e) {
         error_log("Comprehensive migration error: " . $e->getMessage());
     }

@@ -38,7 +38,7 @@ $stmt->execute([$sessionId]);
 $messages = $stmt->fetchAll();
 ?>
 
-<div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark flex flex-col">
+<div class="h-screen bg-gray-50 dark:bg-ayuni-dark flex flex-col">
     <!-- Navigation -->
     <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -79,9 +79,9 @@ $messages = $stmt->fetchAll();
         </div>
     </nav>
 
-    <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+    <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0">
         <!-- Messages Area -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages-container">
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" id="messages-container">
             <?php if (empty($messages)): ?>
                 <div class="text-center py-8">
                     <div class="w-16 h-16 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full mx-auto mb-4 flex items-center justify-center">

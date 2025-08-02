@@ -14,23 +14,16 @@ function getAnthropicApiKey() {
 }
 
 function generateSystemPrompt($aei, $user) {
-    $systemPrompt = "You are {$aei['name']}, an Advanced Electronic Intelligence (AEI) companion.";
-    
+    // If AEI has a custom system prompt, use it directly
     if (!empty($aei['system_prompt'])) {
         return $aei['system_prompt'];
     }
     
-    if (!empty($aei['personality'])) {
-        $systemPrompt .= "\n\nYour personality: " . $aei['personality'];
-    }
+    // Otherwise, use the global template system
+    $template = TemplateEngine::getGlobalTemplate();
+    $data = TemplateEngine::buildTemplateData($aei, $user);
     
-    if (!empty($aei['appearance_description'])) {
-        $systemPrompt .= "\n\nYour appearance: " . $aei['appearance_description'];
-    }
-    
-    $systemPrompt .= "\n\nYou are chatting with {$user['first_name']}. Be conversational, helpful, and maintain your unique personality. Keep responses engaging but concise.";
-    
-    return $systemPrompt;
+    return TemplateEngine::render($template, $data);
 }
 
 function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 1000) {
