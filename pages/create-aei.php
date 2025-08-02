@@ -818,6 +818,13 @@ function updateRelationshipOptions(aeiGender) {
     const familyOptions = relationshipOptions.querySelectorAll('.family-relation');
     const romanticOptions = relationshipOptions.querySelectorAll('.romantic-relation');
     
+    // Show all options if no gender is selected
+    if (!aeiGender) {
+        familyOptions.forEach(option => option.style.display = 'flex');
+        romanticOptions.forEach(option => option.style.display = 'flex');
+        return;
+    }
+    
     // Show/hide family options based on gender
     familyOptions.forEach(option => {
         const optionGender = option.getAttribute('data-gender');
