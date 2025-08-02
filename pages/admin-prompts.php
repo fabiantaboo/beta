@@ -137,6 +137,10 @@ try {
                                             <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{goals}}</code>
                                             <span class="text-gray-500 dark:text-gray-400 text-xs">Goals & aspirations</span>
                                         </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{relationship_context}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Relationship to user</span>
+                                        </div>
                                     </div>
                                     <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                         <h6 class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">📋 Note about Character Data</h6>
@@ -144,6 +148,27 @@ try {
                                             Personality, interests, and communication style are automatically parsed from the interactive character creator. 
                                             Appearance data is intelligently combined into natural descriptions.
                                         </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Relationship Context -->
+                                <div>
+                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Beziehungskontext</h5>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{relationship_context}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Vollständiger Beziehungskontext</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                        <h6 class="text-xs font-semibold text-green-700 dark:text-green-300 mb-2">✨ Neue spezifische Beziehungstypen</h6>
+                                        <div class="text-xs text-green-600 dark:text-green-400 space-y-1">
+                                            <p><strong>Familie:</strong> Schwester, Bruder, Tochter, Sohn</p>
+                                            <p><strong>Romantisch:</strong> Freundin, Freund, Ehefrau, Ehemann</p>
+                                            <p><strong>Freundschaft:</strong> Beste/r Freund/in, Enge/r Freund/in</p>
+                                            <p><strong>Professionell:</strong> Mentor/in, Schüler/in, Kolleg/in</p>
+                                            <p><strong>Begleitung:</strong> Begleiter/in</p>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -221,6 +246,8 @@ try {
                                         <button type="button" onclick="insertConditional('interests')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Interests</button>
                                         <button type="button" onclick="insertConditional('background')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Background</button>
                                         <button type="button" onclick="insertConditional('occupation')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Occupation</button>
+                                        <button type="button" onclick="insertTag('{{relationship_context}}')" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Relationship</button>
+                                        <button type="button" onclick="insertConditional('relationship_context')" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">If Relationship</button>
                                         <button type="button" onclick="insertConditional('user_profession')" class="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600">If User Prof</button>
                                         <button type="button" onclick="insertConditional('user_hobbies')" class="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600">If User Hobby</button>
                                     </div>
@@ -269,6 +296,10 @@ try {
 
 {{#if interests}}
 **Interests:** {{interests}}
+{{/if}}
+
+{{#if relationship_context}}
+**Relationship:** {{relationship_context}}
 {{/if}}
 
 {{#if user_first_name}}

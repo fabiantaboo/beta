@@ -504,53 +504,124 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                                 What is your relationship to this AEI?
                             </label>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <!-- Freundschaft -->
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                     <input type="radio" name="relationship_type" value="Best Friend" class="sr-only">
                                     <i class="fas fa-user-friends text-blue-500 mr-3"></i>
                                     <div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Best Friend</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Close friendship and trust</p>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Beste/r Freund/in</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Enge Freundschaft und Vertrauen</p>
                                     </div>
                                 </label>
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Romantic Partner" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Close Friend" class="sr-only">
+                                    <i class="fas fa-users text-blue-400 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Enge/r Freund/in</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Vertrauensvolle Freundschaft</p>
+                                    </div>
+                                </label>
+                                
+                                <!-- Familie -->
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Sister" class="sr-only">
+                                    <i class="fas fa-female text-pink-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Schwester</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Geschwisterliche Verbindung</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Brother" class="sr-only">
+                                    <i class="fas fa-male text-blue-600 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Bruder</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Geschwisterliche Verbindung</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Daughter" class="sr-only">
+                                    <i class="fas fa-baby text-pink-400 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Tochter</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Eltern-Kind Beziehung</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Son" class="sr-only">
+                                    <i class="fas fa-child text-blue-400 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Sohn</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Eltern-Kind Beziehung</p>
+                                    </div>
+                                </label>
+                                
+                                <!-- Romantische Beziehungen -->
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Girlfriend" class="sr-only">
                                     <i class="fas fa-heart text-red-500 mr-3"></i>
                                     <div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Romantic Partner</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Romantic relationship</p>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Freundin</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Romantische Partnerin</p>
                                     </div>
                                 </label>
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Family Member" class="sr-only">
-                                    <i class="fas fa-home text-green-500 mr-3"></i>
+                                    <input type="radio" name="relationship_type" value="Boyfriend" class="sr-only">
+                                    <i class="fas fa-heart text-red-600 mr-3"></i>
                                     <div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Family Member</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Sibling, cousin, or chosen family</p>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Freund</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Romantischer Partner</p>
                                     </div>
                                 </label>
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Mentor/Student" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Wife" class="sr-only">
+                                    <i class="fas fa-ring text-gold-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Ehefrau</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Verheiratet</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Husband" class="sr-only">
+                                    <i class="fas fa-ring text-gold-600 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Ehemann</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Verheiratet</p>
+                                    </div>
+                                </label>
+                                
+                                <!-- Professionell/Andere -->
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Mentor" class="sr-only">
                                     <i class="fas fa-graduation-cap text-purple-500 mr-3"></i>
                                     <div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mentor/Student</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Teaching or learning relationship</p>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mentor/in</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Lehrende Beziehung</p>
                                     </div>
                                 </label>
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Work Colleague" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Student" class="sr-only">
+                                    <i class="fas fa-book text-purple-400 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Schüler/in</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Lernende Beziehung</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Colleague" class="sr-only">
                                     <i class="fas fa-briefcase text-gray-500 mr-3"></i>
                                     <div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Work Colleague</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Professional relationship</p>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Kolleg/in</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Professionelle Beziehung</p>
                                     </div>
                                 </label>
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                     <input type="radio" name="relationship_type" value="Companion" class="sr-only">
                                     <i class="fas fa-smile text-yellow-500 mr-3"></i>
                                     <div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Companion</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">General friendship and support</p>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Begleiter/in</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Allgemeine Unterstützung</p>
                                     </div>
                                 </label>
                             </div>
