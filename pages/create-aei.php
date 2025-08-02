@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <i class="fas fa-arrow-left"></i>
                         <span class="font-medium">Back to Dashboard</span>
                     </a>
-                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-10 w-auto">
+                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-10 w-auto">
                     <span class="text-xl font-semibold text-gray-900 dark:text-white">Birth AEI</span>
                 </div>
                 <button 

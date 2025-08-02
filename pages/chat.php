@@ -48,7 +48,7 @@ $messages = $stmt->fetchAll();
                         <i class="fas fa-arrow-left"></i>
                         <span class="font-medium">Back to Dashboard</span>
                     </a>
-                    <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-8 w-auto">
+                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-8 w-auto">
                 </div>
                 <div class="flex items-center space-x-4">
                     <button 

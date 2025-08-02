@@ -168,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center">
                 <div class="mb-8">
                     <div class="flex justify-center mb-6">
-                        <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-24 w-auto">
+                        <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-24 w-auto">
                     </div>
                 </div>
                 
@@ -240,7 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center">
                 <div class="mb-8">
                     <div class="flex justify-center mb-6">
-                        <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-24 w-auto">
+                        <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-24 w-auto">
                     </div>
                 </div>
                 
@@ -326,7 +326,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center">
                 <div class="mb-8">
                     <div class="flex justify-center mb-6">
-                        <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-24 w-auto">
+                        <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-24 w-auto">
                     </div>
                 </div>
                 
