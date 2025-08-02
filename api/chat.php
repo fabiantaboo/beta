@@ -139,6 +139,7 @@ try {
     }
     
     error_log("Chat API error: " . $e->getMessage());
+    error_log("AEI ID: " . $aeiId . ", User ID: " . getUserSession());
     
     http_response_code(500);
     echo json_encode(['error' => 'Failed to send message. Please try again.']);

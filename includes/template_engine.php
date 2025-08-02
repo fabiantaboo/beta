@@ -145,8 +145,11 @@ class TemplateEngine {
         $personalityTraits = [];
         if (!empty($aei['personality'])) {
             $traits = json_decode($aei['personality'], true);
-            if (is_array($traits)) {
+            if (json_last_error() === JSON_ERROR_NONE && is_array($traits)) {
                 $personalityTraits = array_filter($traits);
+            } else {
+                // Fallback: treat as plain text if JSON parsing fails
+                $personalityTraits = [$aei['personality']];
             }
         }
         $personality = !empty($personalityTraits) ? implode(', ', $personalityTraits) : '';
@@ -155,8 +158,11 @@ class TemplateEngine {
         $communicationData = [];
         if (!empty($aei['communication_style'])) {
             $commData = json_decode($aei['communication_style'], true);
-            if (is_array($commData)) {
+            if (json_last_error() === JSON_ERROR_NONE && is_array($commData)) {
                 $communicationData = $commData;
+            } else {
+                // Fallback: treat as plain text
+                $communicationData = ['style' => $aei['communication_style']];
             }
         }
         $communication_style = '';
@@ -171,8 +177,11 @@ class TemplateEngine {
         $appearanceData = [];
         if (!empty($aei['appearance_description'])) {
             $appData = json_decode($aei['appearance_description'], true);
-            if (is_array($appData)) {
+            if (json_last_error() === JSON_ERROR_NONE && is_array($appData)) {
                 $appearanceData = $appData;
+            } else {
+                // Fallback: treat as plain text
+                $appearanceData = ['custom' => $aei['appearance_description']];
             }
         }
         $appearance_description = self::buildAppearanceDescription($appearanceData);
@@ -181,8 +190,11 @@ class TemplateEngine {
         $interestsArray = [];
         if (!empty($aei['interests'])) {
             $interests = json_decode($aei['interests'], true);
-            if (is_array($interests)) {
+            if (json_last_error() === JSON_ERROR_NONE && is_array($interests)) {
                 $interestsArray = array_filter($interests);
+            } else {
+                // Fallback: treat as plain text and split by comma
+                $interestsArray = array_map('trim', explode(',', $aei['interests']));
             }
         }
         $interests = !empty($interestsArray) ? implode(', ', $interestsArray) : '';
