@@ -36,7 +36,7 @@ function generateSystemPrompt($aei, $user) {
     }
 }
 
-function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 120000) {
+function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000) {
     $apiKey = getAnthropicApiKey();
     
     if (!$apiKey) {
@@ -89,7 +89,7 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 120000) {
     return $data['content'][0]['text'];
 }
 
-function getChatHistory($sessionId, $limit = 20) {
+function getChatHistory($sessionId, $limit = 40) {
     global $pdo;
     
     try {
@@ -97,11 +97,11 @@ function getChatHistory($sessionId, $limit = 20) {
             SELECT sender_type, message_text, created_at 
             FROM chat_messages 
             WHERE session_id = ? 
-            ORDER BY created_at ASC 
+            ORDER BY created_at DESC 
             LIMIT ?
         ");
         $stmt->execute([$sessionId, $limit]);
-        $messages = $stmt->fetchAll();
+        $messages = array_reverse($stmt->fetchAll());
         
         $formattedMessages = [];
         foreach ($messages as $message) {
