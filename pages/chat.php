@@ -36,6 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['message'])) {
         $chatError = "Invalid request. Please try again.";
     } else {
         try {
+            // Start database transaction for data consistency
+            $pdo->beginTransaction();
+            
             $message = sanitizeInput($_POST['message']);
             
             // Get user data for AI context
@@ -43,25 +46,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['message'])) {
             $stmt->execute([getUserSession()]);
             $user = $stmt->fetch();
             
-            // Generate AI response BEFORE saving the user message
-            $aeiResponse = generateAIResponse($message, $aei, $user, $sessionId);
-            
-            // Now save both messages in order
+            // Save user message first
             $messageId = generateId();
             $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'user', ?)");
             $stmt->execute([$messageId, $sessionId, $message]);
             
+            // Generate AI response with complete context
+            $aeiResponse = generateAIResponse($message, $aei, $user, $sessionId);
+            
+            // Save AI response
             $aeiResponseId = generateId();
             $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'aei', ?)");
             $stmt->execute([$aeiResponseId, $sessionId, $aeiResponse]);
             
+            // Update session timestamp
             $stmt = $pdo->prepare("UPDATE chat_sessions SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?");
             $stmt->execute([$sessionId]);
-        } catch (PDOException $e) {
-            error_log("Database error sending message: " . $e->getMessage());
+            
+            // Commit transaction
+            $pdo->commit();
+            
+            // POST-Redirect-GET pattern: Redirect after successful POST to prevent duplicate submissions on reload
+            $redirectUrl = "/chat?aei=" . urlencode($aeiId) . "&sent=1";
+            header("Location: " . $redirectUrl);
+            exit;
+            
+        } catch (Exception $e) {
+            // Rollback transaction on any error
+            $pdo->rollback();
+            error_log("Chat error: " . $e->getMessage());
             $chatError = "Failed to send message. Please try again.";
         }
     }
+}
+
+// Handle success message from redirect
+$successMessage = null;
+if (isset($_GET['sent']) && $_GET['sent'] === '1') {
+    $successMessage = "Message sent successfully!";
 }
 
 $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE session_id = ? ORDER BY created_at ASC");
@@ -151,6 +173,14 @@ $messages = $stmt->fetchAll();
                     <div class="flex items-center">
                         <i class="fas fa-exclamation-circle mr-2"></i>
                         <?= htmlspecialchars($chatError) ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+            <?php if (isset($successMessage)): ?>
+                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-2 rounded-lg mb-4 text-sm">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <?= htmlspecialchars($successMessage) ?>
                     </div>
                 </div>
             <?php endif; ?>

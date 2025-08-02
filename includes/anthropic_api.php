@@ -138,8 +138,8 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId) {
     } catch (Exception $e) {
         error_log("AI Response Error: " . $e->getMessage());
         
-        // Fallback response
-        return "I'm sorry, I'm having trouble connecting right now. Please try again in a moment. (Error: " . $e->getMessage() . ")";
+        // Don't expose internal errors to users - return generic fallback
+        return "I'm temporarily unavailable. Please try again in a moment.";
     }
 }
 
