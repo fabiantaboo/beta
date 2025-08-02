@@ -37,18 +37,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['message'])) {
     } else {
         try {
             $message = sanitizeInput($_POST['message']);
-            $messageId = generateId();
-            
-            $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'user', ?)");
-            $stmt->execute([$messageId, $sessionId, $message]);
             
             // Get user data for AI context
             $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
             $stmt->execute([getUserSession()]);
             $user = $stmt->fetch();
             
-            // Generate AI response
+            // Generate AI response BEFORE saving the user message
             $aeiResponse = generateAIResponse($message, $aei, $user, $sessionId);
+            
+            // Now save both messages in order
+            $messageId = generateId();
+            $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'user', ?)");
+            $stmt->execute([$messageId, $sessionId, $message]);
             
             $aeiResponseId = generateId();
             $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'aei', ?)");

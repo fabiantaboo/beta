@@ -118,7 +118,7 @@ function getChatHistory($sessionId, $limit = 20) {
 
 function generateAIResponse($userMessage, $aei, $user, $sessionId) {
     try {
-        // Get recent chat history
+        // Get recent chat history (excluding the current message that hasn't been saved yet)
         $chatHistory = getChatHistory($sessionId, 15);
         
         // Add the new user message
