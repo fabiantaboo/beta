@@ -153,21 +153,22 @@ try {
                                 
                                 <!-- Relationship Context -->
                                 <div>
-                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Beziehungskontext</h5>
+                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Relationship Context</h5>
                                     <div class="space-y-1">
                                         <div class="flex items-center justify-between text-sm">
                                             <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{relationship_context}}</code>
-                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Vollständiger Beziehungskontext</span>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Complete relationship context</span>
                                         </div>
                                     </div>
                                     <div class="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                        <h6 class="text-xs font-semibold text-green-700 dark:text-green-300 mb-2">✨ Neue spezifische Beziehungstypen</h6>
+                                        <h6 class="text-xs font-semibold text-green-700 dark:text-green-300 mb-2">✨ Gender-Aware Relationship Types</h6>
                                         <div class="text-xs text-green-600 dark:text-green-400 space-y-1">
-                                            <p><strong>Familie:</strong> Schwester, Bruder, Tochter, Sohn</p>
-                                            <p><strong>Romantisch:</strong> Freundin, Freund, Ehefrau, Ehemann</p>
-                                            <p><strong>Freundschaft:</strong> Beste/r Freund/in, Enge/r Freund/in</p>
-                                            <p><strong>Professionell:</strong> Mentor/in, Schüler/in, Kolleg/in</p>
-                                            <p><strong>Begleitung:</strong> Begleiter/in</p>
+                                            <p><strong>Family:</strong> Sister, Brother, Daughter, Son</p>
+                                            <p><strong>Romantic:</strong> Girlfriend, Boyfriend, Wife, Husband</p>
+                                            <p><strong>Friendship:</strong> Best Friend, Close Friend</p>
+                                            <p><strong>Professional:</strong> Mentor, Student, Colleague</p>
+                                            <p><strong>Other:</strong> Companion</p>
+                                            <p class="mt-2 italic">Relationship options automatically filter based on AEI gender</p>
                                         </div>
                                     </div>
                                 </div>
