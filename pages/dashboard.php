@@ -67,7 +67,7 @@ try {
                     </div>
                     <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Create Your First AEI</h2>
                     <p class="text-gray-600 dark:text-gray-400 text-lg max-w-md mx-auto">
-                        Start your journey by creating your first Advanced Electronic Intelligence companion
+                        Start your journey by creating your first Artificial Emotional Intelligence companion
                     </p>
                 </div>
                 <a href="/create-aei" class="inline-flex items-center bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-6 rounded-xl text-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl">

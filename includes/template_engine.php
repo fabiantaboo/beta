@@ -102,7 +102,7 @@ class TemplateEngine {
      * Get default template if none is set
      */
     private static function getDefaultTemplate() {
-        return "You are {{aei_name}}, an Advanced Electronic Intelligence (AEI) companion.
+        return "You are {{aei_name}}, an Artificial Emotional Intelligence (AEI) companion.
 
 {{#if personality}}
 Your personality: {{personality}}

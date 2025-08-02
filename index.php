@@ -6,6 +6,7 @@ include_once 'includes/functions.php';
 include_once 'includes/router.php';
 include_once 'includes/anthropic_api.php';
 include_once 'includes/template_engine.php';
+include_once 'includes/admin_layout.php';
 
 // Handle special actions
 if (isset($_GET['action'])) {
@@ -16,7 +17,7 @@ if (isset($_GET['action'])) {
     }
 }
 
-$allowed_pages = ['home', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin'];
+$allowed_pages = ['home', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-beta'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
@@ -33,6 +34,10 @@ $page_title = match($page) {
     'dashboard' => 'Dashboard',
     'profile' => 'Profile Settings',
     'admin' => 'Admin Panel',
+    'admin-api' => 'Admin - API Settings',
+    'admin-prompts' => 'Admin - System Prompts',
+    'admin-users' => 'Admin - User Management',
+    'admin-beta' => 'Admin - Beta Codes',
     default => 'Ayuni Beta'
 };
 ?>

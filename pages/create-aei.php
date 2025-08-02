@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Create Your AEI</h1>
-            <p class="text-gray-600 dark:text-gray-400 text-lg">Design a unique Advanced Electronic Intelligence companion</p>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">Design a unique Artificial Emotional Intelligence companion</p>
         </div>
 
         <?php if (isset($error)): ?>

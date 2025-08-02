@@ -296,7 +296,7 @@ try {
             $stmt = $pdo->prepare("SELECT setting_value FROM api_settings WHERE setting_key = 'global_system_prompt_template'");
             $stmt->execute();
             if (!$stmt->fetch()) {
-                $defaultTemplate = "You are {{aei_name}}, an Advanced Electronic Intelligence (AEI) companion.
+                $defaultTemplate = "You are {{aei_name}}, an Artificial Emotional Intelligence (AEI) companion.
 
 {{#if personality}}
 Your personality: {{personality}}
