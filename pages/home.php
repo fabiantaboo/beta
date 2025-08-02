@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "Please fill in all fields.";
             } else {
                 try {
-                    $stmt = $pdo->prepare("SELECT id, password_hash, is_admin FROM users WHERE email = ? AND password_hash IS NOT NULL");
+                    $stmt = $pdo->prepare("SELECT id, password_hash, is_admin, is_onboarded FROM users WHERE email = ? AND password_hash IS NOT NULL");
                     $stmt->execute([$email]);
                     $user = $stmt->fetch();
                     
@@ -130,9 +130,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt = $pdo->prepare("UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?");
                         $stmt->execute([$user['id']]);
                         
-                        // Redirect based on user type
+                        // Redirect based on user type and onboarding status
                         if ($user['is_admin']) {
                             redirectTo('admin');
+                        } elseif (!$user['is_onboarded']) {
+                            redirectTo('onboarding');
                         } else {
                             redirectTo('dashboard');
                         }

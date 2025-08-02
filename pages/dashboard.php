@@ -1,5 +1,5 @@
 <?php
-requireAuth();
+requireOnboarding();
 
 $userId = getUserSession();
 if (!$userId) {

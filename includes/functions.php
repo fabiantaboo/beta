@@ -44,6 +44,30 @@ function requireAuth() {
     }
 }
 
+function requireOnboarding() {
+    requireAuth();
+    global $pdo;
+    
+    $userId = getUserSession();
+    if (!$userId) {
+        redirectTo('home');
+        return;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("SELECT is_onboarded FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        
+        if ($user && !$user['is_onboarded']) {
+            redirectTo('onboarding');
+        }
+    } catch (PDOException $e) {
+        error_log("Error checking onboarding status: " . $e->getMessage());
+        // Continue anyway to avoid blocking legitimate users
+    }
+}
+
 function requireAdmin() {
     requireAuth();
     if (!isAdmin()) {

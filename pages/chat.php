@@ -1,5 +1,5 @@
 <?php
-requireAuth();
+requireOnboarding();
 
 $aeiId = $_GET['aei'] ?? '';
 if (empty($aeiId)) {
