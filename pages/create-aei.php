@@ -524,70 +524,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </label>
                                 
                                 <!-- Family (Gender-aware) -->
-                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-gender="female">
+                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="female">
                                     <input type="radio" name="relationship_type" value="Sister" class="sr-only">
                                     <i class="fas fa-female text-pink-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Sister</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Sibling relationship</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">She is your sister</p>
                                     </div>
                                 </label>
-                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-gender="male">
+                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="male">
                                     <input type="radio" name="relationship_type" value="Brother" class="sr-only">
                                     <i class="fas fa-male text-blue-600 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Brother</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Sibling relationship</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">He is your brother</p>
                                     </div>
                                 </label>
-                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-gender="female">
+                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="female">
                                     <input type="radio" name="relationship_type" value="Daughter" class="sr-only">
                                     <i class="fas fa-baby text-pink-400 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Daughter</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Parent-child relationship</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">She is your daughter</p>
                                     </div>
                                 </label>
-                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-gender="male">
+                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="male">
                                     <input type="radio" name="relationship_type" value="Son" class="sr-only">
                                     <i class="fas fa-child text-blue-400 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Son</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Parent-child relationship</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">He is your son</p>
                                     </div>
                                 </label>
                                 
                                 <!-- Romantic (Gender-aware) -->
-                                <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-gender="female">
+                                <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="female">
                                     <input type="radio" name="relationship_type" value="Girlfriend" class="sr-only">
                                     <i class="fas fa-heart text-red-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Girlfriend</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Romantic partner</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">She is your girlfriend</p>
                                     </div>
                                 </label>
-                                <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-gender="male">
+                                <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="male">
                                     <input type="radio" name="relationship_type" value="Boyfriend" class="sr-only">
                                     <i class="fas fa-heart text-red-600 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Boyfriend</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Romantic partner</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">He is your boyfriend</p>
                                     </div>
                                 </label>
-                                <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-gender="female">
+                                <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="female">
                                     <input type="radio" name="relationship_type" value="Wife" class="sr-only">
                                     <i class="fas fa-ring text-gold-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Wife</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Married partner</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">She is your wife</p>
                                     </div>
                                 </label>
-                                <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-gender="male">
+                                <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="male">
                                     <input type="radio" name="relationship_type" value="Husband" class="sr-only">
                                     <i class="fas fa-ring text-gold-600 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Husband</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Married partner</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">He is your husband</p>
                                     </div>
                                 </label>
                                 
@@ -827,7 +827,7 @@ function updateRelationshipOptions(aeiGender) {
     
     // Show/hide family options based on gender
     familyOptions.forEach(option => {
-        const optionGender = option.getAttribute('data-gender');
+        const optionGender = option.getAttribute('data-aei-gender');
         if (optionGender === aeiGender) {
             option.style.display = 'flex';
         } else {
@@ -843,7 +843,7 @@ function updateRelationshipOptions(aeiGender) {
     
     // Show/hide romantic options based on gender
     romanticOptions.forEach(option => {
-        const optionGender = option.getAttribute('data-gender');
+        const optionGender = option.getAttribute('data-aei-gender');
         if (optionGender === aeiGender) {
             option.style.display = 'flex';
         } else {
