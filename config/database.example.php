@@ -67,6 +67,7 @@ function createTablesIfNotExist($pdo) {
             name VARCHAR(100) NOT NULL,
             personality TEXT,
             appearance_description TEXT,
+            system_prompt TEXT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN DEFAULT TRUE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -90,6 +91,13 @@ function createTablesIfNotExist($pdo) {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
             INDEX idx_session_time (session_id, created_at)
+        )",
+        'api_settings' => "CREATE TABLE IF NOT EXISTS api_settings (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            setting_key VARCHAR(100) UNIQUE NOT NULL,
+            setting_value TEXT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )"
     ];
 
@@ -223,11 +231,23 @@ try {
                 name VARCHAR(100) NOT NULL,
                 personality TEXT,
                 appearance_description TEXT,
+                system_prompt TEXT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 is_active BOOLEAN DEFAULT TRUE,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 INDEX idx_user_id (user_id)
             )");
+        } else {
+            // Add system_prompt column if it doesn't exist
+            try {
+                $stmt = $pdo->query("DESCRIBE aeis");
+                $aeiColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                if (!in_array('system_prompt', $aeiColumns)) {
+                    $pdo->exec("ALTER TABLE aeis ADD COLUMN system_prompt TEXT NULL AFTER appearance_description");
+                }
+            } catch (PDOException $e) {
+                // Column might already exist, ignore error
+            }
         }
         
         // 5. Check and migrate chat_sessions table
@@ -256,6 +276,18 @@ try {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
                 INDEX idx_session_time (session_id, created_at)
+            )");
+        }
+        
+        // 7. Check and migrate api_settings table
+        $stmt = $pdo->query("SHOW TABLES LIKE 'api_settings'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("CREATE TABLE api_settings (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                setting_key VARCHAR(100) UNIQUE NOT NULL,
+                setting_value TEXT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )");
         }
         

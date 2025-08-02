@@ -42,9 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['message'])) {
             $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'user', ?)");
             $stmt->execute([$messageId, $sessionId, $message]);
             
-            $aeiResponseId = generateId();
-            $aeiResponse = "Hello! I'm " . htmlspecialchars($aei['name']) . ". Thanks for your message: \"" . htmlspecialchars($message) . "\". This is a simulated response for the MVP version.";
+            // Get user data for AI context
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([getUserSession()]);
+            $user = $stmt->fetch();
             
+            // Generate AI response
+            $aeiResponse = generateAIResponse($message, $aei, $user, $sessionId);
+            
+            $aeiResponseId = generateId();
             $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'aei', ?)");
             $stmt->execute([$aeiResponseId, $sessionId, $aeiResponse]);
             

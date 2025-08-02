@@ -74,6 +74,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+        
+        if ($action === 'update_api_key') {
+            $apiKey = sanitizeInput($_POST['api_key'] ?? '');
+            
+            try {
+                // Update or insert the API key
+                $stmt = $pdo->prepare("INSERT INTO api_settings (setting_key, setting_value) VALUES ('anthropic_api_key', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
+                $stmt->execute([$apiKey]);
+                $success = "Anthropic API key updated successfully.";
+            } catch (PDOException $e) {
+                error_log("Database error updating API key: " . $e->getMessage());
+                $error = "Failed to update API key.";
+            }
+        }
     }
 }
 
@@ -115,6 +129,16 @@ try {
     $usedCodes = $stmt->fetch()['used_codes'];
 } catch (PDOException $e) {
     $totalUsers = $activeCodes = $usedCodes = 0;
+}
+
+// Get current API key
+try {
+    $stmt = $pdo->prepare("SELECT setting_value FROM api_settings WHERE setting_key = 'anthropic_api_key'");
+    $stmt->execute();
+    $apiKeyResult = $stmt->fetch();
+    $currentApiKey = $apiKeyResult ? $apiKeyResult['setting_value'] : '';
+} catch (PDOException $e) {
+    $currentApiKey = '';
 }
 ?>
 
@@ -206,6 +230,67 @@ try {
                         <p class="text-3xl font-bold text-gray-900 dark:text-white"><?= $usedCodes ?></p>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- API Configuration -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">API Configuration</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Configure Anthropic API for AI chat functionality</p>
+            </div>
+            <div class="p-6">
+                <form method="POST" class="space-y-4">
+                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                    <input type="hidden" name="action" value="update_api_key">
+                    
+                    <div>
+                        <label for="api_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <i class="fas fa-key mr-2 text-ayuni-blue"></i>
+                            Anthropic API Key
+                        </label>
+                        <div class="flex space-x-3">
+                            <input 
+                                type="password" 
+                                id="api_key" 
+                                name="api_key" 
+                                value="<?= htmlspecialchars($currentApiKey) ?>"
+                                class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent"
+                                placeholder="sk-ant-api03-..."
+                            />
+                            <button 
+                                type="button" 
+                                onclick="toggleApiKeyVisibility()"
+                                class="px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                                title="Toggle visibility"
+                            >
+                                <i class="fas fa-eye" id="eye-icon"></i>
+                            </button>
+                            <button 
+                                type="submit" 
+                                class="px-6 py-2 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white rounded-lg font-medium hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-colors"
+                            >
+                                <i class="fas fa-save mr-2"></i>
+                                Save
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Required for AI chat functionality. Get your API key from <a href="https://console.anthropic.com/" target="_blank" class="text-ayuni-blue hover:underline">console.anthropic.com</a>
+                        </p>
+                        <?php if ($currentApiKey): ?>
+                            <p class="text-xs text-green-600 dark:text-green-400 mt-1">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                API key is configured (<?= strlen($currentApiKey) > 0 ? 'Key length: ' . strlen($currentApiKey) . ' characters' : 'No key set' ?>)
+                            </p>
+                        <?php else: ?>
+                            <p class="text-xs text-red-600 dark:text-red-400 mt-1">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                No API key configured - AI chat will not work
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -487,6 +572,21 @@ function editUser(id, firstName, email, isAdmin) {
 
 function closeEditModal() {
     document.getElementById('editUserModal').classList.add('hidden');
+}
+
+function toggleApiKeyVisibility() {
+    const input = document.getElementById('api_key');
+    const icon = document.getElementById('eye-icon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
 }
 
 // Close modal when clicking outside

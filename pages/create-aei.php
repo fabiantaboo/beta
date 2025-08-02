@@ -8,14 +8,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = sanitizeInput($_POST['name'] ?? '');
         $personality = sanitizeInput($_POST['personality'] ?? '');
         $appearance = sanitizeInput($_POST['appearance'] ?? '');
+        $systemPrompt = sanitizeInput($_POST['system_prompt'] ?? '');
         
         if (empty($name)) {
             $error = "AEI name is required";
         } else {
             try {
                 $aeiId = generateId();
-                $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, personality, appearance_description) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$aeiId, getUserSession(), $name, $personality, $appearance]);
+                $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, personality, appearance_description, system_prompt) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$aeiId, getUserSession(), $name, $personality, $appearance, $systemPrompt]);
                 redirectTo('dashboard');
             } catch (PDOException $e) {
                 error_log("Database error creating AEI: " . $e->getMessage());
@@ -119,6 +120,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         placeholder="How does your AEI present themselves? Describe their visual characteristics, style, or digital form..."
                     ><?= htmlspecialchars($_POST['appearance'] ?? '') ?></textarea>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Optional: How would you visualize this AEI?</p>
+                </div>
+
+                <div>
+                    <label for="system_prompt" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        <i class="fas fa-code mr-2 text-ayuni-aqua"></i>
+                        Custom System Prompt
+                        <span class="text-xs text-gray-500 dark:text-gray-400 font-normal">(Advanced)</span>
+                    </label>
+                    <textarea 
+                        id="system_prompt" 
+                        name="system_prompt" 
+                        rows="4"
+                        maxlength="2000"
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
+                        placeholder="Optional: Define a custom system prompt for advanced AI behavior control..."
+                    ><?= htmlspecialchars($_POST['system_prompt'] ?? '') ?></textarea>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Optional: Custom instructions for AI behavior. Leave empty to use automatic prompt generation based on personality and appearance.</p>
                 </div>
 
                 <div class="flex space-x-4 pt-6">

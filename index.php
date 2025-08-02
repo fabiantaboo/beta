@@ -4,6 +4,7 @@ session_start();
 include_once 'config/database.php';
 include_once 'includes/functions.php';
 include_once 'includes/router.php';
+include_once 'includes/anthropic_api.php';
 
 // Handle special actions
 if (isset($_GET['action'])) {
