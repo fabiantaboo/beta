@@ -540,22 +540,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <p class="text-xs text-gray-500 dark:text-gray-400">He is your brother</p>
                                     </div>
                                 </label>
-                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="female">
-                                    <input type="radio" name="relationship_type" value="Daughter" class="sr-only">
-                                    <i class="fas fa-baby text-pink-400 mr-3"></i>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Daughter</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">She is your daughter</p>
-                                    </div>
-                                </label>
-                                <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="male">
-                                    <input type="radio" name="relationship_type" value="Son" class="sr-only">
-                                    <i class="fas fa-child text-blue-400 mr-3"></i>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Son</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">He is your son</p>
-                                    </div>
-                                </label>
                                 
                                 <!-- Romantic (Gender-aware) -->
                                 <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="female">
