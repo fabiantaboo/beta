@@ -12,7 +12,8 @@
       "Bash(mv:*)",
       "Bash(find:*)",
       "Bash(sed:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(php:*)"
     ],
     "deny": []
   }

@@ -51,13 +51,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $occupation = sanitizeInput($_POST['occupation'] ?? '');
         $goals = sanitizeInput($_POST['goals'] ?? '');
         
+        // Process relationship data
+        $relationshipType = sanitizeInput($_POST['relationship_type'] ?? '');
+        $relationshipHistory = sanitizeInput($_POST['relationship_history'] ?? '');
+        $relationshipDynamics = $_POST['relationship_dynamics'] ?? [];
+        $relationship = json_encode([
+            'type' => $relationshipType,
+            'history' => $relationshipHistory,
+            'dynamics' => $relationshipDynamics
+        ]);
+        
         if (empty($name)) {
             $error = "AEI name is required";
         } else {
             try {
                 $aeiId = generateId();
-                $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$aeiId, getUserSession(), $name, $age, $gender, $personality, $appearance, $background, $interests, $communication, $quirks, $occupation, $goals]);
+                $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$aeiId, getUserSession(), $name, $age, $gender, $personality, $appearance, $background, $interests, $communication, $quirks, $occupation, $goals, $relationship]);
                 redirectTo('dashboard');
             } catch (PDOException $e) {
                 error_log("Database error creating AEI: " . $e->getMessage());
@@ -482,6 +492,108 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
+                <!-- Relationship Context -->
+                <div class="border-b border-gray-200 dark:border-gray-700 pb-8">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                        <i class="fas fa-heart mr-2 text-red-500"></i>
+                        Your Relationship
+                    </h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                What is your relationship to this AEI?
+                            </label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Best Friend" class="sr-only">
+                                    <i class="fas fa-user-friends text-blue-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Best Friend</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Close friendship and trust</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Romantic Partner" class="sr-only">
+                                    <i class="fas fa-heart text-red-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Romantic Partner</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Romantic relationship</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Family Member" class="sr-only">
+                                    <i class="fas fa-home text-green-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Family Member</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Sibling, cousin, or chosen family</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Mentor/Student" class="sr-only">
+                                    <i class="fas fa-graduation-cap text-purple-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mentor/Student</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Teaching or learning relationship</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Work Colleague" class="sr-only">
+                                    <i class="fas fa-briefcase text-gray-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Work Colleague</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Professional relationship</p>
+                                    </div>
+                                </label>
+                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="relationship_type" value="Companion" class="sr-only">
+                                    <i class="fas fa-smile text-yellow-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Companion</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">General friendship and support</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                Relationship dynamics
+                                <span class="text-xs text-gray-500 ml-2">(Select what characterizes your relationship)</span>
+                            </label>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <?php 
+                                $relationshipDynamics = [
+                                    'Supportive', 'Playful', 'Deep conversations', 'Shared interests', 
+                                    'Emotional support', 'Adventure together', 'Intellectual discussions', 'Fun and laughter',
+                                    'Honest communication', 'Protective', 'Inspiring', 'Relaxing presence'
+                                ];
+                                foreach ($relationshipDynamics as $dynamic): ?>
+                                    <label class="dynamics-button flex items-center justify-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
+                                        <input type="checkbox" name="relationship_dynamics[]" value="<?= $dynamic ?>" class="sr-only">
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><?= $dynamic ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="relationship_history" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                How did you meet? 
+                                <span class="text-xs text-gray-500 ml-2">(Optional - your shared history)</span>
+                            </label>
+                            <textarea 
+                                id="relationship_history" 
+                                name="relationship_history" 
+                                rows="3"
+                                maxlength="300"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
+                                placeholder="Tell the story of how you met, key moments in your relationship, shared experiences..."
+                            ></textarea>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Submit -->
                 <div class="flex space-x-4 pt-6">
                     <a href="/dashboard" class="flex-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-4 px-6 rounded-lg text-center hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors">
@@ -562,6 +674,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     border-color: #2196F3;
     background: rgba(33, 150, 243, 0.1);
 }
+
+/* Relationship type styling */
+.relationship-type:has(input:checked) {
+    border-color: #2196F3;
+    background: rgba(33, 150, 243, 0.1);
+}
+
+/* Dynamics button styling */
+.dynamics-button input:checked + span {
+    background: linear-gradient(135deg, #00D4AA, #2196F3);
+    color: white;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: -8px -12px;
+}
+
+.dynamics-button:has(input:checked) {
+    border-color: #2196F3;
+    background: rgba(33, 150, 243, 0.1);
+}
 </style>
 
 <script>
@@ -572,14 +704,14 @@ function updateAgeDisplay(value) {
 // Handle trait button selection
 document.addEventListener('DOMContentLoaded', function() {
     // Trait buttons
-    document.querySelectorAll('.trait-button input, .interest-button input').forEach(input => {
+    document.querySelectorAll('.trait-button input, .interest-button input, .dynamics-button input').forEach(input => {
         input.addEventListener('change', function() {
             this.closest('label').classList.toggle('selected', this.checked);
         });
     });
     
-    // Gender and communication style selection
-    document.querySelectorAll('.gender-option input, .comm-style input').forEach(input => {
+    // Radio button selections
+    document.querySelectorAll('.gender-option input, .comm-style input, .relationship-type input').forEach(input => {
         input.addEventListener('change', function() {
             // Remove selected class from siblings
             this.closest('.grid, .space-y-3').querySelectorAll('label').forEach(label => {

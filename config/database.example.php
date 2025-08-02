@@ -75,6 +75,7 @@ function createTablesIfNotExist($pdo) {
             quirks TEXT NULL,
             occupation VARCHAR(200) NULL,
             goals VARCHAR(200) NULL,
+            relationship_context TEXT NULL,
             system_prompt TEXT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN DEFAULT TRUE,
@@ -260,7 +261,8 @@ try {
                     'quirks' => "ALTER TABLE aeis ADD COLUMN quirks TEXT NULL AFTER communication_style",
                     'occupation' => "ALTER TABLE aeis ADD COLUMN occupation VARCHAR(200) NULL AFTER quirks",
                     'goals' => "ALTER TABLE aeis ADD COLUMN goals VARCHAR(200) NULL AFTER occupation",
-                    'system_prompt' => "ALTER TABLE aeis ADD COLUMN system_prompt TEXT NULL AFTER goals"
+                    'relationship_context' => "ALTER TABLE aeis ADD COLUMN relationship_context TEXT NULL AFTER goals",
+                    'system_prompt' => "ALTER TABLE aeis ADD COLUMN system_prompt TEXT NULL AFTER relationship_context"
                 ];
                 
                 foreach ($newColumns as $columnName => $alterSQL) {

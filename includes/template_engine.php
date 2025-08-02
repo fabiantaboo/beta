@@ -125,7 +125,10 @@ class TemplateEngine {
 {{#if quirks}}**Unique Traits:** {{quirks}}
 {{/if}}
 
-## Interaction Context
+## Relationship Context
+{{#if relationship_context}}{{relationship_context}}
+
+{{/if}}## Interaction Context
 {{#if user_first_name}}You are chatting with {{user_first_name}}.{{#if user_profession}} They work as {{user_profession}}.{{/if}}{{#if user_hobbies}} Their hobbies include: {{user_hobbies}}.{{/if}}
 
 {{/if}}## Instructions
@@ -199,6 +202,19 @@ class TemplateEngine {
         }
         $interests = !empty($interestsArray) ? implode(', ', $interestsArray) : '';
         
+        // Parse relationship context from JSON
+        $relationshipData = [];
+        if (!empty($aei['relationship_context'])) {
+            $relData = json_decode($aei['relationship_context'], true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($relData)) {
+                $relationshipData = $relData;
+            } else {
+                // Fallback: treat as plain text
+                $relationshipData = ['type' => $aei['relationship_context']];
+            }
+        }
+        $relationship_context = self::buildRelationshipContext($relationshipData);
+        
         return [
             // AEI data
             'aei_name' => $aei['name'] ?? '',
@@ -212,6 +228,7 @@ class TemplateEngine {
             'quirks' => $aei['quirks'] ?? '',
             'occupation' => $aei['occupation'] ?? '',
             'goals' => $aei['goals'] ?? '',
+            'relationship_context' => $relationship_context,
             
             // User data
             'user_first_name' => $user['first_name'] ?? '',
@@ -269,6 +286,34 @@ class TemplateEngine {
         // Custom details
         if (!empty($appearanceData['custom'])) {
             $parts[] = $appearanceData['custom'];
+        }
+        
+        return !empty($parts) ? implode('. ', $parts) : '';
+    }
+    
+    /**
+     * Build human-readable relationship context from structured data
+     */
+    private static function buildRelationshipContext($relationshipData) {
+        if (empty($relationshipData) || !is_array($relationshipData)) {
+            return '';
+        }
+        
+        $parts = [];
+        
+        // Relationship type
+        if (!empty($relationshipData['type'])) {
+            $parts[] = "Relationship: " . $relationshipData['type'];
+        }
+        
+        // Dynamics
+        if (!empty($relationshipData['dynamics']) && is_array($relationshipData['dynamics'])) {
+            $parts[] = "Dynamics: " . implode(', ', $relationshipData['dynamics']);
+        }
+        
+        // History
+        if (!empty($relationshipData['history'])) {
+            $parts[] = "History: " . $relationshipData['history'];
         }
         
         return !empty($parts) ? implode('. ', $parts) : '';
