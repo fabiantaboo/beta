@@ -138,6 +138,13 @@ try {
                                             <span class="text-gray-500 dark:text-gray-400 text-xs">Goals & aspirations</span>
                                         </div>
                                     </div>
+                                    <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                        <h6 class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">📋 Note about Character Data</h6>
+                                        <p class="text-xs text-blue-600 dark:text-blue-400">
+                                            Personality, interests, and communication style are automatically parsed from the interactive character creator. 
+                                            Appearance data is intelligently combined into natural descriptions.
+                                        </p>
+                                    </div>
                                 </div>
                                 
                                 <!-- User Data -->
@@ -205,11 +212,15 @@ try {
                                     <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Quick Insert</h5>
                                     <div class="grid grid-cols-2 gap-2">
                                         <button type="button" onclick="insertTag('{{aei_name}}')" class="text-xs bg-ayuni-blue text-white px-2 py-1 rounded hover:bg-ayuni-blue/90">AEI Name</button>
+                                        <button type="button" onclick="insertTag('{{age}}')" class="text-xs bg-ayuni-blue text-white px-2 py-1 rounded hover:bg-ayuni-blue/90">Age</button>
+                                        <button type="button" onclick="insertTag('{{gender}}')" class="text-xs bg-ayuni-blue text-white px-2 py-1 rounded hover:bg-ayuni-blue/90">Gender</button>
                                         <button type="button" onclick="insertTag('{{user_first_name}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Name</button>
                                         <button type="button" onclick="insertConditional('personality')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Personality</button>
-                                        <button type="button" onclick="insertConditional('background')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Background</button>
-                                        <button type="button" onclick="insertConditional('interests')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Interests</button>
                                         <button type="button" onclick="insertConditional('communication_style')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Comm Style</button>
+                                        <button type="button" onclick="insertConditional('appearance_description')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Appearance</button>
+                                        <button type="button" onclick="insertConditional('interests')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Interests</button>
+                                        <button type="button" onclick="insertConditional('background')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Background</button>
+                                        <button type="button" onclick="insertConditional('occupation')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Occupation</button>
                                         <button type="button" onclick="insertConditional('user_profession')" class="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600">If User Prof</button>
                                         <button type="button" onclick="insertConditional('user_hobbies')" class="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600">If User Hobby</button>
                                     </div>
@@ -241,19 +252,30 @@ try {
                         <h4 class="text-sm font-semibold text-yellow-800 dark:text-yellow-300 mb-2">Template Example</h4>
                         <pre class="text-xs text-yellow-700 dark:text-yellow-400 whitespace-pre-wrap font-mono">You are {{aei_name}}, an Artificial Emotional Intelligence.
 
+{{#if age}}Age: {{age}} years old{{/if}}
+{{#if gender}} | Gender: {{gender}}{{/if}}
+
 {{#if personality}}
-Your personality: {{personality}}
+**Personality:** {{personality}}
+{{/if}}
+
+{{#if communication_style}}
+**Communication:** {{communication_style}}
+{{/if}}
+
+{{#if appearance_description}}
+**Appearance:** {{appearance_description}}
+{{/if}}
+
+{{#if interests}}
+**Interests:** {{interests}}
 {{/if}}
 
 {{#if user_first_name}}
-You're chatting with {{user_first_name}}.
+You're chatting with {{user_first_name}}.{{#if user_profession}} They work as {{user_profession}}.{{/if}}
 {{/if}}
 
-{{#if user_profession}}
-{{user_first_name}} works as {{user_profession}}.
-{{/if}}
-
-Be conversational and personalized!</pre>
+Stay true to your character and personality!</pre>
                     </div>
                 </div>
             </div>
