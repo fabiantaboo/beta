@@ -814,12 +814,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to update relationship options based on AEI gender
 function updateRelationshipOptions(aeiGender) {
+    console.log('updateRelationshipOptions called with aeiGender:', aeiGender);
+    
     const relationshipOptions = document.getElementById('relationship-options');
     const familyOptions = relationshipOptions.querySelectorAll('.family-relation');
     const romanticOptions = relationshipOptions.querySelectorAll('.romantic-relation');
     
+    console.log('Found family options:', familyOptions.length);
+    console.log('Found romantic options:', romanticOptions.length);
+    
     // Show all options if no gender is selected
     if (!aeiGender) {
+        console.log('No gender selected, showing all options');
         familyOptions.forEach(option => option.style.display = 'flex');
         romanticOptions.forEach(option => option.style.display = 'flex');
         return;
@@ -828,6 +834,7 @@ function updateRelationshipOptions(aeiGender) {
     // Show/hide family options based on gender
     familyOptions.forEach(option => {
         const optionGender = option.getAttribute('data-aei-gender');
+        console.log('Family option:', option.querySelector('span').textContent, 'data-aei-gender:', optionGender, 'matches:', optionGender === aeiGender);
         if (optionGender === aeiGender) {
             option.style.display = 'flex';
         } else {
@@ -844,6 +851,7 @@ function updateRelationshipOptions(aeiGender) {
     // Show/hide romantic options based on gender
     romanticOptions.forEach(option => {
         const optionGender = option.getAttribute('data-aei-gender');
+        console.log('Romantic option:', option.querySelector('span').textContent, 'data-aei-gender:', optionGender, 'matches:', optionGender === aeiGender);
         if (optionGender === aeiGender) {
             option.style.display = 'flex';
         } else {
