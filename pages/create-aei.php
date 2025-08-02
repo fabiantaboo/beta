@@ -831,11 +831,14 @@ function updateRelationshipOptions(aeiGender) {
         return;
     }
     
+    // Convert aeiGender to lowercase for comparison
+    const aeiGenderLower = aeiGender.toLowerCase();
+    
     // Show/hide family options based on gender
     familyOptions.forEach(option => {
         const optionGender = option.getAttribute('data-aei-gender');
-        console.log('Family option:', option.querySelector('span').textContent, 'data-aei-gender:', optionGender, 'matches:', optionGender === aeiGender);
-        if (optionGender === aeiGender) {
+        console.log('Family option:', option.querySelector('span').textContent, 'data-aei-gender:', optionGender, 'aeiGenderLower:', aeiGenderLower, 'matches:', optionGender === aeiGenderLower);
+        if (optionGender === aeiGenderLower) {
             option.style.display = 'flex';
         } else {
             option.style.display = 'none';
@@ -851,8 +854,8 @@ function updateRelationshipOptions(aeiGender) {
     // Show/hide romantic options based on gender
     romanticOptions.forEach(option => {
         const optionGender = option.getAttribute('data-aei-gender');
-        console.log('Romantic option:', option.querySelector('span').textContent, 'data-aei-gender:', optionGender, 'matches:', optionGender === aeiGender);
-        if (optionGender === aeiGender) {
+        console.log('Romantic option:', option.querySelector('span').textContent, 'data-aei-gender:', optionGender, 'aeiGenderLower:', aeiGenderLower, 'matches:', optionGender === aeiGenderLower);
+        if (optionGender === aeiGenderLower) {
             option.style.display = 'flex';
         } else {
             option.style.display = 'none';
