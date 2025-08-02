@@ -141,16 +141,62 @@ class TemplateEngine {
      * Build data array from AEI and user objects
      */
     public static function buildTemplateData($aei, $user) {
+        // Parse personality traits from JSON
+        $personalityTraits = [];
+        if (!empty($aei['personality'])) {
+            $traits = json_decode($aei['personality'], true);
+            if (is_array($traits)) {
+                $personalityTraits = array_filter($traits);
+            }
+        }
+        $personality = !empty($personalityTraits) ? implode(', ', $personalityTraits) : '';
+        
+        // Parse communication style from JSON
+        $communicationData = [];
+        if (!empty($aei['communication_style'])) {
+            $commData = json_decode($aei['communication_style'], true);
+            if (is_array($commData)) {
+                $communicationData = $commData;
+            }
+        }
+        $communication_style = '';
+        if (!empty($communicationData['style'])) {
+            $communication_style = $communicationData['style'];
+            if (!empty($communicationData['traits']) && is_array($communicationData['traits'])) {
+                $communication_style .= '. Speaking habits: ' . implode(', ', $communicationData['traits']);
+            }
+        }
+        
+        // Parse appearance from JSON
+        $appearanceData = [];
+        if (!empty($aei['appearance_description'])) {
+            $appData = json_decode($aei['appearance_description'], true);
+            if (is_array($appData)) {
+                $appearanceData = $appData;
+            }
+        }
+        $appearance_description = self::buildAppearanceDescription($appearanceData);
+        
+        // Parse interests from JSON
+        $interestsArray = [];
+        if (!empty($aei['interests'])) {
+            $interests = json_decode($aei['interests'], true);
+            if (is_array($interests)) {
+                $interestsArray = array_filter($interests);
+            }
+        }
+        $interests = !empty($interestsArray) ? implode(', ', $interestsArray) : '';
+        
         return [
             // AEI data
             'aei_name' => $aei['name'] ?? '',
             'age' => $aei['age'] ?? '',
             'gender' => $aei['gender'] ?? '',
-            'personality' => $aei['personality'] ?? '',
-            'appearance_description' => $aei['appearance_description'] ?? '',
+            'personality' => $personality,
+            'appearance_description' => $appearance_description,
             'background' => $aei['background'] ?? '',
-            'interests' => $aei['interests'] ?? '',
-            'communication_style' => $aei['communication_style'] ?? '',
+            'interests' => $interests,
+            'communication_style' => $communication_style,
             'quirks' => $aei['quirks'] ?? '',
             'occupation' => $aei['occupation'] ?? '',
             'goals' => $aei['goals'] ?? '',
@@ -167,6 +213,53 @@ class TemplateEngine {
             'user_partner_qualities' => $user['partner_qualities'] ?? '',
             'user_additional_info' => $user['additional_info'] ?? '',
         ];
+    }
+    
+    /**
+     * Build human-readable appearance description from structured data
+     */
+    private static function buildAppearanceDescription($appearanceData) {
+        if (empty($appearanceData) || !is_array($appearanceData)) {
+            return '';
+        }
+        
+        $parts = [];
+        
+        // Physical features
+        $features = [];
+        if (!empty($appearanceData['hair_color'])) {
+            $features[] = $appearanceData['hair_color'] . ' hair';
+        }
+        if (!empty($appearanceData['eye_color'])) {
+            $features[] = $appearanceData['eye_color'] . ' eyes';
+        }
+        if (!empty($features)) {
+            $parts[] = implode(', ', $features);
+        }
+        
+        // Build and height
+        $physical = [];
+        if (!empty($appearanceData['height'])) {
+            $physical[] = strtolower($appearanceData['height']) . ' height';
+        }
+        if (!empty($appearanceData['build'])) {
+            $physical[] = strtolower($appearanceData['build']) . ' build';
+        }
+        if (!empty($physical)) {
+            $parts[] = implode(', ', $physical);
+        }
+        
+        // Style
+        if (!empty($appearanceData['style'])) {
+            $parts[] = strtolower($appearanceData['style']) . ' style';
+        }
+        
+        // Custom details
+        if (!empty($appearanceData['custom'])) {
+            $parts[] = $appearanceData['custom'];
+        }
+        
+        return !empty($parts) ? implode('. ', $parts) : '';
     }
 }
 
