@@ -65,8 +65,16 @@ function createTablesIfNotExist($pdo) {
             id VARCHAR(32) PRIMARY KEY,
             user_id VARCHAR(32) NOT NULL,
             name VARCHAR(100) NOT NULL,
+            age VARCHAR(50) NULL,
+            gender VARCHAR(50) NULL,
             personality TEXT,
             appearance_description TEXT,
+            background TEXT NULL,
+            interests TEXT NULL,
+            communication_style TEXT NULL,
+            quirks TEXT NULL,
+            occupation VARCHAR(200) NULL,
+            goals VARCHAR(200) NULL,
             system_prompt TEXT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN DEFAULT TRUE,
@@ -238,15 +246,34 @@ try {
                 INDEX idx_user_id (user_id)
             )");
         } else {
-            // Add system_prompt column if it doesn't exist
+            // Add new character columns if they don't exist
             try {
                 $stmt = $pdo->query("DESCRIBE aeis");
                 $aeiColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
-                if (!in_array('system_prompt', $aeiColumns)) {
-                    $pdo->exec("ALTER TABLE aeis ADD COLUMN system_prompt TEXT NULL AFTER appearance_description");
+                
+                $newColumns = [
+                    'age' => "ALTER TABLE aeis ADD COLUMN age VARCHAR(50) NULL AFTER name",
+                    'gender' => "ALTER TABLE aeis ADD COLUMN gender VARCHAR(50) NULL AFTER age", 
+                    'background' => "ALTER TABLE aeis ADD COLUMN background TEXT NULL AFTER appearance_description",
+                    'interests' => "ALTER TABLE aeis ADD COLUMN interests TEXT NULL AFTER background",
+                    'communication_style' => "ALTER TABLE aeis ADD COLUMN communication_style TEXT NULL AFTER interests",
+                    'quirks' => "ALTER TABLE aeis ADD COLUMN quirks TEXT NULL AFTER communication_style",
+                    'occupation' => "ALTER TABLE aeis ADD COLUMN occupation VARCHAR(200) NULL AFTER quirks",
+                    'goals' => "ALTER TABLE aeis ADD COLUMN goals VARCHAR(200) NULL AFTER occupation",
+                    'system_prompt' => "ALTER TABLE aeis ADD COLUMN system_prompt TEXT NULL AFTER goals"
+                ];
+                
+                foreach ($newColumns as $columnName => $alterSQL) {
+                    if (!in_array($columnName, $aeiColumns)) {
+                        try {
+                            $pdo->exec($alterSQL);
+                        } catch (PDOException $e) {
+                            // Column might already exist, ignore error
+                        }
+                    }
                 }
             } catch (PDOException $e) {
-                // Column might already exist, ignore error
+                // Error reading columns, ignore
             }
         }
         

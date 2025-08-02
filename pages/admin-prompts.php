@@ -89,21 +89,53 @@ try {
                             </h4>
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-4 max-h-96 overflow-y-auto">
                                 
-                                <!-- AEI Data -->
+                                <!-- AEI Character Data -->
                                 <div>
-                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">AEI Data</h5>
+                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">AEI Character Data</h5>
                                     <div class="space-y-1">
                                         <div class="flex items-center justify-between text-sm">
                                             <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{aei_name}}</code>
                                             <span class="text-gray-500 dark:text-gray-400 text-xs">AEI name</span>
                                         </div>
                                         <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{age}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Age</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{gender}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Gender identity</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
                                             <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{personality}}</code>
-                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Personality description</span>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Core personality</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{communication_style}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Communication style</span>
                                         </div>
                                         <div class="flex items-center justify-between text-sm">
                                             <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{appearance_description}}</code>
-                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Appearance details</span>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Physical appearance</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{background}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Personal background</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{interests}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Interests & hobbies</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{quirks}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Unique quirks</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{occupation}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Occupation/role</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{goals}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Goals & aspirations</span>
                                         </div>
                                     </div>
                                 </div>
@@ -175,9 +207,11 @@ try {
                                         <button type="button" onclick="insertTag('{{aei_name}}')" class="text-xs bg-ayuni-blue text-white px-2 py-1 rounded hover:bg-ayuni-blue/90">AEI Name</button>
                                         <button type="button" onclick="insertTag('{{user_first_name}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Name</button>
                                         <button type="button" onclick="insertConditional('personality')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Personality</button>
-                                        <button type="button" onclick="insertConditional('user_profession')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Profession</button>
-                                        <button type="button" onclick="insertConditional('user_hobbies')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Hobbies</button>
-                                        <button type="button" onclick="insertConditional('user_goals')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Goals</button>
+                                        <button type="button" onclick="insertConditional('background')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Background</button>
+                                        <button type="button" onclick="insertConditional('interests')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Interests</button>
+                                        <button type="button" onclick="insertConditional('communication_style')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Comm Style</button>
+                                        <button type="button" onclick="insertConditional('user_profession')" class="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600">If User Prof</button>
+                                        <button type="button" onclick="insertConditional('user_hobbies')" class="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600">If User Hobby</button>
                                     </div>
                                 </div>
                             </div>
