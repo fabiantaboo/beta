@@ -502,7 +502,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="space-y-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                                What is your relationship to this AEI?
+                                What is your AEI for you?
                             </label>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="relationship-options">
                                 <!-- Friendship -->
@@ -598,14 +598,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mentor</span>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">Teaching relationship</p>
-                                    </div>
-                                </label>
-                                <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Student" class="sr-only">
-                                    <i class="fas fa-book text-purple-400 mr-3"></i>
-                                    <div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Student</span>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">Learning relationship</p>
                                     </div>
                                 </label>
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
