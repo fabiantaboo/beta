@@ -36,7 +36,7 @@ function generateSystemPrompt($aei, $user) {
     }
 }
 
-function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 1000) {
+function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 120000) {
     $apiKey = getAnthropicApiKey();
     
     if (!$apiKey) {
