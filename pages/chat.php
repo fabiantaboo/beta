@@ -31,60 +31,7 @@ if (!$session) {
     $sessionId = $session['id'];
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['message'])) {
-    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-        $chatError = "Invalid request. Please try again.";
-    } else {
-        try {
-            // Start database transaction for data consistency
-            $pdo->beginTransaction();
-            
-            $message = sanitizeInput($_POST['message']);
-            
-            // Get user data for AI context
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-            $stmt->execute([getUserSession()]);
-            $user = $stmt->fetch();
-            
-            // Save user message first
-            $messageId = generateId();
-            $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'user', ?)");
-            $stmt->execute([$messageId, $sessionId, $message]);
-            
-            // Generate AI response with complete context
-            $aeiResponse = generateAIResponse($message, $aei, $user, $sessionId);
-            
-            // Save AI response
-            $aeiResponseId = generateId();
-            $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'aei', ?)");
-            $stmt->execute([$aeiResponseId, $sessionId, $aeiResponse]);
-            
-            // Update session timestamp
-            $stmt = $pdo->prepare("UPDATE chat_sessions SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?");
-            $stmt->execute([$sessionId]);
-            
-            // Commit transaction
-            $pdo->commit();
-            
-            // POST-Redirect-GET pattern: Redirect after successful POST to prevent duplicate submissions on reload
-            $redirectUrl = "/chat?aei=" . urlencode($aeiId) . "&sent=1";
-            header("Location: " . $redirectUrl);
-            exit;
-            
-        } catch (Exception $e) {
-            // Rollback transaction on any error
-            $pdo->rollback();
-            error_log("Chat error: " . $e->getMessage());
-            $chatError = "Failed to send message. Please try again.";
-        }
-    }
-}
-
-// Handle success message from redirect
-$successMessage = null;
-if (isset($_GET['sent']) && $_GET['sent'] === '1') {
-    $successMessage = "Message sent successfully!";
-}
+// No more POST handling here - everything moved to AJAX API
 
 $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE session_id = ? ORDER BY created_at ASC");
 $stmt->execute([$sessionId]);
@@ -168,38 +115,50 @@ $messages = $stmt->fetchAll();
 
         <!-- Message Input -->
         <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <?php if (isset($chatError)): ?>
-                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-2 rounded-lg mb-4 text-sm">
-                    <div class="flex items-center">
-                        <i class="fas fa-exclamation-circle mr-2"></i>
-                        <?= htmlspecialchars($chatError) ?>
+            <!-- Error/Success Messages -->
+            <div id="chat-alerts" class="hidden mb-4"></div>
+            
+            <!-- Typing indicator -->
+            <div id="typing-indicator" class="hidden mb-4">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
+                        <span class="text-xs font-bold text-white">
+                            <?= strtoupper(substr($aei['name'], 0, 1)) ?>
+                        </span>
+                    </div>
+                    <div class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2 shadow-sm">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($aei['name']) ?> is typing</span>
+                            <div class="typing-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            <?php endif; ?>
-            <?php if (isset($successMessage)): ?>
-                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-2 rounded-lg mb-4 text-sm">
-                    <div class="flex items-center">
-                        <i class="fas fa-check-circle mr-2"></i>
-                        <?= htmlspecialchars($successMessage) ?>
-                    </div>
-                </div>
-            <?php endif; ?>
-            <form method="POST" class="flex space-x-4">
-                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+            </div>
+            
+            <form id="chat-form" class="flex space-x-4">
+                <input type="hidden" id="csrf-token" value="<?= generateCSRFToken() ?>">
                 <div class="flex-1">
                     <textarea 
+                        id="message-input"
                         name="message" 
                         rows="1"
                         required
-                        maxlength="1000"
+                        maxlength="2000"
                         class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
                         placeholder="Type your message..."
-                        onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();this.form.submit();}"
                     ></textarea>
                 </div>
-                <button type="submit" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0">
+                <button 
+                    type="submit" 
+                    id="send-button"
+                    class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                     <i class="fas fa-paper-plane mr-2"></i>
-                    Send
+                    <span id="send-text">Send</span>
                 </button>
             </form>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
@@ -209,9 +168,227 @@ $messages = $stmt->fetchAll();
     </div>
 </div>
 
+<style>
+/* Typing animation CSS */
+.typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.typing-dots span {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: #9CA3AF;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typing {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Message fade-in animation */
+.message-fade-in {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('messages-container');
-    container.scrollTop = container.scrollHeight;
+    const form = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const sendText = document.getElementById('send-text');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const chatAlerts = document.getElementById('chat-alerts');
+    const csrfToken = document.getElementById('csrf-token').value;
+    const aeiId = '<?= htmlspecialchars($aeiId) ?>';
+    const aeiName = '<?= htmlspecialchars($aei['name']) ?>';
+    
+    // Scroll to bottom
+    function scrollToBottom() {
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    // Initial scroll
+    scrollToBottom();
+    
+    // Show alert message
+    function showAlert(message, type = 'error') {
+        const alertClass = type === 'error' 
+            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400' 
+            : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400';
+        
+        const icon = type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+        
+        chatAlerts.innerHTML = `
+            <div class="${alertClass} border px-4 py-2 rounded-lg text-sm">
+                <div class="flex items-center">
+                    <i class="${icon} mr-2"></i>
+                    ${message}
+                </div>
+            </div>
+        `;
+        chatAlerts.classList.remove('hidden');
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            chatAlerts.classList.add('hidden');
+        }, 5000);
+    }
+    
+    // Add message to chat
+    function addMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'} message-fade-in`;
+        
+        const time = new Date().toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        });
+        
+        messageDiv.innerHTML = `
+            <div class="flex ${message.sender_type === 'user' ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-xs lg:max-w-md">
+                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${message.sender_type === 'user' ? 'bg-gray-500 dark:bg-gray-600 ml-2' : 'bg-gradient-to-br from-ayuni-aqua to-ayuni-blue mr-2'}">
+                    <span class="text-xs font-bold text-white">
+                        ${message.sender_type === 'user' ? 'U' : aeiName.charAt(0).toUpperCase()}
+                    </span>
+                </div>
+                <div class="${message.sender_type === 'user' ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'} rounded-2xl px-4 py-2 shadow-sm">
+                    <p class="text-sm">${message.message_text.replace(/\n/g, '<br>')}</p>
+                    <p class="text-xs opacity-70 mt-1">${time}</p>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(messageDiv);
+        scrollToBottom();
+    }
+    
+    // Show typing indicator
+    function showTyping() {
+        typingIndicator.classList.remove('hidden');
+        scrollToBottom();
+    }
+    
+    // Hide typing indicator
+    function hideTyping() {
+        typingIndicator.classList.add('hidden');
+    }
+    
+    // Send AI message (user message already shown)
+    async function sendAIMessage(message) {
+        try {
+            const response = await fetch('/api/chat.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    aei_id: aeiId,
+                    csrf_token: csrfToken
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to send message');
+            }
+            
+            // Only add AI response (user message was already added)
+            const aiMessage = data.messages.find(msg => msg.sender_type === 'aei');
+            if (aiMessage) {
+                addMessage(aiMessage);
+            }
+            
+        } catch (error) {
+            console.error('Chat error:', error);
+            showAlert(error.message || 'Failed to send message. Please try again.');
+            hideTyping();
+        }
+    }
+    
+    // Handle form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const message = messageInput.value.trim();
+        if (!message) return;
+        
+        // Disable form
+        sendButton.disabled = true;
+        sendText.textContent = 'Sending...';
+        messageInput.disabled = true;
+        
+        // Clear input
+        const userMessage = message;
+        messageInput.value = '';
+        
+        // Add user message immediately
+        addMessage({
+            sender_type: 'user',
+            message_text: userMessage
+        });
+        
+        // Show typing indicator
+        showTyping();
+        
+        // Send message (only AI response will be added)
+        await sendAIMessage(userMessage);
+        
+        // Re-enable form
+        sendButton.disabled = false;
+        sendText.textContent = 'Send';
+        messageInput.disabled = false;
+        messageInput.focus();
+        
+        // Hide typing indicator
+        hideTyping();
+    });
+    
+    // Handle Enter key
+    messageInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            form.dispatchEvent(new Event('submit'));
+        }
+    });
+    
+    // Auto-resize textarea
+    messageInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
 });
 </script>
