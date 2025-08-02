@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/template_engine.php';
+
 function getAnthropicApiKey() {
     global $pdo;
     try {

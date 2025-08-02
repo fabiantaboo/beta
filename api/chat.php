@@ -1,10 +1,18 @@
 <?php
+// Prevent any output before JSON
+ob_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Don't display errors in output
+ini_set('log_errors', 1);     // Log errors instead
+
 session_start();
 
 include_once '../config/database.php';
 include_once '../includes/functions.php';
 include_once '../includes/anthropic_api.php';
 
+// Clear any unwanted output
+ob_clean();
 header('Content-Type: application/json');
 
 // Only allow POST requests
@@ -111,6 +119,9 @@ try {
     // Commit transaction
     $pdo->commit();
     
+    // Clear output buffer and return successful response
+    ob_clean();
+    
     // Return successful response with both messages
     echo json_encode([
         'success' => true,
@@ -139,9 +150,15 @@ try {
     }
     
     error_log("Chat API error: " . $e->getMessage());
-    error_log("AEI ID: " . $aeiId . ", User ID: " . getUserSession());
+    error_log("Error trace: " . $e->getTraceAsString());
+    
+    // Clear any output buffer to ensure clean JSON
+    ob_clean();
     
     http_response_code(500);
     echo json_encode(['error' => 'Failed to send message. Please try again.']);
 }
+
+// Ensure we end output buffering and send response
+ob_end_flush();
 ?>
