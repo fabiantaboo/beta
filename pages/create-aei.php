@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <span class="font-medium">Back to Dashboard</span>
                     </a>
                     <img src="assets/ayuni.png" alt="Ayuni Logo" class="h-10 w-auto">
-                    <span class="text-xl font-semibold text-gray-900 dark:text-white">Create AEI</span>
+                    <span class="text-xl font-semibold text-gray-900 dark:text-white">Welcome AEI</span>
                 </div>
                 <button 
                     id="theme-toggle" 
@@ -96,8 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Create Your AEI</h1>
-            <p class="text-gray-600 dark:text-gray-400 text-lg">Design a unique Artificial Emotional Intelligence companion</p>
+            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">Welcome Your AEI to Life</h1>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">Help bring a unique Artificial Emotional Intelligence companion into being</p>
         </div>
 
         <?php if (isset($error)): ?>
@@ -488,8 +488,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         Cancel
                     </a>
                     <button type="submit" class="flex-1 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-4 px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
-                        <i class="fas fa-plus mr-2"></i>
-                        Create AEI
+                        <i class="fas fa-heart mr-2"></i>
+                        Welcome to Life
                     </button>
                 </div>
             </form>
