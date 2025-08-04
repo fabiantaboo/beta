@@ -37,11 +37,14 @@ $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE session_id = ? ORDER BY
 $stmt->execute([$sessionId]);
 $messages = $stmt->fetchAll();
 
-// Get current emotional state for display
-include_once __DIR__ . '/../includes/emotions.php';
-$emotions = new Emotions($pdo);
-$currentEmotions = $emotions->getEmotionalState($sessionId);
-$formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
+// Get current emotional state for display (only for admins)
+$isCurrentUserAdmin = isAdmin();
+if ($isCurrentUserAdmin) {
+    include_once __DIR__ . '/../includes/emotions.php';
+    $emotions = new Emotions($pdo);
+    $currentEmotions = $emotions->getEmotionalState($sessionId);
+    $formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
+}
 ?>
 
 <div class="h-screen bg-gray-50 dark:bg-ayuni-dark flex flex-col">
@@ -74,8 +77,8 @@ $formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
                                 </span>
                             </div>
                             <?php 
-                            // Show primary emotion as small indicator
-                            if (!empty($formattedEmotions['strong'])) {
+                            // Show primary emotion as small indicator (admin only)
+                            if ($isCurrentUserAdmin && !empty($formattedEmotions['strong'])) {
                                 $primaryEmotion = explode(':', $formattedEmotions['strong'][0])[0];
                                 $emotionIcon = match($primaryEmotion) {
                                     // Grundemotionen (Plutchik)
@@ -138,14 +141,16 @@ $formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
                             <div class="flex items-center space-x-1">
                                 <div class="w-2 h-2 bg-green-500 rounded-full"></div>
                                 <span class="text-xs text-gray-500 dark:text-gray-400">Online</span>
-                                <span class="text-xs text-gray-400 dark:text-gray-500">•</span>
-                                <button 
-                                    onclick="toggleEmotions()" 
-                                    class="text-xs text-ayuni-blue hover:text-ayuni-blue/80 transition-colors"
-                                    title="View emotional state"
-                                >
-                                    <i class="fas fa-brain mr-1"></i>Emotions
-                                </button>
+                                <?php if ($isCurrentUserAdmin): ?>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">•</span>
+                                    <button 
+                                        onclick="toggleEmotions()" 
+                                        class="text-xs text-ayuni-blue hover:text-ayuni-blue/80 transition-colors"
+                                        title="View emotional state (Admin only)"
+                                    >
+                                        <i class="fas fa-brain mr-1"></i>Emotions
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -154,7 +159,8 @@ $formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
         </div>
     </nav>
 
-    <!-- Emotion Panel (Hidden by default) -->
+    <!-- Emotion Panel (Hidden by default, Admin only) -->
+    <?php if ($isCurrentUserAdmin): ?>
     <div id="emotion-panel" class="hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div class="max-w-4xl mx-auto px-4 py-3">
             <div class="flex items-center justify-between mb-3">
@@ -259,6 +265,7 @@ $formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
     <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0">
         <!-- Messages Area -->
@@ -589,15 +596,20 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Emotion panel toggle
+// Emotion panel toggle (admin only)
 function toggleEmotions() {
+    <?php if ($isCurrentUserAdmin): ?>
     const panel = document.getElementById('emotion-panel');
-    if (panel.classList.contains('hidden')) {
+    if (panel && panel.classList.contains('hidden')) {
         panel.classList.remove('hidden');
         panel.classList.add('animate-fade-in');
-    } else {
+    } else if (panel) {
         panel.classList.add('hidden');
         panel.classList.remove('animate-fade-in');
     }
+    <?php else: ?>
+    // Not available for regular users
+    console.log('Emotion panel is only available for administrators.');
+    <?php endif; ?>
 }
 </script>
