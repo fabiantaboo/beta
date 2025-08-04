@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark py-6">
+<div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark">
     <?php 
     include_once __DIR__ . '/../includes/header.php';
     renderHeader([
