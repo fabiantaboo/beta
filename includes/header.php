@@ -33,8 +33,8 @@ function renderHeader($config = []) {
                     <?php endif; ?>
                     
                     <div class="relative">
-                        <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-10 sm:h-12 w-auto dark:hidden">
-                        <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-10 sm:h-12 w-auto hidden dark:block">
+                        <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-12 sm:h-14 w-auto dark:hidden">
+                        <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-12 sm:h-14 w-auto hidden dark:block">
                     </div>
                 </div>
 

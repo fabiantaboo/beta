@@ -128,8 +128,8 @@ try {
             <div class="text-center mb-10">
                 <div class="relative inline-block mb-6">
                     <div class="relative">
-                        <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-16 w-auto dark:hidden">
-                        <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-16 w-auto hidden dark:block">
+                        <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-20 w-auto dark:hidden">
+                        <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-20 w-auto hidden dark:block">
                     </div>
                 </div>
                 <h1 class="text-3xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-4">

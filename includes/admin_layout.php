@@ -15,8 +15,8 @@ function renderAdminNavigation($currentPage = '') {
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-4">
                     <div class="relative">
-                        <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-10 w-auto dark:hidden">
-                        <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-10 w-auto hidden dark:block">
+                        <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-12 w-auto dark:hidden">
+                        <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-12 w-auto hidden dark:block">
                     </div>
                     <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Admin Panel</span>
                 </div>
