@@ -1,0 +1,505 @@
+<?php
+requireOnboarding();
+
+$error = null;
+$success = null;
+
+// Get current user data
+try {
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([getUserSession()]);
+    $user = $stmt->fetch();
+    
+    if (!$user) {
+        redirectTo('home');
+    }
+} catch (PDOException $e) {
+    error_log("Error fetching user data: " . $e->getMessage());
+    redirectTo('dashboard');
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $error = "Invalid request. Please try again.";
+    } else {
+        // Sanitize and validate input
+        $firstName = sanitizeInput($_POST['first_name'] ?? '');
+        $gender = sanitizeInput($_POST['gender'] ?? '');
+        $birthDate = $_POST['birth_date'] ?? '';
+        $profession = sanitizeInput($_POST['profession'] ?? '');
+        $hobbies = sanitizeInput($_POST['hobbies'] ?? '');
+        $sexualOrientation = sanitizeInput($_POST['sexual_orientation'] ?? '');
+        $dailyRituals = sanitizeInput($_POST['daily_rituals'] ?? '');
+        $lifeGoals = sanitizeInput($_POST['life_goals'] ?? '');
+        $beliefs = sanitizeInput($_POST['beliefs'] ?? '');
+        $partnerQualities = sanitizeInput($_POST['partner_qualities'] ?? '');
+        $additionalInfo = sanitizeInput($_POST['additional_info'] ?? '');
+        $timezone = sanitizeInput($_POST['timezone'] ?? 'UTC');
+        
+        // Validate required fields
+        if (empty($firstName)) {
+            $error = "First name is required.";
+        } elseif (!empty($birthDate) && !strtotime($birthDate)) {
+            $error = "Please enter a valid birth date.";
+        } else {
+            try {
+                // Update user data
+                $stmt = $pdo->prepare("
+                    UPDATE users SET 
+                        first_name = ?, 
+                        gender = ?, 
+                        birth_date = ?, 
+                        profession = ?, 
+                        hobbies = ?, 
+                        sexual_orientation = ?, 
+                        daily_rituals = ?, 
+                        life_goals = ?, 
+                        beliefs = ?, 
+                        partner_qualities = ?, 
+                        additional_info = ?, 
+                        timezone = ?
+                    WHERE id = ?
+                ");
+                
+                $stmt->execute([
+                    $firstName,
+                    $gender,
+                    $birthDate ?: null,
+                    $profession,
+                    $hobbies,
+                    $sexualOrientation,
+                    $dailyRituals,
+                    $lifeGoals,
+                    $beliefs,
+                    $partnerQualities,
+                    $additionalInfo,
+                    $timezone,
+                    getUserSession()
+                ]);
+                
+                $success = "Profile updated successfully!";
+                
+                // Refresh user data
+                $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+                $stmt->execute([getUserSession()]);
+                $user = $stmt->fetch();
+                
+            } catch (PDOException $e) {
+                error_log("Error updating profile: " . $e->getMessage());
+                $error = "Failed to update profile. Please try again.";
+            }
+        }
+    }
+}
+?>
+
+<div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark py-6">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14 sm:h-16">
+                <div class="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+                    <a href="/dashboard" class="flex items-center space-x-1 sm:space-x-2 text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors min-h-[44px] py-2 pr-2">
+                        <i class="fas fa-arrow-left text-sm sm:text-base"></i>
+                        <span class="font-medium text-sm sm:text-base hidden xs:inline">Back</span>
+                        <span class="font-medium text-sm sm:text-base hidden sm:inline">to Dashboard</span>
+                    </a>
+                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-6 sm:h-8 w-auto">
+                </div>
+                <div class="flex items-center">
+                    <button 
+                        id="theme-toggle" 
+                        onclick="toggleTheme()" 
+                        class="p-3 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Toggle theme"
+                    >
+                        <i class="fas fa-sun sun-icon text-base sm:text-lg"></i>
+                        <i class="fas fa-moon moon-icon text-base sm:text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <!-- Header -->
+        <div class="text-center mb-6 sm:mb-8">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full mx-auto mb-3 sm:mb-4 flex items-center justify-center">
+                <span class="text-2xl sm:text-3xl text-white font-bold">
+                    <?= strtoupper(substr($user['first_name'], 0, 1)) ?>
+                </span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white px-4 sm:px-0">Profile Settings</h1>
+            <p class="mt-2 text-sm sm:text-base text-gray-600 dark:text-gray-400 px-4 sm:px-0">Manage your personal information and preferences</p>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <?php if ($success): ?>
+            <div class="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-4">
+                <div class="flex">
+                    <i class="fas fa-check-circle text-green-400 mr-2 mt-0.5"></i>
+                    <p class="text-sm text-green-700 dark:text-green-400"><?= htmlspecialchars($success) ?></p>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($error): ?>
+            <div class="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                <div class="flex">
+                    <i class="fas fa-exclamation-circle text-red-400 mr-2 mt-0.5"></i>
+                    <p class="text-sm text-red-700 dark:text-red-400"><?= htmlspecialchars($error) ?></p>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Profile Form -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <form method="POST" class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                
+                <!-- Basic Information -->
+                <div>
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fas fa-user text-ayuni-blue mr-2"></i>
+                        Basic Information
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- First Name -->
+                        <div>
+                            <label for="first_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                First Name *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="first_name" 
+                                name="first_name" 
+                                required
+                                maxlength="100"
+                                value="<?= htmlspecialchars($user['first_name']) ?>"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent text-base sm:text-sm"
+                                placeholder="Enter your first name"
+                            >
+                        </div>
+
+                        <!-- Email (Read-only) -->
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Email Address
+                            </label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                value="<?= htmlspecialchars($user['email']) ?>"
+                                readonly
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed text-base sm:text-sm"
+                            >
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Email cannot be changed</p>
+                        </div>
+
+                        <!-- Gender -->
+                        <div>
+                            <label for="gender" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Gender
+                            </label>
+                            <select 
+                                id="gender" 
+                                name="gender"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent text-base sm:text-sm min-h-[44px]"
+                            >
+                                <option value="">Select gender</option>
+                                <option value="male" <?= $user['gender'] === 'male' ? 'selected' : '' ?>>Male</option>
+                                <option value="female" <?= $user['gender'] === 'female' ? 'selected' : '' ?>>Female</option>
+                                <option value="non-binary" <?= $user['gender'] === 'non-binary' ? 'selected' : '' ?>>Non-binary</option>
+                                <option value="other" <?= $user['gender'] === 'other' ? 'selected' : '' ?>>Other</option>
+                                <option value="prefer-not-to-say" <?= $user['gender'] === 'prefer-not-to-say' ? 'selected' : '' ?>>Prefer not to say</option>
+                            </select>
+                        </div>
+
+                        <!-- Birth Date -->
+                        <div>
+                            <label for="birth_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Birth Date
+                            </label>
+                            <input 
+                                type="date" 
+                                id="birth_date" 
+                                name="birth_date"
+                                value="<?= $user['birth_date'] ?>"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent text-base sm:text-sm min-h-[44px]"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Details -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fas fa-id-card text-ayuni-blue mr-2"></i>
+                        Personal Details
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Profession -->
+                        <div>
+                            <label for="profession" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Profession
+                            </label>
+                            <input 
+                                type="text" 
+                                id="profession" 
+                                name="profession"
+                                maxlength="255"
+                                value="<?= htmlspecialchars($user['profession'] ?? '') ?>"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent text-base sm:text-sm"
+                                placeholder="e.g., Software Engineer, Teacher, Artist"
+                            >
+                        </div>
+
+                        <!-- Sexual Orientation -->
+                        <div>
+                            <label for="sexual_orientation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Sexual Orientation
+                            </label>
+                            <select 
+                                id="sexual_orientation" 
+                                name="sexual_orientation"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent text-base sm:text-sm min-h-[44px]"
+                            >
+                                <option value="">Select orientation</option>
+                                <option value="heterosexual" <?= $user['sexual_orientation'] === 'heterosexual' ? 'selected' : '' ?>>Heterosexual</option>
+                                <option value="homosexual" <?= $user['sexual_orientation'] === 'homosexual' ? 'selected' : '' ?>>Homosexual</option>
+                                <option value="bisexual" <?= $user['sexual_orientation'] === 'bisexual' ? 'selected' : '' ?>>Bisexual</option>
+                                <option value="pansexual" <?= $user['sexual_orientation'] === 'pansexual' ? 'selected' : '' ?>>Pansexual</option>
+                                <option value="asexual" <?= $user['sexual_orientation'] === 'asexual' ? 'selected' : '' ?>>Asexual</option>
+                                <option value="other" <?= $user['sexual_orientation'] === 'other' ? 'selected' : '' ?>>Other</option>
+                                <option value="prefer-not-to-say" <?= $user['sexual_orientation'] === 'prefer-not-to-say' ? 'selected' : '' ?>>Prefer not to say</option>
+                            </select>
+                        </div>
+
+                        <!-- Timezone -->
+                        <div class="md:col-span-2">
+                            <label for="timezone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Timezone
+                            </label>
+                            <select 
+                                id="timezone" 
+                                name="timezone"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent text-base sm:text-sm min-h-[44px]"
+                            >
+                                <option value="UTC" <?= $user['timezone'] === 'UTC' ? 'selected' : '' ?>>UTC (Coordinated Universal Time)</option>
+                                <option value="America/New_York" <?= $user['timezone'] === 'America/New_York' ? 'selected' : '' ?>>Eastern Time (US & Canada)</option>
+                                <option value="America/Chicago" <?= $user['timezone'] === 'America/Chicago' ? 'selected' : '' ?>>Central Time (US & Canada)</option>
+                                <option value="America/Denver" <?= $user['timezone'] === 'America/Denver' ? 'selected' : '' ?>>Mountain Time (US & Canada)</option>
+                                <option value="America/Los_Angeles" <?= $user['timezone'] === 'America/Los_Angeles' ? 'selected' : '' ?>>Pacific Time (US & Canada)</option>
+                                <option value="Europe/London" <?= $user['timezone'] === 'Europe/London' ? 'selected' : '' ?>>London (GMT/BST)</option>
+                                <option value="Europe/Berlin" <?= $user['timezone'] === 'Europe/Berlin' ? 'selected' : '' ?>>Central European Time</option>
+                                <option value="Europe/Paris" <?= $user['timezone'] === 'Europe/Paris' ? 'selected' : '' ?>>Central European Time (Paris)</option>
+                                <option value="Asia/Tokyo" <?= $user['timezone'] === 'Asia/Tokyo' ? 'selected' : '' ?>>Japan Standard Time</option>
+                                <option value="Asia/Shanghai" <?= $user['timezone'] === 'Asia/Shanghai' ? 'selected' : '' ?>>China Standard Time</option>
+                                <option value="Australia/Sydney" <?= $user['timezone'] === 'Australia/Sydney' ? 'selected' : '' ?>>Australian Eastern Time</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interests & Lifestyle -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fas fa-heart text-ayuni-blue mr-2"></i>
+                        Interests & Lifestyle
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <!-- Hobbies -->
+                        <div>
+                            <label for="hobbies" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Hobbies & Interests
+                            </label>
+                            <textarea 
+                                id="hobbies" 
+                                name="hobbies" 
+                                rows="2"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent resize-none text-base sm:text-sm"
+                                placeholder="Tell us about your hobbies and interests..."
+                            ><?= htmlspecialchars($user['hobbies'] ?? '') ?></textarea>
+                        </div>
+
+                        <!-- Daily Rituals -->
+                        <div>
+                            <label for="daily_rituals" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Daily Rituals & Routines
+                            </label>
+                            <textarea 
+                                id="daily_rituals" 
+                                name="daily_rituals" 
+                                rows="2"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent resize-none text-base sm:text-sm"
+                                placeholder="Describe your daily routines and rituals..."
+                            ><?= htmlspecialchars($user['daily_rituals'] ?? '') ?></textarea>
+                        </div>
+
+                        <!-- Life Goals -->
+                        <div>
+                            <label for="life_goals" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Life Goals & Aspirations
+                            </label>
+                            <textarea 
+                                id="life_goals" 
+                                name="life_goals" 
+                                rows="2"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent resize-none text-base sm:text-sm"
+                                placeholder="Share your life goals and aspirations..."
+                            ><?= htmlspecialchars($user['life_goals'] ?? '') ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Beliefs & Values -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fas fa-lightbulb text-ayuni-blue mr-2"></i>
+                        Beliefs & Values
+                    </h2>
+                    
+                    <div class="space-y-6">
+                        <!-- Beliefs -->
+                        <div>
+                            <label for="beliefs" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Personal Beliefs & Values
+                            </label>
+                            <textarea 
+                                id="beliefs" 
+                                name="beliefs" 
+                                rows="2"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent resize-none text-base sm:text-sm"
+                                placeholder="Share your beliefs and values..."
+                            ><?= htmlspecialchars($user['beliefs'] ?? '') ?></textarea>
+                        </div>
+
+                        <!-- Partner Qualities -->
+                        <div>
+                            <label for="partner_qualities" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Ideal Partner Qualities
+                            </label>
+                            <textarea 
+                                id="partner_qualities" 
+                                name="partner_qualities" 
+                                rows="2"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent resize-none text-base sm:text-sm"
+                                placeholder="Describe qualities you value in a partner..."
+                            ><?= htmlspecialchars($user['partner_qualities'] ?? '') ?></textarea>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div>
+                            <label for="additional_info" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Additional Information
+                            </label>
+                            <textarea 
+                                id="additional_info" 
+                                name="additional_info" 
+                                rows="3"
+                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent resize-none text-base sm:text-sm"
+                                placeholder="Any additional information you'd like to share..."
+                            ><?= htmlspecialchars($user['additional_info'] ?? '') ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6">
+                    <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+                        <a 
+                            href="/dashboard" 
+                            class="px-6 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent text-center text-base sm:text-sm font-medium min-h-[44px] flex items-center justify-center"
+                        >
+                            Cancel
+                        </a>
+                        <button 
+                            type="submit"
+                            class="px-6 py-3 sm:py-2 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold rounded-md hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:ring-offset-2 shadow-sm hover:shadow-md text-base sm:text-sm min-h-[44px] flex items-center justify-center"
+                        >
+                            <i class="fas fa-save mr-2"></i>
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Account Information -->
+        <div class="mt-6 sm:mt-8 bg-white dark:bg-gray-800 shadow rounded-lg p-4 sm:p-6">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                <i class="fas fa-info-circle text-ayuni-blue mr-2"></i>
+                Account Information
+            </h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-sm">
+                <div>
+                    <span class="text-gray-500 dark:text-gray-400">Member since:</span>
+                    <span class="ml-2 text-gray-900 dark:text-white font-medium">
+                        <?= date('F j, Y', strtotime($user['created_at'])) ?>
+                    </span>
+                </div>
+                <div>
+                    <span class="text-gray-500 dark:text-gray-400">Last active:</span>
+                    <span class="ml-2 text-gray-900 dark:text-white font-medium">
+                        <?= date('F j, Y g:i A', strtotime($user['last_active'])) ?>
+                    </span>
+                </div>
+                <div>
+                    <span class="text-gray-500 dark:text-gray-400">Beta code:</span>
+                    <span class="ml-2 text-gray-900 dark:text-white font-medium">
+                        <?= $user['beta_code'] ? htmlspecialchars($user['beta_code']) : 'N/A' ?>
+                    </span>
+                </div>
+                <div>
+                    <span class="text-gray-500 dark:text-gray-400">Account status:</span>
+                    <span class="ml-2">
+                        <?php if ($user['is_admin']): ?>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300">
+                                <i class="fas fa-crown mr-1"></i>Administrator
+                            </span>
+                        <?php else: ?>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300">
+                                <i class="fas fa-check mr-1"></i>Active User
+                            </span>
+                        <?php endif; ?>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-resize textareas with mobile optimization
+document.addEventListener('DOMContentLoaded', function() {
+    const textareas = document.querySelectorAll('textarea');
+    const isMobile = window.innerWidth < 640; // sm breakpoint
+    const maxHeight = isMobile ? 120 : 200; // Smaller max height on mobile
+    
+    textareas.forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, maxHeight) + 'px';
+        });
+        
+        // Initial resize
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px';
+    });
+    
+    // Re-calculate on window resize
+    window.addEventListener('resize', function() {
+        const newIsMobile = window.innerWidth < 640;
+        const newMaxHeight = newIsMobile ? 120 : 200;
+        textareas.forEach(textarea => {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, newMaxHeight) + 'px';
+        });
+    });
+});
+</script>
