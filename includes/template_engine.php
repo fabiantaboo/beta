@@ -215,6 +215,14 @@ class TemplateEngine {
         }
         $relationship_context = self::buildRelationshipContext($relationshipData);
         
+        // Calculate user age from birth_date
+        $user_age = '';
+        if (!empty($user['birth_date'])) {
+            $birthDate = new DateTime($user['birth_date']);
+            $today = new DateTime();
+            $user_age = $birthDate->diff($today)->y . ' years old';
+        }
+
         return [
             // AEI data
             'aei_name' => $aei['name'] ?? '',
@@ -230,6 +238,14 @@ class TemplateEngine {
             'goals' => $aei['goals'] ?? '',
             'relationship_context' => $relationship_context,
             
+            // Individual appearance fields
+            'hair_color' => $appearanceData['hair_color'] ?? '',
+            'eye_color' => $appearanceData['eye_color'] ?? '',
+            'height' => $appearanceData['height'] ?? '',
+            'build' => $appearanceData['build'] ?? '',
+            'style' => $appearanceData['style'] ?? '',
+            'appearance_custom' => $appearanceData['custom'] ?? '',
+            
             // User data
             'user_first_name' => $user['first_name'] ?? '',
             'user_profession' => $user['profession'] ?? '',
@@ -241,6 +257,9 @@ class TemplateEngine {
             'user_daily_rituals' => $user['daily_rituals'] ?? '',
             'user_partner_qualities' => $user['partner_qualities'] ?? '',
             'user_additional_info' => $user['additional_info'] ?? '',
+            'user_birth_date' => $user['birth_date'] ?? '',
+            'user_age' => $user_age,
+            'user_timezone' => $user['timezone'] ?? '',
         ];
     }
     

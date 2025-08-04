@@ -142,6 +142,44 @@ try {
                                             <span class="text-gray-500 dark:text-gray-400 text-xs">Relationship to user</span>
                                         </div>
                                     </div>
+                                </div>
+                                
+                                <!-- Individual Appearance Fields -->
+                                <div>
+                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Individual Appearance Fields</h5>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{hair_color}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Hair color</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{eye_color}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Eye color</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{height}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Height</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{build}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Build/physique</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{style}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Clothing style</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{appearance_custom}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Custom appearance details</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                        <h6 class="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-2">🎨 Appearance Options</h6>
+                                        <p class="text-xs text-purple-600 dark:text-purple-400">
+                                            Use individual fields for specific mentions, or {{appearance_description}} for a complete natural description.
+                                        </p>
+                                    </div>
+                                    </div>
                                     <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                         <h6 class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">📋 Note about Character Data</h6>
                                         <p class="text-xs text-blue-600 dark:text-blue-400">
@@ -217,6 +255,18 @@ try {
                                             <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{user_additional_info}}</code>
                                             <span class="text-gray-500 dark:text-gray-400 text-xs">Additional info</span>
                                         </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{user_birth_date}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">User's birth date</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{user_age}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">User's calculated age</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{user_timezone}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">User's timezone</span>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -237,20 +287,33 @@ try {
                                 <div>
                                     <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Quick Insert</h5>
                                     <div class="grid grid-cols-2 gap-2">
+                                        <!-- AEI Data -->
                                         <button type="button" onclick="insertTag('{{aei_name}}')" class="text-xs bg-ayuni-blue text-white px-2 py-1 rounded hover:bg-ayuni-blue/90">AEI Name</button>
                                         <button type="button" onclick="insertTag('{{age}}')" class="text-xs bg-ayuni-blue text-white px-2 py-1 rounded hover:bg-ayuni-blue/90">Age</button>
                                         <button type="button" onclick="insertTag('{{gender}}')" class="text-xs bg-ayuni-blue text-white px-2 py-1 rounded hover:bg-ayuni-blue/90">Gender</button>
+                                        <button type="button" onclick="insertTag('{{personality}}')" class="text-xs bg-ayuni-blue text-white px-2 py-1 rounded hover:bg-ayuni-blue/90">Personality</button>
+                                        
+                                        <!-- Appearance -->
+                                        <button type="button" onclick="insertTag('{{hair_color}}')" class="text-xs bg-pink-500 text-white px-2 py-1 rounded hover:bg-pink-600">Hair Color</button>
+                                        <button type="button" onclick="insertTag('{{eye_color}}')" class="text-xs bg-pink-500 text-white px-2 py-1 rounded hover:bg-pink-600">Eye Color</button>
+                                        <button type="button" onclick="insertTag('{{height}}')" class="text-xs bg-pink-500 text-white px-2 py-1 rounded hover:bg-pink-600">Height</button>
+                                        <button type="button" onclick="insertTag('{{build}}')" class="text-xs bg-pink-500 text-white px-2 py-1 rounded hover:bg-pink-600">Build</button>
+                                        
+                                        <!-- User Data -->
                                         <button type="button" onclick="insertTag('{{user_first_name}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Name</button>
-                                        <button type="button" onclick="insertConditional('personality')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Personality</button>
-                                        <button type="button" onclick="insertConditional('communication_style')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Comm Style</button>
-                                        <button type="button" onclick="insertConditional('appearance_description')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Appearance</button>
-                                        <button type="button" onclick="insertConditional('interests')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Interests</button>
-                                        <button type="button" onclick="insertConditional('background')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Background</button>
-                                        <button type="button" onclick="insertConditional('occupation')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Occupation</button>
+                                        <button type="button" onclick="insertTag('{{user_age}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Age</button>
+                                        <button type="button" onclick="insertTag('{{user_profession}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Prof</button>
+                                        <button type="button" onclick="insertTag('{{user_timezone}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Timezone</button>
+                                        
+                                        <!-- Relationships -->
                                         <button type="button" onclick="insertTag('{{relationship_context}}')" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Relationship</button>
                                         <button type="button" onclick="insertConditional('relationship_context')" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">If Relationship</button>
-                                        <button type="button" onclick="insertConditional('user_profession')" class="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600">If User Prof</button>
-                                        <button type="button" onclick="insertConditional('user_hobbies')" class="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600">If User Hobby</button>
+                                        
+                                        <!-- Conditionals -->
+                                        <button type="button" onclick="insertConditional('personality')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Personality</button>
+                                        <button type="button" onclick="insertConditional('appearance_description')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Appearance</button>
+                                        <button type="button" onclick="insertConditional('interests')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If Interests</button>
+                                        <button type="button" onclick="insertConditional('user_profession')" class="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">If User Prof</button>
                                     </div>
                                 </div>
                             </div>
