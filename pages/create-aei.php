@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Process personality traits (selected traits as JSON)
         $personalityTraits = $_POST['personality_traits'] ?? [];
         $personalityCustom = sanitizeInput($_POST['personality_custom'] ?? '');
-        $customTraits = $personalityCustom ? array_map('trim', explode(',', $personalityCustom)) : [];
+        $customTraits = $personalityCustom ? json_decode($personalityCustom, true) ?: [] : [];
         $personality = json_encode(array_merge($personalityTraits, $customTraits));
         
         // Process communication style
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Process interests as tags
         $interestTags = $_POST['interest_tags'] ?? [];
         $interestCustom = sanitizeInput($_POST['interest_custom'] ?? '');
-        $customInterests = $interestCustom ? array_map('trim', explode(',', $interestCustom)) : [];
+        $customInterests = $interestCustom ? json_decode($interestCustom, true) ?: [] : [];
         $interests = json_encode(array_merge($interestTags, $customInterests));
         
         $quirks = sanitizeInput($_POST['quirks'] ?? '');
@@ -210,12 +210,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endforeach; ?>
                             </div>
                             <div class="mt-4">
-                                <input 
-                                    type="text" 
-                                    name="personality_custom" 
-                                    placeholder="Add custom traits (comma-separated)..."
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
-                                />
+                                <div class="custom-tags-container" data-field="personality_custom">
+                                    <div class="tags-display flex flex-wrap gap-2 mb-3" id="personality-tags"></div>
+                                    <input 
+                                        type="text" 
+                                        id="personality-input"
+                                        placeholder="Add custom trait and press Enter..."
+                                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
+                                    />
+                                    <input type="hidden" name="personality_custom" id="personality-custom-hidden" />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -434,12 +438,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endforeach; ?>
                             </div>
                             <div class="mt-4">
-                                <input 
-                                    type="text" 
-                                    name="interest_custom" 
-                                    placeholder="Add custom interests (comma-separated)..."
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
-                                />
+                                <div class="custom-tags-container" data-field="interest_custom">
+                                    <div class="tags-display flex flex-wrap gap-2 mb-3" id="interest-tags"></div>
+                                    <input 
+                                        type="text" 
+                                        id="interest-input"
+                                        placeholder="Add custom interest and press Enter..."
+                                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
+                                    />
+                                    <input type="hidden" name="interest_custom" id="interest-custom-hidden" />
+                                </div>
                             </div>
                         </div>
                         
@@ -828,18 +836,80 @@ function updateRelationshipOptions(aeiGender) {
     });
 }
 
-// Prevent form submission when Enter is pressed in custom input fields
+// Custom Tags System
 document.addEventListener('DOMContentLoaded', function() {
-    const customInputs = document.querySelectorAll('input[name="personality_custom"], input[name="interest_custom"], input[name="appearance_custom"]');
-    
-    customInputs.forEach(input => {
-        input.addEventListener('keydown', function(e) {
+    const tagSystems = {
+        'personality': {
+            input: document.getElementById('personality-input'),
+            tagsContainer: document.getElementById('personality-tags'),
+            hiddenInput: document.getElementById('personality-custom-hidden'),
+            tags: []
+        },
+        'interest': {
+            input: document.getElementById('interest-input'),
+            tagsContainer: document.getElementById('interest-tags'),
+            hiddenInput: document.getElementById('interest-custom-hidden'),
+            tags: []
+        }
+    };
+
+    // Initialize tag system for each type
+    Object.keys(tagSystems).forEach(type => {
+        const system = tagSystems[type];
+        if (!system.input) return;
+
+        system.input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                // Instead of submitting, just blur the input to process the custom values
-                this.blur();
+                const value = this.value.trim();
+                if (value && !system.tags.includes(value)) {
+                    addTag(type, value);
+                    this.value = '';
+                }
+            }
+        });
+
+        system.input.addEventListener('blur', function() {
+            const value = this.value.trim();
+            if (value && !system.tags.includes(value)) {
+                addTag(type, value);
+                this.value = '';
             }
         });
     });
+
+    function addTag(type, tagText) {
+        const system = tagSystems[type];
+        system.tags.push(tagText);
+        
+        // Create tag element
+        const tagElement = document.createElement('div');
+        tagElement.className = 'inline-flex items-center bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white text-sm px-3 py-1 rounded-full';
+        tagElement.innerHTML = `
+            <span>${tagText}</span>
+            <button type="button" class="ml-2 text-white hover:text-gray-200 focus:outline-none" onclick="removeTag('${type}', '${tagText}', this)">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        `;
+        
+        system.tagsContainer.appendChild(tagElement);
+        updateHiddenInput(type);
+    }
+
+    function updateHiddenInput(type) {
+        const system = tagSystems[type];
+        system.hiddenInput.value = JSON.stringify(system.tags);
+    }
+
+    // Global function for removing tags
+    window.removeTag = function(type, tagText, buttonElement) {
+        const system = tagSystems[type];
+        const index = system.tags.indexOf(tagText);
+        if (index > -1) {
+            system.tags.splice(index, 1);
+            buttonElement.parentElement.remove();
+            updateHiddenInput(type);
+        }
+    };
 });
 </script>
