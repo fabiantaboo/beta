@@ -95,32 +95,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark py-6">
-    <!-- Navigation -->
-    <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-14 sm:h-16">
-                <div class="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
-                    <a href="/dashboard" class="flex items-center space-x-1 sm:space-x-2 text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors min-h-[44px] py-2 pr-2">
-                        <i class="fas fa-arrow-left text-sm sm:text-base"></i>
-                        <span class="font-medium text-sm sm:text-base hidden xs:inline">Back</span>
-                        <span class="font-medium text-sm sm:text-base hidden sm:inline">to Dashboard</span>
-                    </a>
-                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-6 sm:h-8 w-auto">
-                </div>
-                <div class="flex items-center">
-                    <button 
-                        id="theme-toggle" 
-                        onclick="toggleTheme()" 
-                        class="p-3 sm:p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        title="Toggle theme"
-                    >
-                        <i class="fas fa-sun sun-icon text-base sm:text-lg"></i>
-                        <i class="fas fa-moon moon-icon text-base sm:text-lg"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <?php 
+    include_once __DIR__ . '/../includes/header.php';
+    renderHeader([
+        'title' => 'Profile Settings',
+        'show_back_button' => true,
+        'back_url' => '/dashboard',
+        'back_text' => 'Back to Dashboard'
+    ]);
+    ?>
 
     <div class="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         <!-- Header -->

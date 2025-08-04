@@ -79,30 +79,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark">
-    <!-- Navigation -->
-    <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-4">
-                    <a href="/dashboard" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors">
-                        <i class="fas fa-arrow-left"></i>
-                        <span class="font-medium">Back to Dashboard</span>
-                    </a>
-                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-10 w-auto">
-                    <span class="text-xl font-semibold text-gray-900 dark:text-white">Birth AEI</span>
-                </div>
-                <button 
-                    id="theme-toggle" 
-                    onclick="toggleTheme()" 
-                    class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
-                    title="Toggle theme"
-                >
-                    <i class="fas fa-sun sun-icon text-lg"></i>
-                    <i class="fas fa-moon moon-icon text-lg"></i>
-                </button>
-            </div>
-        </div>
-    </nav>
+    <?php 
+    include_once __DIR__ . '/../includes/header.php';
+    renderHeader([
+        'title' => 'Birth AEI',
+        'show_back_button' => true,
+        'back_url' => '/dashboard',
+        'back_text' => 'Back to Dashboard'
+    ]);
+    ?>
 
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="text-center mb-8">
