@@ -23,6 +23,7 @@ class Router {
             'admin/prompts' => ['page' => 'admin-prompts'],
             'admin/users' => ['page' => 'admin-users'],
             'admin/beta' => ['page' => 'admin-beta'],
+            'admin/emotions' => ['page' => 'admin-emotions'],
             'dashboard' => ['page' => 'dashboard'],
             'create-aei' => ['page' => 'create-aei'],
             'chat' => ['page' => 'chat'],

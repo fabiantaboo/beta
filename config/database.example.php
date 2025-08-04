@@ -88,6 +88,27 @@ function createTablesIfNotExist($pdo) {
             aei_id VARCHAR(32) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            
+            -- Current AEI Emotional State
+            aei_joy DECIMAL(3,2) DEFAULT 0.5,
+            aei_sadness DECIMAL(3,2) DEFAULT 0.5,
+            aei_fear DECIMAL(3,2) DEFAULT 0.5,
+            aei_anger DECIMAL(3,2) DEFAULT 0.5,
+            aei_surprise DECIMAL(3,2) DEFAULT 0.5,
+            aei_disgust DECIMAL(3,2) DEFAULT 0.5,
+            aei_trust DECIMAL(3,2) DEFAULT 0.5,
+            aei_anticipation DECIMAL(3,2) DEFAULT 0.5,
+            aei_shame DECIMAL(3,2) DEFAULT 0.5,
+            aei_love DECIMAL(3,2) DEFAULT 0.5,
+            aei_contempt DECIMAL(3,2) DEFAULT 0.5,
+            aei_loneliness DECIMAL(3,2) DEFAULT 0.5,
+            aei_pride DECIMAL(3,2) DEFAULT 0.5,
+            aei_envy DECIMAL(3,2) DEFAULT 0.5,
+            aei_nostalgia DECIMAL(3,2) DEFAULT 0.5,
+            aei_gratitude DECIMAL(3,2) DEFAULT 0.5,
+            aei_frustration DECIMAL(3,2) DEFAULT 0.5,
+            aei_boredom DECIMAL(3,2) DEFAULT 0.5,
+            
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
             INDEX idx_user_aei (user_id, aei_id)
@@ -98,6 +119,27 @@ function createTablesIfNotExist($pdo) {
             sender_type ENUM('user', 'aei') NOT NULL,
             message_text TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            
+            -- AEI Emotional State (NULL for user messages)
+            aei_joy DECIMAL(3,2) NULL,
+            aei_sadness DECIMAL(3,2) NULL,
+            aei_fear DECIMAL(3,2) NULL,
+            aei_anger DECIMAL(3,2) NULL,
+            aei_surprise DECIMAL(3,2) NULL,
+            aei_disgust DECIMAL(3,2) NULL,
+            aei_trust DECIMAL(3,2) NULL,
+            aei_anticipation DECIMAL(3,2) NULL,
+            aei_shame DECIMAL(3,2) NULL,
+            aei_love DECIMAL(3,2) NULL,
+            aei_contempt DECIMAL(3,2) NULL,
+            aei_loneliness DECIMAL(3,2) NULL,
+            aei_pride DECIMAL(3,2) NULL,
+            aei_envy DECIMAL(3,2) NULL,
+            aei_nostalgia DECIMAL(3,2) NULL,
+            aei_gratitude DECIMAL(3,2) NULL,
+            aei_frustration DECIMAL(3,2) NULL,
+            aei_boredom DECIMAL(3,2) NULL,
+            
             FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
             INDEX idx_session_time (session_id, created_at)
         )",
@@ -306,6 +348,56 @@ try {
                 FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
                 INDEX idx_session_time (session_id, created_at)
             )");
+        }
+        
+        // Add emotion columns to chat_messages if they don't exist
+        try {
+            $stmt = $pdo->query("DESCRIBE chat_messages");
+            $messageColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            $emotionColumns = [
+                'aei_joy', 'aei_sadness', 'aei_fear', 'aei_anger', 'aei_surprise', 
+                'aei_disgust', 'aei_trust', 'aei_anticipation', 'aei_shame', 'aei_love',
+                'aei_contempt', 'aei_loneliness', 'aei_pride', 'aei_envy', 'aei_nostalgia',
+                'aei_gratitude', 'aei_frustration', 'aei_boredom'
+            ];
+            
+            foreach ($emotionColumns as $column) {
+                if (!in_array($column, $messageColumns)) {
+                    try {
+                        $pdo->exec("ALTER TABLE chat_messages ADD COLUMN $column DECIMAL(3,2) NULL");
+                    } catch (PDOException $e) {
+                        // Column might already exist, ignore error
+                    }
+                }
+            }
+        } catch (PDOException $e) {
+            // Error reading columns, ignore
+        }
+        
+        // Add emotion columns to chat_sessions if they don't exist
+        try {
+            $stmt = $pdo->query("DESCRIBE chat_sessions");
+            $sessionColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            $emotionColumns = [
+                'aei_joy', 'aei_sadness', 'aei_fear', 'aei_anger', 'aei_surprise', 
+                'aei_disgust', 'aei_trust', 'aei_anticipation', 'aei_shame', 'aei_love',
+                'aei_contempt', 'aei_loneliness', 'aei_pride', 'aei_envy', 'aei_nostalgia',
+                'aei_gratitude', 'aei_frustration', 'aei_boredom'
+            ];
+            
+            foreach ($emotionColumns as $column) {
+                if (!in_array($column, $sessionColumns)) {
+                    try {
+                        $pdo->exec("ALTER TABLE chat_sessions ADD COLUMN $column DECIMAL(3,2) DEFAULT 0.5");
+                    } catch (PDOException $e) {
+                        // Column might already exist, ignore error
+                    }
+                }
+            }
+        } catch (PDOException $e) {
+            // Error reading columns, ignore
         }
         
         // 7. Check and migrate api_settings table

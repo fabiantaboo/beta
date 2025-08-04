@@ -6,6 +6,7 @@ function renderAdminNavigation($currentPage = '') {
         'admin-prompts' => ['name' => 'System Prompts', 'icon' => 'fas fa-code', 'url' => '/admin/prompts'],
         'admin-users' => ['name' => 'User Management', 'icon' => 'fas fa-users', 'url' => '/admin/users'],
         'admin-beta' => ['name' => 'Beta Codes', 'icon' => 'fas fa-ticket-alt', 'url' => '/admin/beta'],
+        'admin-emotions' => ['name' => 'Emotions', 'icon' => 'fas fa-brain', 'url' => '/admin/emotions'],
     ];
     
     ?>

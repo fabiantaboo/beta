@@ -17,7 +17,7 @@ if (isset($_GET['action'])) {
     }
 }
 
-$allowed_pages = ['home', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-beta'];
+$allowed_pages = ['home', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-beta', 'admin-emotions'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
@@ -38,6 +38,7 @@ $page_title = match($page) {
     'admin-prompts' => 'Admin - System Prompts',
     'admin-users' => 'Admin - User Management',
     'admin-beta' => 'Admin - Beta Codes',
+    'admin-emotions' => 'Admin - Emotion Monitoring',
     default => 'Ayuni Beta'
 };
 ?>

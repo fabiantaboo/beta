@@ -10,6 +10,7 @@ session_start();
 include_once '../config/database.php';
 include_once '../includes/functions.php';
 include_once '../includes/anthropic_api.php';
+include_once '../includes/emotions.php';
 
 // Clear any unwanted output
 ob_clean();
@@ -83,6 +84,10 @@ try {
         $sessionId = generateId();
         $stmt = $pdo->prepare("INSERT INTO chat_sessions (id, user_id, aei_id) VALUES (?, ?, ?)");
         $stmt->execute([$sessionId, getUserSession(), $aeiId]);
+        
+        // Initialize emotional state for new session
+        $emotions = new Emotions($pdo);
+        $emotions->initializeSessionEmotions($sessionId);
     } else {
         $sessionId = $session['id'];
     }
@@ -109,6 +114,11 @@ try {
     $aeiResponseId = generateId();
     $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'aei', ?)");
     $stmt->execute([$aeiResponseId, $sessionId, $aeiResponse]);
+    
+    // Store current emotional state with the AEI message
+    $emotions = new Emotions($pdo);
+    $currentEmotions = $emotions->getEmotionalState($sessionId);
+    $emotions->storeMessageEmotions($aeiResponseId, $currentEmotions);
     
     $aeiMessageTime = getCurrentTimestamp();
     
