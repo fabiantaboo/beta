@@ -27,20 +27,12 @@ function renderHeader($config = []) {
                 <!-- Left Side -->
                 <div class="flex items-center space-x-2 sm:space-x-4">
                     <?php if ($config['show_back_button']): ?>
-                        <a href="<?= $config['back_url'] ?>" class="flex items-center space-x-1 sm:space-x-2 text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors">
-                            <i class="fas fa-arrow-left"></i>
-                            <span class="font-medium hidden sm:inline"><?= htmlspecialchars($config['back_text']) ?></span>
-                            <span class="font-medium sm:hidden">Back</span>
+                        <a href="<?= $config['back_url'] ?>" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Back to Dashboard">
+                            <i class="fas fa-arrow-left text-lg"></i>
                         </a>
                     <?php endif; ?>
                     
-                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="<?= $config['show_back_button'] ? 'h-6 sm:h-8' : 'h-10' ?> w-auto">
-                    
-                    <?php if ($config['title']): ?>
-                        <span class="text-xl font-semibold text-gray-900 dark:text-white">
-                            <?= htmlspecialchars($config['title']) ?>
-                        </span>
-                    <?php endif; ?>
+                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-10 sm:h-12 w-auto">
                 </div>
 
                 <!-- Right Side -->
@@ -180,7 +172,6 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
     return renderHeader([
         'show_back_button' => true,
         'back_url' => '/dashboard',
-        'back_text' => 'Back to Dashboard',
         'show_user_menu' => false,
         'show_admin_link' => false,
         'extra_content' => $aeiInfo

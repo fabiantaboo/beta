@@ -98,10 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php 
     include_once __DIR__ . '/../includes/header.php';
     renderHeader([
-        'title' => 'Profile Settings',
         'show_back_button' => true,
-        'back_url' => '/dashboard',
-        'back_text' => 'Back to Dashboard'
+        'back_url' => '/dashboard'
     ]);
     ?>
 

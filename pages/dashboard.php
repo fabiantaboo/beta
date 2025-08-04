@@ -20,7 +20,6 @@ try {
     <?php 
     include_once __DIR__ . '/../includes/header.php';
     renderHeader([
-        'title' => 'Dashboard',
         'show_create_aei' => true
     ]);
     ?>
