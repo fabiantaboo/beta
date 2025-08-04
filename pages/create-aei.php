@@ -827,4 +827,19 @@ function updateRelationshipOptions(aeiGender) {
         }
     });
 }
+
+// Prevent form submission when Enter is pressed in custom input fields
+document.addEventListener('DOMContentLoaded', function() {
+    const customInputs = document.querySelectorAll('input[name="personality_custom"], input[name="interest_custom"], input[name="appearance_custom"]');
+    
+    customInputs.forEach(input => {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Instead of submitting, just blur the input to process the custom values
+                this.blur();
+            }
+        });
+    });
+});
 </script>
