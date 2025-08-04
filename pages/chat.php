@@ -36,6 +36,12 @@ if (!$session) {
 $stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE session_id = ? ORDER BY created_at ASC");
 $stmt->execute([$sessionId]);
 $messages = $stmt->fetchAll();
+
+// Get current emotional state for display
+include_once __DIR__ . '/../includes/emotions.php';
+$emotions = new Emotions($pdo);
+$currentEmotions = $emotions->getEmotionalState($sessionId);
+$formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
 ?>
 
 <div class="h-screen bg-gray-50 dark:bg-ayuni-dark flex flex-col">
@@ -61,16 +67,53 @@ $messages = $stmt->fetchAll();
                         <i class="fas fa-moon moon-icon text-lg"></i>
                     </button>
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
-                            <span class="text-lg text-white font-bold">
-                                <?= strtoupper(substr($aei['name'], 0, 1)) ?>
-                            </span>
+                        <div class="relative">
+                            <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
+                                <span class="text-lg text-white font-bold">
+                                    <?= strtoupper(substr($aei['name'], 0, 1)) ?>
+                                </span>
+                            </div>
+                            <?php 
+                            // Show primary emotion as small indicator
+                            if (!empty($formattedEmotions['strong'])) {
+                                $primaryEmotion = explode(':', $formattedEmotions['strong'][0])[0];
+                                $emotionIcon = match($primaryEmotion) {
+                                    'joy' => 'fa-smile',
+                                    'love' => 'fa-heart',
+                                    'trust' => 'fa-handshake',
+                                    'sadness' => 'fa-frown',
+                                    'anger' => 'fa-angry',
+                                    'fear' => 'fa-exclamation-triangle',
+                                    default => 'fa-brain'
+                                };
+                                $emotionColor = match($primaryEmotion) {
+                                    'joy' => 'text-yellow-400',
+                                    'love' => 'text-pink-400',
+                                    'trust' => 'text-green-400',
+                                    'sadness' => 'text-blue-400',
+                                    'anger' => 'text-red-400',
+                                    'fear' => 'text-yellow-600',
+                                    default => 'text-gray-400'
+                                };
+                                ?>
+                                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800">
+                                    <i class="fas <?= $emotionIcon ?> text-xs <?= $emotionColor ?>"></i>
+                                </div>
+                            <?php } ?>
                         </div>
                         <div>
                             <h1 class="text-lg font-semibold text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></h1>
                             <div class="flex items-center space-x-1">
                                 <div class="w-2 h-2 bg-green-500 rounded-full"></div>
                                 <span class="text-xs text-gray-500 dark:text-gray-400">Online</span>
+                                <span class="text-xs text-gray-400 dark:text-gray-500">•</span>
+                                <button 
+                                    onclick="toggleEmotions()" 
+                                    class="text-xs text-ayuni-blue hover:text-ayuni-blue/80 transition-colors"
+                                    title="View emotional state"
+                                >
+                                    <i class="fas fa-brain mr-1"></i>Emotions
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -78,6 +121,81 @@ $messages = $stmt->fetchAll();
             </div>
         </div>
     </nav>
+
+    <!-- Emotion Panel (Hidden by default) -->
+    <div id="emotion-panel" class="hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-medium text-gray-900 dark:text-white flex items-center">
+                    <i class="fas fa-brain text-ayuni-blue mr-2"></i>
+                    <?= htmlspecialchars($aei['name']) ?>'s Current Emotional State
+                </h3>
+                <button 
+                    onclick="toggleEmotions()" 
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                <?php 
+                $emotionIcons = [
+                    'joy' => ['icon' => 'fa-smile', 'color' => 'text-yellow-500'],
+                    'love' => ['icon' => 'fa-heart', 'color' => 'text-pink-500'],
+                    'trust' => ['icon' => 'fa-handshake', 'color' => 'text-green-500'],
+                    'gratitude' => ['icon' => 'fa-hands', 'color' => 'text-orange-500'],
+                    'anticipation' => ['icon' => 'fa-clock', 'color' => 'text-indigo-500'],
+                    'pride' => ['icon' => 'fa-medal', 'color' => 'text-purple-500'],
+                    'sadness' => ['icon' => 'fa-frown', 'color' => 'text-blue-500'],
+                    'fear' => ['icon' => 'fa-exclamation-triangle', 'color' => 'text-yellow-600'],
+                    'anger' => ['icon' => 'fa-angry', 'color' => 'text-red-500'],
+                    'frustration' => ['icon' => 'fa-fist-raised', 'color' => 'text-red-600'],
+                    'loneliness' => ['icon' => 'fa-user-times', 'color' => 'text-gray-500'],
+                    'shame' => ['icon' => 'fa-eye-slash', 'color' => 'text-gray-600']
+                ];
+                
+                // Show strongest emotions first
+                $allEmotions = array_merge(
+                    $formattedEmotions['strong'] ?? [],
+                    $formattedEmotions['moderate'] ?? [],
+                    $formattedEmotions['mild'] ?? []
+                );
+                
+                $displayedCount = 0;
+                foreach ($allEmotions as $emotionText) {
+                    if ($displayedCount >= 8) break; // Limit display
+                    
+                    preg_match('/^(\w+):\s*(.+)$/', $emotionText, $matches);
+                    if (count($matches) === 3) {
+                        $emotion = $matches[1];
+                        $value = (float) $matches[2];
+                        
+                        if (isset($emotionIcons[$emotion])) {
+                            $config = $emotionIcons[$emotion];
+                            $intensity = $value >= 0.7 ? 'strong' : ($value >= 0.4 ? 'moderate' : 'mild');
+                            $bgColor = $value >= 0.7 ? 'bg-opacity-20' : 'bg-opacity-10';
+                            ?>
+                            <div class="flex items-center space-x-2 px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 <?= $bgColor ?>">
+                                <i class="fas <?= $config['icon'] ?> <?= $config['color'] ?>"></i>
+                                <span class="text-gray-700 dark:text-gray-300 capitalize"><?= $emotion ?></span>
+                                <span class="ml-auto font-medium text-gray-900 dark:text-white"><?= number_format($value, 1) ?></span>
+                            </div>
+                            <?php
+                            $displayedCount++;
+                        }
+                    }
+                }
+                
+                if ($displayedCount === 0): ?>
+                    <div class="col-span-full text-center text-gray-500 dark:text-gray-400 py-2">
+                        <i class="fas fa-brain text-2xl mb-2"></i>
+                        <p>Emotional state is being analyzed...</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
 
     <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0">
         <!-- Messages Area -->
@@ -174,6 +292,22 @@ $messages = $stmt->fetchAll();
     display: inline-flex;
     align-items: center;
     gap: 2px;
+}
+
+/* Emotion panel animation */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .typing-dots span {
@@ -391,4 +525,16 @@ document.addEventListener('DOMContentLoaded', function() {
         this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     });
 });
+
+// Emotion panel toggle
+function toggleEmotions() {
+    const panel = document.getElementById('emotion-panel');
+    if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        panel.classList.add('animate-fade-in');
+    } else {
+        panel.classList.add('hidden');
+        panel.classList.remove('animate-fade-in');
+    }
+}
 </script>
