@@ -102,8 +102,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
+        <!-- AI Configuration Panel -->
+        <div class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue rounded-2xl p-1 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <i class="fas fa-magic text-2xl text-white"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">AI-Powered Configuration</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Describe your ideal AEI in words, and our AI will configure everything automatically</p>
+                </div>
+                
+                <div class="max-w-2xl mx-auto">
+                    <textarea 
+                        id="ai-description-input"
+                        rows="4"
+                        maxlength="2000"
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent resize-none"
+                        placeholder="Describe your ideal AEI companion... For example: 'I want a cheerful and supportive female companion named Luna who loves art and music. She should be playful but also wise, around 25 years old, with long dark hair and green eyes. She's an artist who enjoys deep conversations and helping others pursue their creative dreams.'"
+                    ></textarea>
+                    
+                    <div class="flex justify-center mt-4">
+                        <button 
+                            type="button" 
+                            id="generate-config-btn"
+                            class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-8 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        >
+                            <i class="fas fa-magic mr-2"></i>
+                            <span id="generate-btn-text">Generate AEI Configuration</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Loading Animation -->
+                    <div id="ai-loading" class="hidden text-center mt-6">
+                        <div class="inline-flex items-center space-x-2 text-ayuni-blue">
+                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-ayuni-blue"></div>
+                            <span class="font-medium">AI is analyzing your description...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Success Message -->
+                    <div id="ai-success" class="hidden bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg mt-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span>Configuration generated successfully! Check the form below.</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Error Message -->
+                    <div id="ai-error" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mt-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle mr-2"></i>
+                            <span id="ai-error-text">Failed to generate configuration. Please try again.</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Or configure manually using the form below
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-8">
-            <form method="POST" class="space-y-10">
+            <form method="POST" class="space-y-10" id="aei-form">
                 <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 
                 <!-- Basic Information -->
@@ -835,6 +899,212 @@ function updateRelationshipOptions(aeiGender) {
         }
     });
 }
+
+// AI Configuration System
+document.addEventListener('DOMContentLoaded', function() {
+    const generateBtn = document.getElementById('generate-config-btn');
+    const descriptionInput = document.getElementById('ai-description-input');
+    const loadingDiv = document.getElementById('ai-loading');
+    const successDiv = document.getElementById('ai-success');
+    const errorDiv = document.getElementById('ai-error');
+    const errorText = document.getElementById('ai-error-text');
+    const btnText = document.getElementById('generate-btn-text');
+    
+    generateBtn.addEventListener('click', async function() {
+        const description = descriptionInput.value.trim();
+        
+        if (!description) {
+            showError('Please describe your ideal AEI companion first.');
+            return;
+        }
+        
+        // Hide previous messages
+        hideMessages();
+        
+        // Show loading state
+        generateBtn.disabled = true;
+        loadingDiv.classList.remove('hidden');
+        btnText.textContent = 'Generating...';
+        
+        try {
+            const response = await fetch('/api/ai-config.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    description: description,
+                    csrf_token: document.querySelector('[name="csrf_token"]').value
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to generate configuration');
+            }
+            
+            // Apply the configuration to form with animations
+            await applyConfigurationWithAnimation(data.config);
+            
+            // Show success message
+            successDiv.classList.remove('hidden');
+            
+            // Scroll to form
+            document.getElementById('aei-form').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+            
+        } catch (error) {
+            console.error('AI Config Error:', error);
+            showError(error.message);
+        } finally {
+            // Reset button state
+            generateBtn.disabled = false;
+            loadingDiv.classList.add('hidden');
+            btnText.textContent = 'Generate AEI Configuration';
+        }
+    });
+    
+    function hideMessages() {
+        successDiv.classList.add('hidden');
+        errorDiv.classList.add('hidden');
+    }
+    
+    function showError(message) {
+        errorText.textContent = message;
+        errorDiv.classList.remove('hidden');
+    }
+    
+    async function applyConfigurationWithAnimation(config) {
+        // Name and Age
+        animateFieldUpdate('name', config.name);
+        animateFieldUpdate('age', config.age);
+        
+        // Gender
+        if (config.gender) {
+            animateSelectUpdate('gender', config.gender);
+        }
+        
+        // Personality Traits with staggered animation
+        if (config.personality_traits && config.personality_traits.length > 0) {
+            for (let i = 0; i < config.personality_traits.length; i++) {
+                setTimeout(() => {
+                    animateCheckboxUpdate('personality_traits[]', config.personality_traits[i]);
+                }, i * 200);
+            }
+        }
+        
+        // Communication Style
+        if (config.communication_style) {
+            setTimeout(() => {
+                animateSelectUpdate('communication_style', config.communication_style);
+            }, config.personality_traits ? config.personality_traits.length * 200 : 0);
+        }
+        
+        // Speaking Traits
+        if (config.speaking_traits && config.speaking_traits.length > 0) {
+            const baseDelay = (config.personality_traits ? config.personality_traits.length * 200 : 0) + 500;
+            for (let i = 0; i < config.speaking_traits.length; i++) {
+                setTimeout(() => {
+                    animateCheckboxUpdate('speaking_traits[]', config.speaking_traits[i]);
+                }, baseDelay + (i * 200));
+            }
+        }
+        
+        // Interests
+        if (config.interests && config.interests.length > 0) {
+            const baseDelay = (config.personality_traits ? config.personality_traits.length * 200 : 0) + 
+                            (config.speaking_traits ? config.speaking_traits.length * 200 : 0) + 1000;
+            for (let i = 0; i < config.interests.length; i++) {
+                setTimeout(() => {
+                    animateCheckboxUpdate('interest_tags[]', config.interests[i]);
+                }, baseDelay + (i * 200));
+            }
+        }
+        
+        // Appearance fields
+        setTimeout(() => {
+            if (config.hair_color) animateFieldUpdate('hair_color', config.hair_color);
+            if (config.eye_color) animateFieldUpdate('eye_color', config.eye_color);
+            if (config.height) animateFieldUpdate('height', config.height);
+            if (config.build) animateFieldUpdate('build', config.build);
+            if (config.style) animateFieldUpdate('style', config.style);
+        }, 2000);
+        
+        // Text areas
+        setTimeout(() => {
+            if (config.background) animateFieldUpdate('background', config.background);
+            if (config.quirks) animateFieldUpdate('quirks', config.quirks);
+            if (config.occupation) animateFieldUpdate('occupation', config.occupation);
+            if (config.goals) animateFieldUpdate('goals', config.goals);
+        }, 2500);
+        
+        // Relationship fields
+        setTimeout(() => {
+            if (config.relationship_type) animateSelectUpdate('relationship_type', config.relationship_type);
+            if (config.relationship_history) animateFieldUpdate('relationship_history', config.relationship_history);
+            
+            if (config.relationship_dynamics && config.relationship_dynamics.length > 0) {
+                config.relationship_dynamics.forEach((dynamic, i) => {
+                    setTimeout(() => {
+                        animateCheckboxUpdate('relationship_dynamics[]', dynamic);
+                    }, i * 200);
+                });
+            }
+        }, 3000);
+    }
+    
+    function animateFieldUpdate(fieldName, value) {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            field.style.transform = 'scale(1.05)';
+            field.style.transition = 'all 0.3s ease';
+            field.value = value;
+            
+            setTimeout(() => {
+                field.style.transform = 'scale(1)';
+            }, 300);
+        }
+    }
+    
+    function animateSelectUpdate(fieldName, value) {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            field.style.transform = 'scale(1.05)';
+            field.style.transition = 'all 0.3s ease';
+            field.value = value;
+            
+            // Trigger change event for any dependent functionality
+            field.dispatchEvent(new Event('change'));
+            
+            setTimeout(() => {
+                field.style.transform = 'scale(1)';
+            }, 300);
+        }
+    }
+    
+    function animateCheckboxUpdate(fieldName, value) {
+        const checkboxes = document.querySelectorAll(`input[name="${fieldName}"]`);
+        checkboxes.forEach(checkbox => {
+            if (checkbox.value === value) {
+                const label = checkbox.closest('label');
+                if (label) {
+                    label.style.transform = 'scale(1.05)';
+                    label.style.transition = 'all 0.3s ease';
+                    
+                    checkbox.checked = true;
+                    label.classList.add('selected');
+                    
+                    setTimeout(() => {
+                        label.style.transform = 'scale(1)';
+                    }, 300);
+                }
+            }
+        });
+    }
+});
 
 // Custom Tags System
 document.addEventListener('DOMContentLoaded', function() {

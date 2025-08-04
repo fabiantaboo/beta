@@ -248,4 +248,126 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId) {
     }
 }
 
+function generateAEIConfiguration($description) {
+    $apiKey = getAnthropicApiKey();
+    
+    if (!$apiKey) {
+        throw new Exception("Anthropic API key not configured");
+    }
+    
+    // Get all available options from the AEI creator
+    $personalityTraits = [
+        'Adventurous', 'Affectionate', 'Ambitious', 'Analytical', 'Artistic', 'Assertive',
+        'Calm', 'Caring', 'Charismatic', 'Cheerful', 'Confident', 'Creative', 'Curious',
+        'Determined', 'Diplomatic', 'Dramatic', 'Empathetic', 'Energetic', 'Enthusiastic',
+        'Flirty', 'Funny', 'Gentle', 'Honest', 'Humble', 'Independent', 'Intelligent',
+        'Introverted', 'Intuitive', 'Kind', 'Loyal', 'Mysterious', 'Optimistic',
+        'Passionate', 'Patient', 'Playful', 'Protective', 'Rebellious', 'Reserved',
+        'Romantic', 'Sarcastic', 'Sensitive', 'Spontaneous', 'Supportive', 'Thoughtful', 'Witty'
+    ];
+    
+    $communicationStyles = [
+        'casual' => 'Casual and laid-back',
+        'formal' => 'Formal and professional', 
+        'playful' => 'Playful and fun',
+        'romantic' => 'Romantic and affectionate',
+        'intellectual' => 'Intellectual and deep',
+        'supportive' => 'Supportive and caring'
+    ];
+    
+    $speakingTraits = [
+        'uses_emojis', 'uses_slang', 'asks_questions', 'gives_compliments',
+        'tells_jokes', 'shares_stories', 'gives_advice', 'uses_pet_names'
+    ];
+    
+    $interests = [
+        'Art', 'Music', 'Reading', 'Movies', 'Gaming', 'Sports', 'Travel', 'Cooking',
+        'Technology', 'Science', 'History', 'Philosophy', 'Photography', 'Dancing',
+        'Writing', 'Nature', 'Fashion', 'Fitness', 'Meditation', 'Learning'
+    ];
+    
+    $systemPrompt = "You are an AI assistant that analyzes user descriptions and generates AEI (Artificial Emotional Intelligence) configurations. Based on the user's description, you need to select appropriate values from the available options.
+
+Return a JSON response with the following structure:
+{
+    \"name\": \"suggested name\",
+    \"age\": number (18-100),
+    \"gender\": \"male\"|\"female\"|\"non-binary\"|\"other\",
+    \"personality_traits\": [\"trait1\", \"trait2\", ...] (max 8 from available list),
+    \"communication_style\": \"style_key\",
+    \"speaking_traits\": [\"trait1\", \"trait2\", ...] (max 6 from available list),
+    \"interests\": [\"interest1\", \"interest2\", ...] (max 10 from available list),
+    \"hair_color\": \"color\",
+    \"eye_color\": \"color\",
+    \"height\": \"height description\",
+    \"build\": \"build description\",
+    \"style\": \"style description\",
+    \"background\": \"background story (2-3 sentences)\",
+    \"quirks\": \"unique quirks (1-2 sentences)\",
+    \"occupation\": \"occupation\",
+    \"goals\": \"life goals (1-2 sentences)\",
+    \"relationship_type\": \"friend\"|\"romantic_partner\"|\"family_member\"|\"mentor\"|\"companion\",
+    \"relationship_history\": \"relationship history (1-2 sentences)\",
+    \"relationship_dynamics\": [\"dynamic1\", \"dynamic2\", ...] (max 4)
+}
+
+Available personality traits: " . implode(', ', $personalityTraits) . "
+Available communication styles: " . implode(', ', array_keys($communicationStyles)) . "
+Available speaking traits: " . implode(', ', $speakingTraits) . "
+Available interests: " . implode(', ', $interests) . "
+Available relationship dynamics: playful_banter, deep_conversations, shared_activities, emotional_support, intellectual_debates, romantic_tension, protective_instincts, mentoring_guidance
+
+Be creative but realistic. Make sure all selected traits and interests are from the provided lists.";
+    
+    $messages = [
+        [
+            'role' => 'user',
+            'content' => "Please analyze this description and generate an AEI configuration: " . $description
+        ]
+    ];
+    
+    $payload = [
+        'model' => 'claude-3-5-sonnet-20241022',
+        'max_tokens' => 4000,
+        'system' => $systemPrompt,
+        'messages' => $messages
+    ];
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, 'https://api.anthropic.com/v1/messages');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'x-api-key: ' . $apiKey,
+        'anthropic-version: 2023-06-01'
+    ]);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode !== 200) {
+        throw new Exception("API request failed with code: " . $httpCode);
+    }
+    
+    $responseData = json_decode($response, true);
+    if (!$responseData || !isset($responseData['content'][0]['text'])) {
+        throw new Exception("Invalid API response format");
+    }
+    
+    $configText = $responseData['content'][0]['text'];
+    
+    // Extract JSON from the response
+    if (preg_match('/\{.*\}/s', $configText, $matches)) {
+        $config = json_decode($matches[0], true);
+        if ($config) {
+            return $config;
+        }
+    }
+    
+    throw new Exception("Could not parse AI configuration response");
+}
+
 ?>
