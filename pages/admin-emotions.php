@@ -105,7 +105,8 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'reset_session_emo
 
 <?php renderAdminNavigation('admin-emotions'); ?>
 
-<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark">
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
     <div class="px-4 py-6 sm:px-0">
         <div class="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
             <h1 class="text-3xl font-bold leading-tight text-gray-900 dark:text-white">Emotion Monitoring</h1>
@@ -462,5 +463,6 @@ if ($_POST && isset($_POST['action']) && $_POST['action'] === 'reset_session_emo
                 </table>
             </div>
         </div>
+    </div>
     </div>
 </div>
