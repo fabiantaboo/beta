@@ -148,9 +148,9 @@ try {
                 
                 <!-- Compact Progress -->
                 <div class="flex items-center justify-center space-x-4 mb-6">
-                    <div class="flex space-x-2">
+                    <div class="flex space-x-3">
                         <?php for ($i = 1; $i <= $maxSteps; $i++): ?>
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 <?= $i <= $step ? 'bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white shadow-lg' : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400' ?>">
+                            <div class="w-10 h-10 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 <?= $i <= $step ? 'bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white shadow-lg' : 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400' ?>">
                                 <?= $i ?>
                             </div>
                         <?php endfor; ?>

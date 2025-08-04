@@ -25,7 +25,7 @@ try {
                     <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-10 w-auto">
                     <span class="text-xl font-semibold text-gray-900 dark:text-white">Dashboard</span>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 sm:space-x-4">
                     <button 
                         id="theme-toggle" 
                         onclick="toggleTheme()" 
@@ -35,30 +35,30 @@ try {
                         <i class="fas fa-sun sun-icon text-lg"></i>
                         <i class="fas fa-moon moon-icon text-lg"></i>
                     </button>
-                    <a href="/create-aei" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-2 px-4 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200">
-                        <i class="fas fa-plus mr-2"></i>
-                        Create AEI
+                    <a href="/create-aei" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-2 px-3 sm:px-4 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200">
+                        <i class="fas fa-plus sm:mr-2"></i>
+                        <span class="hidden sm:inline">Create AEI</span>
                     </a>
                     <?php if (isAdmin()): ?>
-                        <a href="/admin" class="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium transition-colors border border-orange-300 dark:border-orange-600 px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20">
-                            <i class="fas fa-cog mr-2"></i>
-                            Admin Panel
+                        <a href="/admin" class="text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 font-medium transition-colors border border-orange-300 dark:border-orange-600 px-2 sm:px-3 py-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-900/20">
+                            <i class="fas fa-cog sm:mr-2"></i>
+                            <span class="hidden sm:inline">Admin Panel</span>
                         </a>
                     <?php endif; ?>
-                    <a href="/profile" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
+                    <a href="/profile" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors hidden sm:flex">
                         <i class="fas fa-user mr-2"></i>
                         Profile
                     </a>
                     <a href="/logout" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors">
-                        <i class="fas fa-sign-out-alt mr-2"></i>
-                        Logout
+                        <i class="fas fa-sign-out-alt sm:mr-2"></i>
+                        <span class="hidden sm:inline">Logout</span>
                     </a>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
         <?php if (empty($aeis)): ?>
             <div class="text-center py-16">
                 <div class="mb-8">

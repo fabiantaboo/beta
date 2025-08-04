@@ -52,12 +52,13 @@ if ($isCurrentUserAdmin) {
     <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-4">
-                    <a href="/dashboard" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors">
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <a href="/dashboard" class="flex items-center space-x-1 sm:space-x-2 text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors">
                         <i class="fas fa-arrow-left"></i>
-                        <span class="font-medium">Back to Dashboard</span>
+                        <span class="font-medium hidden sm:inline">Back to Dashboard</span>
+                        <span class="font-medium sm:hidden">Back</span>
                     </a>
-                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-8 w-auto">
+                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-6 sm:h-8 w-auto">
                 </div>
                 <div class="flex items-center space-x-4">
                     <button 
@@ -176,7 +177,7 @@ if ($isCurrentUserAdmin) {
                 </button>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 text-xs">
                 <?php 
                 $emotionIcons = [
                     // Grundemotionen (Plutchik)
@@ -283,7 +284,7 @@ if ($isCurrentUserAdmin) {
             <?php else: ?>
                 <?php foreach ($messages as $message): ?>
                     <div class="flex <?= $message['sender_type'] === 'user' ? 'justify-end' : 'justify-start' ?>">
-                        <div class="flex <?= $message['sender_type'] === 'user' ? 'flex-row-reverse' : 'flex-row' ?> items-end space-x-2 max-w-xs lg:max-w-md">
+                        <div class="flex <?= $message['sender_type'] === 'user' ? 'flex-row-reverse' : 'flex-row' ?> items-end space-x-2 max-w-sm sm:max-w-md lg:max-w-lg">
                             <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center <?= $message['sender_type'] === 'user' ? 'bg-gray-500 dark:bg-gray-600 ml-2' : 'bg-gradient-to-br from-ayuni-aqua to-ayuni-blue mr-2' ?>">
                                 <span class="text-xs font-bold <?= $message['sender_type'] === 'user' ? 'text-white' : 'text-white' ?>">
                                     <?= $message['sender_type'] === 'user' ? 'U' : strtoupper(substr($aei['name'], 0, 1)) ?>
@@ -302,7 +303,7 @@ if ($isCurrentUserAdmin) {
         </div>
 
         <!-- Message Input -->
-        <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+        <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 sm:p-4">
             <!-- Error/Success Messages -->
             <div id="chat-alerts" class="hidden mb-4"></div>
             
@@ -327,7 +328,7 @@ if ($isCurrentUserAdmin) {
                 </div>
             </div>
             
-            <form id="chat-form" class="flex space-x-4">
+            <form id="chat-form" class="flex space-x-2 sm:space-x-4">
                 <input type="hidden" id="csrf-token" value="<?= generateCSRFToken() ?>">
                 <div class="flex-1">
                     <textarea 
@@ -343,10 +344,10 @@ if ($isCurrentUserAdmin) {
                 <button 
                     type="submit" 
                     id="send-button"
-                    class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-4 sm:px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <i class="fas fa-paper-plane mr-2"></i>
-                    <span id="send-text">Send</span>
+                    <i class="fas fa-paper-plane sm:mr-2"></i>
+                    <span id="send-text" class="hidden sm:inline">Send</span>
                 </button>
             </form>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">

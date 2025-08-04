@@ -151,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                 Gender Identity
                             </label>
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <label class="gender-option flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                     <input type="radio" name="gender" value="Female" class="sr-only" <?= ($_POST['gender'] ?? '') === 'Female' ? 'checked' : '' ?>>
                                     <i class="fas fa-venus text-pink-500 mr-2"></i>
@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 Core Personality Traits
                                 <span class="text-xs text-gray-500 ml-2">(Select 3-6 traits that best describe them)</span>
                             </label>
-                            <div id="personality-traits" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <div id="personality-traits" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                 <?php 
                                 $personalityTraits = [
                                     'Cheerful', 'Serious', 'Playful', 'Calm', 'Energetic', 'Thoughtful',
@@ -435,7 +435,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 Interests & Hobbies
                                 <span class="text-xs text-gray-500 ml-2">(Select what they're passionate about)</span>
                             </label>
-                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                 <?php 
                                 $interestOptions = [
                                     'Art', 'Music', 'Books', 'Movies', 'Gaming', 'Sports', 'Cooking', 'Travel',
