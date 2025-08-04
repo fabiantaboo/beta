@@ -78,21 +78,53 @@ $formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
                             if (!empty($formattedEmotions['strong'])) {
                                 $primaryEmotion = explode(':', $formattedEmotions['strong'][0])[0];
                                 $emotionIcon = match($primaryEmotion) {
+                                    // Grundemotionen (Plutchik)
                                     'joy' => 'fa-smile',
-                                    'love' => 'fa-heart',
-                                    'trust' => 'fa-handshake',
                                     'sadness' => 'fa-frown',
-                                    'anger' => 'fa-angry',
                                     'fear' => 'fa-exclamation-triangle',
+                                    'anger' => 'fa-angry',
+                                    'surprise' => 'fa-surprise',
+                                    'disgust' => 'fa-grimace',
+                                    'trust' => 'fa-handshake',
+                                    'anticipation' => 'fa-clock',
+                                    
+                                    // Erweiterte Emotionen
+                                    'shame' => 'fa-eye-slash',
+                                    'love' => 'fa-heart',
+                                    'contempt' => 'fa-smirk',
+                                    'loneliness' => 'fa-user-times',
+                                    'pride' => 'fa-medal',
+                                    'envy' => 'fa-eye',
+                                    'nostalgia' => 'fa-history',
+                                    'gratitude' => 'fa-hands',
+                                    'frustration' => 'fa-fist-raised',
+                                    'boredom' => 'fa-yawn',
+                                    
                                     default => 'fa-brain'
                                 };
                                 $emotionColor = match($primaryEmotion) {
+                                    // Grundemotionen (Plutchik)
                                     'joy' => 'text-yellow-400',
-                                    'love' => 'text-pink-400',
-                                    'trust' => 'text-green-400',
                                     'sadness' => 'text-blue-400',
-                                    'anger' => 'text-red-400',
                                     'fear' => 'text-yellow-600',
+                                    'anger' => 'text-red-400',
+                                    'surprise' => 'text-cyan-400',
+                                    'disgust' => 'text-green-600',
+                                    'trust' => 'text-green-400',
+                                    'anticipation' => 'text-indigo-400',
+                                    
+                                    // Erweiterte Emotionen
+                                    'shame' => 'text-gray-600',
+                                    'love' => 'text-pink-400',
+                                    'contempt' => 'text-purple-600',
+                                    'loneliness' => 'text-gray-400',
+                                    'pride' => 'text-purple-400',
+                                    'envy' => 'text-emerald-600',
+                                    'nostalgia' => 'text-amber-600',
+                                    'gratitude' => 'text-orange-400',
+                                    'frustration' => 'text-red-600',
+                                    'boredom' => 'text-slate-400',
+                                    
                                     default => 'text-gray-400'
                                 };
                                 ?>
@@ -138,21 +170,30 @@ $formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
                 </button>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 text-xs">
                 <?php 
                 $emotionIcons = [
+                    // Grundemotionen (Plutchik)
                     'joy' => ['icon' => 'fa-smile', 'color' => 'text-yellow-500'],
-                    'love' => ['icon' => 'fa-heart', 'color' => 'text-pink-500'],
-                    'trust' => ['icon' => 'fa-handshake', 'color' => 'text-green-500'],
-                    'gratitude' => ['icon' => 'fa-hands', 'color' => 'text-orange-500'],
-                    'anticipation' => ['icon' => 'fa-clock', 'color' => 'text-indigo-500'],
-                    'pride' => ['icon' => 'fa-medal', 'color' => 'text-purple-500'],
                     'sadness' => ['icon' => 'fa-frown', 'color' => 'text-blue-500'],
                     'fear' => ['icon' => 'fa-exclamation-triangle', 'color' => 'text-yellow-600'],
                     'anger' => ['icon' => 'fa-angry', 'color' => 'text-red-500'],
-                    'frustration' => ['icon' => 'fa-fist-raised', 'color' => 'text-red-600'],
+                    'surprise' => ['icon' => 'fa-surprise', 'color' => 'text-cyan-500'],
+                    'disgust' => ['icon' => 'fa-grimace', 'color' => 'text-green-600'],
+                    'trust' => ['icon' => 'fa-handshake', 'color' => 'text-green-500'],
+                    'anticipation' => ['icon' => 'fa-clock', 'color' => 'text-indigo-500'],
+                    
+                    // Erweiterte Emotionen
+                    'shame' => ['icon' => 'fa-eye-slash', 'color' => 'text-gray-600'],
+                    'love' => ['icon' => 'fa-heart', 'color' => 'text-pink-500'],
+                    'contempt' => ['icon' => 'fa-smirk', 'color' => 'text-purple-600'],
                     'loneliness' => ['icon' => 'fa-user-times', 'color' => 'text-gray-500'],
-                    'shame' => ['icon' => 'fa-eye-slash', 'color' => 'text-gray-600']
+                    'pride' => ['icon' => 'fa-medal', 'color' => 'text-purple-500'],
+                    'envy' => ['icon' => 'fa-eye', 'color' => 'text-emerald-600'],
+                    'nostalgia' => ['icon' => 'fa-history', 'color' => 'text-amber-600'],
+                    'gratitude' => ['icon' => 'fa-hands', 'color' => 'text-orange-500'],
+                    'frustration' => ['icon' => 'fa-fist-raised', 'color' => 'text-red-600'],
+                    'boredom' => ['icon' => 'fa-yawn', 'color' => 'text-slate-500']
                 ];
                 
                 // Show strongest emotions first
@@ -162,10 +203,9 @@ $formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
                     $formattedEmotions['mild'] ?? []
                 );
                 
+                // Show all emotions, sorted by intensity
                 $displayedCount = 0;
                 foreach ($allEmotions as $emotionText) {
-                    if ($displayedCount >= 8) break; // Limit display
-                    
                     preg_match('/^(\w+):\s*(.+)$/', $emotionText, $matches);
                     if (count($matches) === 3) {
                         $emotion = $matches[1];
@@ -174,12 +214,35 @@ $formattedEmotions = $emotions->formatEmotionsForDisplay($currentEmotions);
                         if (isset($emotionIcons[$emotion])) {
                             $config = $emotionIcons[$emotion];
                             $intensity = $value >= 0.7 ? 'strong' : ($value >= 0.4 ? 'moderate' : 'mild');
-                            $bgColor = $value >= 0.7 ? 'bg-opacity-20' : 'bg-opacity-10';
+                            $bgColor = $value >= 0.7 ? 'bg-opacity-20' : ($value >= 0.4 ? 'bg-opacity-15' : 'bg-opacity-10');
                             ?>
-                            <div class="flex items-center space-x-2 px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 <?= $bgColor ?>">
-                                <i class="fas <?= $config['icon'] ?> <?= $config['color'] ?>"></i>
-                                <span class="text-gray-700 dark:text-gray-300 capitalize"><?= $emotion ?></span>
-                                <span class="ml-auto font-medium text-gray-900 dark:text-white"><?= number_format($value, 1) ?></span>
+                            <div class="flex items-center justify-between px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 <?= $bgColor ?>">
+                                <div class="flex items-center space-x-2 min-w-0">
+                                    <i class="fas <?= $config['icon'] ?> <?= $config['color'] ?> flex-shrink-0"></i>
+                                    <span class="text-gray-700 dark:text-gray-300 capitalize text-xs truncate"><?= $emotion ?></span>
+                                </div>
+                                <span class="font-medium text-gray-900 dark:text-white text-xs ml-1"><?= number_format($value, 1) ?></span>
+                            </div>
+                            <?php
+                            $displayedCount++;
+                        }
+                    }
+                }
+                
+                // Show any remaining emotions that weren't in the formatted lists
+                foreach (Emotions::EMOTIONS as $emotion) {
+                    if (!array_key_exists($emotion, array_flip(array_map(function($e) { return explode(':', $e)[0]; }, $allEmotions)))) {
+                        $value = $currentEmotions[$emotion] ?? 0.5;
+                        if ($value > 0.0 && isset($emotionIcons[$emotion])) {
+                            $config = $emotionIcons[$emotion];
+                            $bgColor = 'bg-opacity-5';
+                            ?>
+                            <div class="flex items-center justify-between px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 <?= $bgColor ?>">
+                                <div class="flex items-center space-x-2 min-w-0">
+                                    <i class="fas <?= $config['icon'] ?> <?= $config['color'] ?> flex-shrink-0 opacity-60"></i>
+                                    <span class="text-gray-700 dark:text-gray-300 capitalize text-xs truncate opacity-60"><?= $emotion ?></span>
+                                </div>
+                                <span class="font-medium text-gray-900 dark:text-white text-xs ml-1 opacity-60"><?= number_format($value, 1) ?></span>
                             </div>
                             <?php
                             $displayedCount++;
