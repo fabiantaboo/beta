@@ -7,8 +7,8 @@ require_once __DIR__ . '/../includes/social_contact_manager.php';
 $processor = new BackgroundSocialProcessor($pdo);
 $socialManager = new SocialContactManager($pdo);
 
-$message = '';
-$messageType = 'info';
+$error = null;
+$success = null;
 
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -18,11 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
         case 'process_all':
             try {
                 $count = $processor->processAllAEISocial();
-                $message = "Processed social environments for $count AEIs successfully.";
-                $messageType = 'success';
+                $success = "Processed social environments for $count AEIs successfully.";
             } catch (Exception $e) {
-                $message = "Error processing AEIs: " . $e->getMessage();
-                $messageType = 'error';
+                $error = "Error processing AEIs: " . $e->getMessage();
             }
             break;
             
@@ -32,15 +30,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                 try {
                     $result = $processor->initializeAEISocialEnvironment($aeiId);
                     if ($result) {
-                        $message = "Successfully initialized social environment for AEI.";
-                        $messageType = 'success';
+                        $success = "Successfully initialized social environment for AEI.";
                     } else {
-                        $message = "Failed to initialize social environment.";
-                        $messageType = 'error';
+                        $error = "Failed to initialize social environment.";
                     }
                 } catch (Exception $e) {
-                    $message = "Error initializing AEI: " . $e->getMessage();
-                    $messageType = 'error';
+                    $error = "Error initializing AEI: " . $e->getMessage();
                 }
             }
             break;
@@ -51,15 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                 try {
                     $result = $processor->processSingleAEI($aeiId);
                     if ($result['success']) {
-                        $message = "Generated {$result['interactions_generated']} new interactions for AEI.";
-                        $messageType = 'success';
+                        $success = "Generated {$result['interactions_generated']} new interactions for AEI.";
                     } else {
-                        $message = "Error: " . $result['error'];
-                        $messageType = 'error';
+                        $error = "Error: " . $result['error'];
                     }
                 } catch (Exception $e) {
-                    $message = "Error processing AEI: " . $e->getMessage();
-                    $messageType = 'error';
+                    $error = "Error processing AEI: " . $e->getMessage();
                 }
             }
             break;
@@ -67,11 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
         case 'cleanup':
             try {
                 $count = $processor->cleanupOldInteractions();
-                $message = "Cleaned up $count old interactions successfully.";
-                $messageType = 'success';
+                $success = "Cleaned up $count old interactions successfully.";
             } catch (Exception $e) {
-                $message = "Error during cleanup: " . $e->getMessage();
-                $messageType = 'error';
+                $error = "Error during cleanup: " . $e->getMessage();
             }
             break;
     }
@@ -130,132 +120,192 @@ try {
 }
 ?>
 
-<div class="min-h-screen bg-ayuni-dark text-white">
-    <div class="container mx-auto px-6 py-8">
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold mb-2">Social System Management</h1>
-            <p class="text-gray-300">Manage AEI social environments and background processing</p>
-        </div>
+<div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark">
+    <?php renderAdminNavigation('admin-social'); ?>
 
-        <!-- Messages -->
-        <?php if ($message): ?>
-        <div class="mb-6 p-4 rounded-lg <?= $messageType === 'success' ? 'bg-green-800 text-green-100' : ($messageType === 'error' ? 'bg-red-800 text-red-100' : 'bg-blue-800 text-blue-100') ?>">
-            <?= htmlspecialchars($message) ?>
-        </div>
-        <?php endif; ?>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <?php renderAdminPageHeader('Social System Management', 'Manage AEI social environments and background processing'); ?>
+
+        <?php renderAdminAlerts($error, $success); ?>
 
         <!-- Statistics -->
         <?php if ($stats): ?>
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-            <div class="bg-ayuni-blue/20 rounded-lg p-6">
-                <h3 class="text-lg font-semibold mb-2">Total AEIs</h3>
-                <p class="text-3xl font-bold text-ayuni-aqua"><?= $stats['total_aeis'] ?></p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-ayuni-blue to-ayuni-aqua rounded-lg flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total AEIs</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white"><?= $stats['total_aeis'] ?></p>
+                    </div>
+                </div>
             </div>
-            <div class="bg-ayuni-aqua/20 rounded-lg p-6">
-                <h3 class="text-lg font-semibold mb-2">Social AEIs</h3>
-                <p class="text-3xl font-bold text-ayuni-aqua"><?= $stats['social_aeis'] ?></p>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-users-cog text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Social AEIs</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white"><?= $stats['social_aeis'] ?></p>
+                    </div>
+                </div>
             </div>
-            <div class="bg-green-900/20 rounded-lg p-6">
-                <h3 class="text-lg font-semibold mb-2">Total Contacts</h3>
-                <p class="text-3xl font-bold text-green-400"><?= $stats['total_contacts'] ?></p>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-address-book text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Contacts</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white"><?= $stats['total_contacts'] ?></p>
+                    </div>
+                </div>
             </div>
-            <div class="bg-purple-900/20 rounded-lg p-6">
-                <h3 class="text-lg font-semibold mb-2">Interactions</h3>
-                <p class="text-3xl font-bold text-purple-400"><?= $stats['total_interactions'] ?></p>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-comments text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Interactions</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white"><?= number_format($stats['total_interactions']) ?></p>
+                    </div>
+                </div>
             </div>
-            <div class="bg-orange-900/20 rounded-lg p-6">
-                <h3 class="text-lg font-semibold mb-2">Unprocessed</h3>
-                <p class="text-3xl font-bold text-orange-400"><?= $stats['unprocessed_interactions'] ?></p>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-clock text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Unprocessed</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white"><?= $stats['unprocessed_interactions'] ?></p>
+                    </div>
+                </div>
             </div>
         </div>
         <?php endif; ?>
 
         <!-- Actions -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <!-- Global Actions -->
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">Global Actions</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Global Actions</h3>
                 
                 <form method="post" class="space-y-4">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
                     <button type="submit" name="action" value="process_all" 
-                            class="w-full bg-ayuni-blue hover:bg-ayuni-blue/80 text-white font-bold py-2 px-4 rounded">
+                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ayuni-blue hover:bg-ayuni-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-blue transition-colors">
+                        <i class="fas fa-play mr-2"></i>
                         Process All AEI Social Environments
                     </button>
                     
                     <button type="submit" name="action" value="cleanup"
-                            class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                        <i class="fas fa-trash-alt mr-2"></i>
                         Cleanup Old Interactions
                     </button>
                 </form>
             </div>
 
             <!-- Last Cron Run -->
-            <div class="bg-gray-800 rounded-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">Last Background Process</h2>
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Last Background Process</h3>
                 
                 <?php if ($lastRunData): ?>
-                <div class="space-y-2 text-sm">
-                    <p><strong>Time:</strong> <?= htmlspecialchars($lastRunData['timestamp']) ?></p>
-                    <p><strong>Processed AEIs:</strong> <?= $lastRunData['processed_aeis'] ?></p>
-                    <p><strong>Cleaned Interactions:</strong> <?= $lastRunData['cleaned_interactions'] ?></p>
-                    <p><strong>Execution Time:</strong> <?= $lastRunData['execution_time'] ?>s</p>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Time:</span>
+                        <span class="text-sm text-gray-900 dark:text-white"><?= htmlspecialchars($lastRunData['timestamp']) ?></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Processed AEIs:</span>
+                        <span class="text-sm text-gray-900 dark:text-white"><?= $lastRunData['processed_aeis'] ?></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Cleaned Interactions:</span>
+                        <span class="text-sm text-gray-900 dark:text-white"><?= $lastRunData['cleaned_interactions'] ?></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Execution Time:</span>
+                        <span class="text-sm text-gray-900 dark:text-white"><?= $lastRunData['execution_time'] ?>s</span>
+                    </div>
                 </div>
                 <?php else: ?>
-                <p class="text-gray-400">No background processing data available</p>
+                <p class="text-gray-500 dark:text-gray-400">No background processing data available</p>
                 <?php endif; ?>
                 
-                <div class="mt-4 p-3 bg-gray-700 rounded text-xs">
-                    <strong>Cron Job Setup:</strong><br>
-                    <code class="text-ayuni-aqua">0 */6 * * * php <?= __DIR__ ?>/../social_background_cron.php</code>
+                <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cron Job Setup:</p>
+                    <code class="text-xs text-gray-600 dark:text-gray-400 font-mono">0 STAR/6 * * * php <?= dirname(__DIR__) ?>/social_background_cron.php</code>
+                    <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">(Replace STAR with asterisk symbol)</p>
                 </div>
             </div>
         </div>
 
         <!-- AEI Management -->
-        <div class="bg-gray-800 rounded-lg p-6">
-            <h2 class="text-xl font-semibold mb-4">AEI Social Management</h2>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">AEI Social Management</h3>
+            </div>
             
-            <?php if (!empty($aeis)): ?>
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="border-b border-gray-600">
-                        <tr>
-                            <th class="py-3 px-4">AEI Name</th>
-                            <th class="py-3 px-4">Social Status</th>
-                            <th class="py-3 px-4">Contacts</th>
-                            <th class="py-3 px-4">Interactions</th>
-                            <th class="py-3 px-4">Actions</th>
+                <?php if (!empty($aeis)): ?>
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                            <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">AEI Name</th>
+                            <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Social Status</th>
+                            <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contacts</th>
+                            <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Interactions</th>
+                            <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                         <?php foreach ($aeis as $aei): ?>
-                        <tr class="border-b border-gray-700 hover:bg-gray-700/50">
-                            <td class="py-3 px-4 font-medium"><?= htmlspecialchars($aei['name']) ?></td>
-                            <td class="py-3 px-4">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td class="py-4 px-6">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-gradient-to-r from-ayuni-blue to-ayuni-aqua rounded-full flex items-center justify-center mr-3">
+                                        <i class="fas fa-robot text-white text-sm"></i>
+                                    </div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></div>
+                                </div>
+                            </td>
+                            <td class="py-4 px-6">
                                 <?php if ($aei['social_initialized']): ?>
-                                    <span class="bg-green-600 text-white px-2 py-1 rounded text-xs">Initialized</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400">
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        Initialized
+                                    </span>
                                 <?php else: ?>
-                                    <span class="bg-gray-600 text-white px-2 py-1 rounded text-xs">Not Initialized</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Not Initialized
+                                    </span>
                                 <?php endif; ?>
                             </td>
-                            <td class="py-3 px-4"><?= $aei['contact_count'] ?></td>
-                            <td class="py-3 px-4"><?= $aei['interaction_count'] ?></td>
-                            <td class="py-3 px-4">
-                                <form method="post" class="inline-flex space-x-2">
+                            <td class="py-4 px-6 text-sm text-gray-900 dark:text-white"><?= $aei['contact_count'] ?></td>
+                            <td class="py-4 px-6 text-sm text-gray-900 dark:text-white"><?= number_format($aei['interaction_count']) ?></td>
+                            <td class="py-4 px-6">
+                                <form method="post" class="inline-flex">
                                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                                     <input type="hidden" name="aei_id" value="<?= $aei['id'] ?>">
                                     
                                     <?php if (!$aei['social_initialized']): ?>
                                     <button type="submit" name="action" value="initialize_aei"
-                                            class="bg-ayuni-aqua hover:bg-ayuni-aqua/80 text-white px-3 py-1 rounded text-xs">
+                                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-ayuni-aqua hover:bg-ayuni-aqua/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-aqua transition-colors">
+                                        <i class="fas fa-plus mr-1"></i>
                                         Initialize
                                     </button>
                                     <?php else: ?>
                                     <button type="submit" name="action" value="process_single"
-                                            class="bg-ayuni-blue hover:bg-ayuni-blue/80 text-white px-3 py-1 rounded text-xs">
+                                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-ayuni-blue hover:bg-ayuni-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-blue transition-colors">
+                                        <i class="fas fa-sync mr-1"></i>
                                         Process
                                     </button>
                                     <?php endif; ?>
@@ -265,10 +315,15 @@ try {
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+                <?php else: ?>
+                <div class="px-6 py-12 text-center">
+                    <div class="w-12 h-12 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-robot text-gray-400 text-xl"></i>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400">No AEIs found</p>
+                </div>
+                <?php endif; ?>
             </div>
-            <?php else: ?>
-            <p class="text-gray-400">No AEIs found.</p>
-            <?php endif; ?>
         </div>
     </div>
 </div>
