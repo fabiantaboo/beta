@@ -391,5 +391,31 @@ class AEISocialContext {
             return false;
         }
     }
+    
+    /**
+     * Generate relationship coaching suggestions
+     */
+    public function generateRelationshipCoaching($aeiId) {
+        try {
+            $context = $this->getSocialContext($aeiId);
+            $suggestions = [];
+            
+            // Social energy coaching
+            if ($context && $context['social_energy_level'] < 30) {
+                $suggestions[] = "You seem socially drained - consider some alone time to recharge";
+            }
+            
+            // Emotional support coaching
+            if ($context && $context['emotional_support_burden_score'] > 60) {
+                $suggestions[] = "You've been supporting many friends - remember your own needs too";
+            }
+            
+            return array_slice($suggestions, 0, 3);
+            
+        } catch (Exception $e) {
+            error_log("Error generating relationship coaching: " . $e->getMessage());
+            return [];
+        }
+    }
 }
 ?>

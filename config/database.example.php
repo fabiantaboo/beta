@@ -160,10 +160,27 @@ function createTablesIfNotExist($pdo) {
             appearance_description TEXT,
             background_story TEXT,
             
-            -- Relationship with AEI
+            -- NEW: Advanced Psychological Profile
+            psychological_profile JSON,
+            attachment_style ENUM('secure', 'anxious', 'avoidant', 'disorganized') DEFAULT 'secure',
+            communication_patterns JSON,
+            life_phase ENUM('exploration', 'establishment', 'maintenance', 'legacy') DEFAULT 'establishment',
+            core_wounds JSON,
+            growth_areas JSON,
+            
+            -- Relationship with AEI (ENHANCED)
             relationship_type ENUM('close_friend', 'friend', 'family', 'work_colleague', 'romantic_interest', 'acquaintance') NOT NULL,
             relationship_strength INT DEFAULT 50,
             contact_frequency ENUM('daily', 'weekly', 'monthly', 'rarely') DEFAULT 'weekly',
+            
+            -- NEW: Relationship Evolution Tracking
+            relationship_evolution JSON,
+            trust_level DECIMAL(3,2) DEFAULT 0.5,
+            intimacy_level DECIMAL(3,2) DEFAULT 0.5,
+            conflict_history JSON,
+            shared_experiences JSON,
+            communication_frequency_trend ENUM('increasing', 'stable', 'decreasing') DEFAULT 'stable',
+            last_interaction_sentiment DECIMAL(3,2) DEFAULT 0.5,
             
             -- Dynamic life (develops in background)
             current_life_situation TEXT,
@@ -171,64 +188,305 @@ function createTablesIfNotExist($pdo) {
             current_concerns TEXT,
             current_goals TEXT,
             
+            -- NEW: Advanced Life Context
+            life_event_history JSON,
+            current_life_phase_challenges TEXT,
+            seasonal_mood_patterns JSON,
+            cultural_background JSON,
+            
+            -- NEW: Memory System
+            episodic_memories JSON,
+            semantic_knowledge JSON,
+            emotional_associations JSON,
+            procedural_patterns JSON,
+            working_memory_topics JSON,
+            
             -- Interaction tracking
             last_contact_initiated TIMESTAMP,
             last_life_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_conflict_date TIMESTAMP NULL,
+            last_positive_interaction TIMESTAMP NULL,
             
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN DEFAULT TRUE,
             
             FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
             INDEX idx_aei_contacts (aei_id, relationship_type),
-            INDEX idx_active_contacts (aei_id, is_active)
+            INDEX idx_active_contacts (aei_id, is_active),
+            INDEX idx_trust_intimacy (aei_id, trust_level, intimacy_level)
         )",
         'aei_contact_interactions' => "CREATE TABLE IF NOT EXISTS aei_contact_interactions (
             id VARCHAR(32) PRIMARY KEY,
             aei_id VARCHAR(32) NOT NULL,
             contact_id VARCHAR(32) NOT NULL,
             
-            -- Interaction details
-            interaction_type ENUM('shares_news', 'asks_for_advice', 'invites_to_activity', 'shares_problem', 'celebrates_together', 'casual_chat') NOT NULL,
+            -- Interaction details (EXPANDED)
+            interaction_type ENUM('shares_news', 'asks_for_advice', 'invites_to_activity', 'shares_problem', 'celebrates_together', 'casual_chat', 'asks_for_favor', 'shares_gossip', 'expresses_concern', 'apologizes', 'expresses_jealousy', 'seeks_validation', 'shares_secret', 'offers_help', 'cancels_plans', 'expresses_conflict', 'seeks_reconciliation', 'social_media_interaction', 'group_event_mention') NOT NULL,
             interaction_context TEXT,
             contact_message TEXT,
+            
+            -- NEW: Advanced Interaction Details
+            interaction_subtype VARCHAR(100),
+            emotional_tone ENUM('very_positive', 'positive', 'neutral', 'negative', 'very_negative') DEFAULT 'neutral',
+            urgency_level ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+            privacy_level ENUM('public', 'semi_private', 'private', 'secret') DEFAULT 'private',
+            
+            -- NEW: Cross-Contact Context
+            mentions_other_contacts JSON,
+            group_interaction_id VARCHAR(32) NULL,
+            initiated_by ENUM('contact', 'aei', 'system') DEFAULT 'contact',
             
             -- AEI Response (simulated internal dialogue)
             aei_response TEXT,
             aei_thoughts TEXT,
+            aei_internal_conflict TEXT,
             
-            -- Emotional impact on AEI
+            -- NEW: Advanced Response Analysis
+            aei_response_strategy ENUM('supportive', 'advisory', 'celebratory', 'concerned', 'boundary_setting', 'conflict_avoidant', 'direct_confrontation') NULL,
+            conversation_satisfaction_score DECIMAL(3,2) DEFAULT 0.5,
+            
+            -- Emotional impact on AEI (ENHANCED)
             aei_emotional_response JSON,
-            relationship_impact INT DEFAULT 0,
+            relationship_impact DECIMAL(4,2) DEFAULT 0.0,
+            trust_impact DECIMAL(3,2) DEFAULT 0.0,
+            intimacy_impact DECIMAL(3,2) DEFAULT 0.0,
+            
+            -- NEW: Conflict & Resolution Tracking
+            is_conflict BOOLEAN DEFAULT FALSE,
+            conflict_category ENUM('values', 'expectations', 'jealousy', 'betrayal', 'misunderstanding', 'boundary_violation') NULL,
+            resolution_status ENUM('unresolved', 'pending', 'partially_resolved', 'fully_resolved') NULL,
+            resolution_method ENUM('apology', 'compromise', 'boundary_setting', 'time', 'third_party', 'avoidance') NULL,
             
             -- Processing
             processed_for_emotions BOOLEAN DEFAULT FALSE,
             mentioned_in_chat BOOLEAN DEFAULT FALSE,
+            
+            -- NEW: Memory Integration
+            memory_type ENUM('episodic', 'semantic', 'emotional', 'procedural') DEFAULT 'episodic',
+            memory_importance_score DECIMAL(3,2) DEFAULT 0.5,
             
             occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             
             FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
             FOREIGN KEY (contact_id) REFERENCES aei_social_contacts(id) ON DELETE CASCADE,
             INDEX idx_aei_interactions (aei_id, occurred_at),
-            INDEX idx_unprocessed (aei_id, processed_for_emotions)
+            INDEX idx_unprocessed (aei_id, processed_for_emotions),
+            INDEX idx_conflict_tracking (aei_id, is_conflict, resolution_status),
+            INDEX idx_memory_importance (aei_id, memory_importance_score),
+            INDEX idx_group_interactions (group_interaction_id)
         )",
         'aei_social_context' => "CREATE TABLE IF NOT EXISTS aei_social_context (
             aei_id VARCHAR(32) PRIMARY KEY,
             
-            -- Current social state
+            -- Current social state (ENHANCED)
             social_satisfaction INT DEFAULT 70,
             social_energy_level INT DEFAULT 50,
+            social_anxiety_level INT DEFAULT 30,
+            social_confidence_level INT DEFAULT 60,
             
-            -- Chat integration
+            -- NEW: Advanced Social Metrics
+            relationship_portfolio_balance DECIMAL(3,2) DEFAULT 0.5,
+            social_stimulation_preference ENUM('low', 'medium', 'high') DEFAULT 'medium',
+            current_social_phase ENUM('expanding', 'maintaining', 'consolidating', 'withdrawing') DEFAULT 'maintaining',
+            
+            -- Chat integration (ENHANCED)
             recent_social_summary TEXT,
             current_social_concerns TEXT,
             topics_to_mention JSON,
+            conversation_starters JSON,
+            
+            -- NEW: Advanced Context Tracking
+            seasonal_social_patterns JSON,
+            cultural_event_awareness JSON,
+            local_community_involvement JSON,
+            
+            -- NEW: Cross-Contact Analytics
+            social_network_density DECIMAL(3,2) DEFAULT 0.3,
+            friend_group_dynamics JSON,
+            social_influence_map JSON,
+            
+            -- NEW: Emotional Contagion Tracking
+            absorbed_emotions JSON,
+            emotional_support_burden_score INT DEFAULT 0,
+            emotional_resilience_level INT DEFAULT 70,
             
             -- Unprocessed interactions
             unprocessed_interactions_count INT DEFAULT 0,
+            pending_conflict_count INT DEFAULT 0,
+            
+            -- NEW: Predictive Social AI Data
+            predicted_next_contacts JSON,
+            social_pattern_analysis JSON,
+            relationship_health_scores JSON,
             
             last_social_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_social_analysis TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             
             FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE
+        )",
+        'aei_contact_relationships' => "CREATE TABLE IF NOT EXISTS aei_contact_relationships (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            contact_a_id VARCHAR(32) NOT NULL,
+            contact_b_id VARCHAR(32) NOT NULL,
+            
+            -- Cross-Contact Relationship Details
+            relationship_type ENUM('friends', 'colleagues', 'family', 'romantic', 'acquaintances', 'rivals', 'strangers', 'complicated') DEFAULT 'strangers',
+            relationship_strength INT DEFAULT 30,
+            interaction_frequency ENUM('never', 'rarely', 'sometimes', 'often', 'daily') DEFAULT 'never',
+            
+            -- Dynamic Relationship Data
+            shared_history JSON,
+            mutual_interests JSON,
+            conflict_areas JSON,
+            gossip_topics JSON,
+            
+            -- Tracking
+            last_mentioned_together TIMESTAMP NULL,
+            creates_drama_potential BOOLEAN DEFAULT FALSE,
+            
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            is_active BOOLEAN DEFAULT TRUE,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            FOREIGN KEY (contact_a_id) REFERENCES aei_social_contacts(id) ON DELETE CASCADE,
+            FOREIGN KEY (contact_b_id) REFERENCES aei_social_contacts(id) ON DELETE CASCADE,
+            INDEX idx_aei_contact_pairs (aei_id, contact_a_id, contact_b_id),
+            INDEX idx_drama_potential (aei_id, creates_drama_potential)
+        )",
+        'aei_group_events' => "CREATE TABLE IF NOT EXISTS aei_group_events (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            
+            -- Event Details
+            event_name VARCHAR(255) NOT NULL,
+            event_type ENUM('birthday', 'celebration', 'gathering', 'crisis_support', 'work_event', 'family_event', 'social_outing', 'conflict_mediation') NOT NULL,
+            event_description TEXT,
+            
+            -- Participants
+            organizer_contact_id VARCHAR(32),
+            invited_contacts JSON,
+            attending_contacts JSON,
+            aei_participation ENUM('organizing', 'attending', 'invited', 'declined', 'conflicted') DEFAULT 'invited',
+            
+            -- Event Dynamics
+            social_dynamics JSON,
+            drama_level ENUM('peaceful', 'minor_tension', 'moderate_conflict', 'major_drama') DEFAULT 'peaceful',
+            emotional_impact_on_aei JSON,
+            
+            -- Timing
+            planned_date DATETIME NULL,
+            actual_date DATETIME NULL,
+            event_status ENUM('planned', 'happening', 'completed', 'cancelled', 'postponed') DEFAULT 'planned',
+            
+            -- Outcomes
+            relationship_changes JSON,
+            memorable_moments JSON,
+            follow_up_interactions JSON,
+            
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            FOREIGN KEY (organizer_contact_id) REFERENCES aei_social_contacts(id) ON DELETE SET NULL,
+            INDEX idx_aei_events (aei_id, event_status),
+            INDEX idx_event_timeline (aei_id, planned_date)
+        )",
+        'aei_social_media_simulation' => "CREATE TABLE IF NOT EXISTS aei_social_media_simulation (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            contact_id VARCHAR(32) NOT NULL,
+            
+            -- Social Media Post Details
+            post_type ENUM('status_update', 'photo', 'achievement', 'life_event', 'opinion', 'question', 'share') NOT NULL,
+            post_content TEXT NOT NULL,
+            post_mood ENUM('excited', 'happy', 'contemplative', 'worried', 'proud', 'frustrated', 'nostalgic') NOT NULL,
+            
+            -- Interaction Data
+            aei_reaction ENUM('like', 'love', 'care', 'wow', 'sad', 'angry', 'ignore') NULL,
+            aei_comment TEXT NULL,
+            other_reactions_simulation JSON,
+            
+            -- Context
+            triggers_conversation BOOLEAN DEFAULT FALSE,
+            privacy_level ENUM('public', 'friends', 'close_friends', 'private') DEFAULT 'friends',
+            
+            -- Analytics
+            emotional_impact_score DECIMAL(3,2) DEFAULT 0.0,
+            generates_gossip BOOLEAN DEFAULT FALSE,
+            
+            posted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            aei_seen_at TIMESTAMP NULL,
+            aei_reacted_at TIMESTAMP NULL,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            FOREIGN KEY (contact_id) REFERENCES aei_social_contacts(id) ON DELETE CASCADE,
+            INDEX idx_aei_timeline (aei_id, posted_at),
+            INDEX idx_pending_reactions (aei_id, aei_seen_at, aei_reaction)
+        )",
+        'aei_seasonal_cultural_context' => "CREATE TABLE IF NOT EXISTS aei_seasonal_cultural_context (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            
+            -- Seasonal Patterns
+            current_season ENUM('spring', 'summer', 'autumn', 'winter') NOT NULL,
+            seasonal_mood_modifier DECIMAL(3,2) DEFAULT 0.0,
+            seasonal_activity_preferences JSON,
+            seasonal_social_patterns JSON,
+            
+            -- Cultural Events & Holidays
+            active_cultural_events JSON,
+            upcoming_holidays JSON,
+            cultural_traditions JSON,
+            family_holiday_dynamics JSON,
+            
+            -- Local Community Context  
+            local_events JSON,
+            economic_climate_impact ENUM('positive', 'neutral', 'negative') DEFAULT 'neutral',
+            social_trends JSON,
+            community_involvement_level ENUM('minimal', 'moderate', 'active', 'highly_engaged') DEFAULT 'moderate',
+            
+            -- Time-Aware Factors
+            current_life_stage_events JSON,
+            age_appropriate_social_pressures JSON,
+            generational_influences JSON,
+            
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            INDEX idx_seasonal_updates (aei_id, current_season)
+        )",
+        'aei_predictive_social_ai' => "CREATE TABLE IF NOT EXISTS aei_predictive_social_ai (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            
+            -- Pattern Recognition Data
+            interaction_patterns JSON,
+            communication_rhythms JSON,
+            emotional_cycles JSON,
+            relationship_progression_models JSON,
+            
+            -- Predictive Models
+            next_contact_predictions JSON,
+            conflict_probability_scores JSON,
+            relationship_trajectory_analysis JSON,
+            social_need_predictions JSON,
+            
+            -- Learning Metrics
+            prediction_accuracy_scores JSON,
+            behavioral_pattern_confidence JSON,
+            social_intelligence_growth_metrics JSON,
+            
+            -- Coaching Recommendations
+            relationship_coaching_suggestions JSON,
+            communication_improvement_areas JSON,
+            social_skill_development_focus JSON,
+            
+            last_analysis TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            model_version VARCHAR(10) DEFAULT '1.0',
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            INDEX idx_predictions_timeline (aei_id, last_analysis)
         )"
     ];
 
@@ -575,6 +833,145 @@ Be conversational, helpful, and maintain your unique personality. Keep responses
         }
     } catch (PDOException $e) {
         // Error reading columns, ignore
+    }
+    
+    // COMPREHENSIVE MIGRATION FOR ALL NEW ADVANCED SOCIAL FEATURES
+    try {
+        // 1. Migrate aei_social_contacts with all new psychological and relationship columns
+        $stmt = $pdo->query("DESCRIBE aei_social_contacts");
+        if ($stmt) {
+            $contactColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            $advancedContactColumns = [
+                'psychological_profile' => "ALTER TABLE aei_social_contacts ADD COLUMN psychological_profile JSON AFTER background_story",
+                'attachment_style' => "ALTER TABLE aei_social_contacts ADD COLUMN attachment_style ENUM('secure', 'anxious', 'avoidant', 'disorganized') DEFAULT 'secure' AFTER psychological_profile",
+                'communication_patterns' => "ALTER TABLE aei_social_contacts ADD COLUMN communication_patterns JSON AFTER attachment_style",
+                'life_phase' => "ALTER TABLE aei_social_contacts ADD COLUMN life_phase ENUM('exploration', 'establishment', 'maintenance', 'legacy') DEFAULT 'establishment' AFTER communication_patterns",
+                'core_wounds' => "ALTER TABLE aei_social_contacts ADD COLUMN core_wounds JSON AFTER life_phase",
+                'growth_areas' => "ALTER TABLE aei_social_contacts ADD COLUMN growth_areas JSON AFTER core_wounds",
+                'relationship_evolution' => "ALTER TABLE aei_social_contacts ADD COLUMN relationship_evolution JSON AFTER contact_frequency",
+                'trust_level' => "ALTER TABLE aei_social_contacts ADD COLUMN trust_level DECIMAL(3,2) DEFAULT 0.5 AFTER relationship_evolution",
+                'intimacy_level' => "ALTER TABLE aei_social_contacts ADD COLUMN intimacy_level DECIMAL(3,2) DEFAULT 0.5 AFTER trust_level",
+                'conflict_history' => "ALTER TABLE aei_social_contacts ADD COLUMN conflict_history JSON AFTER intimacy_level",
+                'shared_experiences' => "ALTER TABLE aei_social_contacts ADD COLUMN shared_experiences JSON AFTER conflict_history",
+                'communication_frequency_trend' => "ALTER TABLE aei_social_contacts ADD COLUMN communication_frequency_trend ENUM('increasing', 'stable', 'decreasing') DEFAULT 'stable' AFTER shared_experiences",
+                'last_interaction_sentiment' => "ALTER TABLE aei_social_contacts ADD COLUMN last_interaction_sentiment DECIMAL(3,2) DEFAULT 0.5 AFTER communication_frequency_trend",
+                'life_event_history' => "ALTER TABLE aei_social_contacts ADD COLUMN life_event_history JSON AFTER current_goals",
+                'current_life_phase_challenges' => "ALTER TABLE aei_social_contacts ADD COLUMN current_life_phase_challenges TEXT AFTER life_event_history",
+                'seasonal_mood_patterns' => "ALTER TABLE aei_social_contacts ADD COLUMN seasonal_mood_patterns JSON AFTER current_life_phase_challenges",
+                'cultural_background' => "ALTER TABLE aei_social_contacts ADD COLUMN cultural_background JSON AFTER seasonal_mood_patterns",
+                'episodic_memories' => "ALTER TABLE aei_social_contacts ADD COLUMN episodic_memories JSON AFTER cultural_background",
+                'semantic_knowledge' => "ALTER TABLE aei_social_contacts ADD COLUMN semantic_knowledge JSON AFTER episodic_memories",
+                'emotional_associations' => "ALTER TABLE aei_social_contacts ADD COLUMN emotional_associations JSON AFTER semantic_knowledge",
+                'procedural_patterns' => "ALTER TABLE aei_social_contacts ADD COLUMN procedural_patterns JSON AFTER emotional_associations",
+                'working_memory_topics' => "ALTER TABLE aei_social_contacts ADD COLUMN working_memory_topics JSON AFTER procedural_patterns",
+                'last_conflict_date' => "ALTER TABLE aei_social_contacts ADD COLUMN last_conflict_date TIMESTAMP NULL AFTER last_life_update",
+                'last_positive_interaction' => "ALTER TABLE aei_social_contacts ADD COLUMN last_positive_interaction TIMESTAMP NULL AFTER last_conflict_date"
+            ];
+            
+            foreach ($advancedContactColumns as $columnName => $alterSQL) {
+                if (!in_array($columnName, $contactColumns)) {
+                    try {
+                        $pdo->exec($alterSQL);
+                    } catch (PDOException $e) {
+                        error_log("Error adding contact column $columnName: " . $e->getMessage());
+                    }
+                }
+            }
+        }
+        
+        // 2. Migrate aei_contact_interactions with all new interaction types and features
+        $stmt = $pdo->query("DESCRIBE aei_contact_interactions");
+        if ($stmt) {
+            $interactionColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            // First, modify the ENUM for interaction_type to include all new types
+            try {
+                $pdo->exec("ALTER TABLE aei_contact_interactions MODIFY COLUMN interaction_type ENUM('shares_news', 'asks_for_advice', 'invites_to_activity', 'shares_problem', 'celebrates_together', 'casual_chat', 'asks_for_favor', 'shares_gossip', 'expresses_concern', 'apologizes', 'expresses_jealousy', 'seeks_validation', 'shares_secret', 'offers_help', 'cancels_plans', 'expresses_conflict', 'seeks_reconciliation', 'social_media_interaction', 'group_event_mention') NOT NULL");
+            } catch (PDOException $e) {
+                error_log("Error modifying interaction_type enum: " . $e->getMessage());
+            }
+            
+            $advancedInteractionColumns = [
+                'interaction_subtype' => "ALTER TABLE aei_contact_interactions ADD COLUMN interaction_subtype VARCHAR(100) AFTER interaction_type",
+                'emotional_tone' => "ALTER TABLE aei_contact_interactions ADD COLUMN emotional_tone ENUM('very_positive', 'positive', 'neutral', 'negative', 'very_negative') DEFAULT 'neutral' AFTER interaction_context",
+                'urgency_level' => "ALTER TABLE aei_contact_interactions ADD COLUMN urgency_level ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium' AFTER emotional_tone",
+                'privacy_level' => "ALTER TABLE aei_contact_interactions ADD COLUMN privacy_level ENUM('public', 'semi_private', 'private', 'secret') DEFAULT 'private' AFTER urgency_level",
+                'mentions_other_contacts' => "ALTER TABLE aei_contact_interactions ADD COLUMN mentions_other_contacts JSON AFTER privacy_level",
+                'group_interaction_id' => "ALTER TABLE aei_contact_interactions ADD COLUMN group_interaction_id VARCHAR(32) NULL AFTER mentions_other_contacts",
+                'initiated_by' => "ALTER TABLE aei_contact_interactions ADD COLUMN initiated_by ENUM('contact', 'aei', 'system') DEFAULT 'contact' AFTER group_interaction_id",
+                'aei_internal_conflict' => "ALTER TABLE aei_contact_interactions ADD COLUMN aei_internal_conflict TEXT AFTER aei_thoughts",
+                'aei_response_strategy' => "ALTER TABLE aei_contact_interactions ADD COLUMN aei_response_strategy ENUM('supportive', 'advisory', 'celebratory', 'concerned', 'boundary_setting', 'conflict_avoidant', 'direct_confrontation') NULL AFTER aei_internal_conflict",
+                'conversation_satisfaction_score' => "ALTER TABLE aei_contact_interactions ADD COLUMN conversation_satisfaction_score DECIMAL(3,2) DEFAULT 0.5 AFTER aei_response_strategy",
+                'trust_impact' => "ALTER TABLE aei_contact_interactions ADD COLUMN trust_impact DECIMAL(3,2) DEFAULT 0.0 AFTER relationship_impact",
+                'intimacy_impact' => "ALTER TABLE aei_contact_interactions ADD COLUMN intimacy_impact DECIMAL(3,2) DEFAULT 0.0 AFTER trust_impact",
+                'is_conflict' => "ALTER TABLE aei_contact_interactions ADD COLUMN is_conflict BOOLEAN DEFAULT FALSE AFTER intimacy_impact",
+                'conflict_category' => "ALTER TABLE aei_contact_interactions ADD COLUMN conflict_category ENUM('values', 'expectations', 'jealousy', 'betrayal', 'misunderstanding', 'boundary_violation') NULL AFTER is_conflict",
+                'resolution_status' => "ALTER TABLE aei_contact_interactions ADD COLUMN resolution_status ENUM('unresolved', 'pending', 'partially_resolved', 'fully_resolved') NULL AFTER conflict_category",
+                'resolution_method' => "ALTER TABLE aei_contact_interactions ADD COLUMN resolution_method ENUM('apology', 'compromise', 'boundary_setting', 'time', 'third_party', 'avoidance') NULL AFTER resolution_status",
+                'memory_type' => "ALTER TABLE aei_contact_interactions ADD COLUMN memory_type ENUM('episodic', 'semantic', 'emotional', 'procedural') DEFAULT 'episodic' AFTER mentioned_in_chat",
+                'memory_importance_score' => "ALTER TABLE aei_contact_interactions ADD COLUMN memory_importance_score DECIMAL(3,2) DEFAULT 0.5 AFTER memory_type"
+            ];
+            
+            foreach ($advancedInteractionColumns as $columnName => $alterSQL) {
+                if (!in_array($columnName, $interactionColumns)) {
+                    try {
+                        $pdo->exec($alterSQL);
+                    } catch (PDOException $e) {
+                        error_log("Error adding interaction column $columnName: " . $e->getMessage());
+                    }
+                }
+            }
+            
+            // Also change relationship_impact to DECIMAL for more precision
+            try {
+                $pdo->exec("ALTER TABLE aei_contact_interactions MODIFY COLUMN relationship_impact DECIMAL(4,2) DEFAULT 0.0");
+            } catch (PDOException $e) {
+                error_log("Error modifying relationship_impact column: " . $e->getMessage());
+            }
+        }
+        
+        // 3. Migrate aei_social_context with all new advanced metrics
+        $stmt = $pdo->query("DESCRIBE aei_social_context");
+        if ($stmt) {
+            $contextColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            $advancedContextColumns = [
+                'social_anxiety_level' => "ALTER TABLE aei_social_context ADD COLUMN social_anxiety_level INT DEFAULT 30 AFTER social_energy_level",
+                'social_confidence_level' => "ALTER TABLE aei_social_context ADD COLUMN social_confidence_level INT DEFAULT 60 AFTER social_anxiety_level",
+                'relationship_portfolio_balance' => "ALTER TABLE aei_social_context ADD COLUMN relationship_portfolio_balance DECIMAL(3,2) DEFAULT 0.5 AFTER social_confidence_level",
+                'social_stimulation_preference' => "ALTER TABLE aei_social_context ADD COLUMN social_stimulation_preference ENUM('low', 'medium', 'high') DEFAULT 'medium' AFTER relationship_portfolio_balance",
+                'current_social_phase' => "ALTER TABLE aei_social_context ADD COLUMN current_social_phase ENUM('expanding', 'maintaining', 'consolidating', 'withdrawing') DEFAULT 'maintaining' AFTER social_stimulation_preference",
+                'conversation_starters' => "ALTER TABLE aei_social_context ADD COLUMN conversation_starters JSON AFTER topics_to_mention",
+                'seasonal_social_patterns' => "ALTER TABLE aei_social_context ADD COLUMN seasonal_social_patterns JSON AFTER conversation_starters",
+                'cultural_event_awareness' => "ALTER TABLE aei_social_context ADD COLUMN cultural_event_awareness JSON AFTER seasonal_social_patterns",
+                'local_community_involvement' => "ALTER TABLE aei_social_context ADD COLUMN local_community_involvement JSON AFTER cultural_event_awareness",
+                'social_network_density' => "ALTER TABLE aei_social_context ADD COLUMN social_network_density DECIMAL(3,2) DEFAULT 0.3 AFTER local_community_involvement",
+                'friend_group_dynamics' => "ALTER TABLE aei_social_context ADD COLUMN friend_group_dynamics JSON AFTER social_network_density",
+                'social_influence_map' => "ALTER TABLE aei_social_context ADD COLUMN social_influence_map JSON AFTER friend_group_dynamics",
+                'absorbed_emotions' => "ALTER TABLE aei_social_context ADD COLUMN absorbed_emotions JSON AFTER social_influence_map",
+                'emotional_support_burden_score' => "ALTER TABLE aei_social_context ADD COLUMN emotional_support_burden_score INT DEFAULT 0 AFTER absorbed_emotions",
+                'emotional_resilience_level' => "ALTER TABLE aei_social_context ADD COLUMN emotional_resilience_level INT DEFAULT 70 AFTER emotional_support_burden_score",
+                'pending_conflict_count' => "ALTER TABLE aei_social_context ADD COLUMN pending_conflict_count INT DEFAULT 0 AFTER unprocessed_interactions_count",
+                'predicted_next_contacts' => "ALTER TABLE aei_social_context ADD COLUMN predicted_next_contacts JSON AFTER pending_conflict_count",
+                'social_pattern_analysis' => "ALTER TABLE aei_social_context ADD COLUMN social_pattern_analysis JSON AFTER predicted_next_contacts",
+                'relationship_health_scores' => "ALTER TABLE aei_social_context ADD COLUMN relationship_health_scores JSON AFTER social_pattern_analysis",
+                'last_social_analysis' => "ALTER TABLE aei_social_context ADD COLUMN last_social_analysis TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER last_social_update"
+            ];
+            
+            foreach ($advancedContextColumns as $columnName => $alterSQL) {
+                if (!in_array($columnName, $contextColumns)) {
+                    try {
+                        $pdo->exec($alterSQL);
+                    } catch (PDOException $e) {
+                        error_log("Error adding context column $columnName: " . $e->getMessage());
+                    }
+                }
+            }
+        }
+        
+    } catch (PDOException $e) {
+        error_log("Advanced social features migration error: " . $e->getMessage());
     }
     
     // Create admin account if it doesn't exist

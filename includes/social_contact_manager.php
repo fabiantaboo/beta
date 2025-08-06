@@ -479,5 +479,109 @@ class SocialContactManager {
             return false;
         }
     }
+    
+    /**
+     * Get advanced social statistics for an AEI
+     */
+    public function getAdvancedSocialStatistics($aeiId) {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT 
+                    COUNT(DISTINCT c.id) as total_contacts,
+                    AVG(c.relationship_strength) as avg_relationship_strength,
+                    AVG(c.trust_level) as avg_trust_level,
+                    AVG(c.intimacy_level) as avg_intimacy_level,
+                    COUNT(DISTINCT CASE WHEN i.is_conflict = TRUE AND i.resolution_status IS NULL THEN i.id END) as unresolved_conflicts,
+                    COUNT(DISTINCT CASE WHEN i.occurred_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN i.id END) as recent_interactions,
+                    COUNT(DISTINCT CASE WHEN c.communication_frequency_trend = 'increasing' THEN c.id END) as improving_relationships,
+                    COUNT(DISTINCT CASE WHEN c.communication_frequency_trend = 'decreasing' THEN c.id END) as declining_relationships,
+                    COUNT(DISTINCT cr.id) as cross_contact_relationships,
+                    COUNT(DISTINCT CASE WHEN cr.creates_drama_potential = TRUE THEN cr.id END) as drama_potential_relationships
+                FROM aei_social_contacts c
+                LEFT JOIN aei_contact_interactions i ON c.id = i.contact_id
+                LEFT JOIN aei_contact_relationships cr ON c.aei_id = cr.aei_id AND (c.id = cr.contact_a_id OR c.id = cr.contact_b_id)
+                WHERE c.aei_id = ? AND c.is_active = TRUE
+            ");
+            $stmt->execute([$aeiId]);
+            return $stmt->fetch();
+        } catch (PDOException $e) {
+            error_log("Error getting advanced social statistics: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Generate social media posts for contacts
+     */
+    public function generateSocialMediaActivity($contactId) {
+        try {
+            $contact = $this->getContact($contactId);
+            if (!$contact) return false;
+            
+            $recentEvents = json_decode($contact['recent_life_events'], true) ?: [];
+            $personalityTraits = json_decode($contact['personality_traits'], true) ?: [];
+            $culturalBg = json_decode($contact['cultural_background'], true) ?: [];
+            
+            // 30% chance to post something
+            if (mt_rand(1, 100) > 30) {
+                return false;
+            }
+            
+            $prompt = "
+            Generate a social media post for {$contact['name']}:
+            
+            PERSONALITY: " . implode(', ', $personalityTraits) . "
+            CURRENT SITUATION: {$contact['current_life_situation']}
+            RECENT EVENTS: " . implode(', ', $recentEvents) . "
+            CULTURAL BACKGROUND: " . ($culturalBg['ethnicity'] ?? 'mixed') . "
+            LIFE PHASE: {$contact['life_phase']}
+            
+            Create a realistic social media post they might make:
+            
+            {
+                \"post_type\": \"status_update|photo|achievement|life_event|opinion|question|share\",
+                \"post_content\": \"The actual post content\",
+                \"post_mood\": \"excited|happy|contemplative|worried|proud|frustrated|nostalgic\",
+                \"triggers_conversation\": true/false,
+                \"generates_gossip\": true/false
+            }
+            ";
+            
+            $systemPrompt = "Generate realistic social media posts that reflect the person's current life situation and personality.";
+            $messages = [['role' => 'user', 'content' => $prompt]];
+            $response = callAnthropicAPI($messages, $systemPrompt, 600);
+            
+            $postData = json_decode($response, true);
+            if (!$postData) {
+                return false;
+            }
+            
+            // Store the social media post
+            $stmt = $this->pdo->prepare("
+                INSERT INTO aei_social_media_simulation (
+                    id, aei_id, contact_id, post_type, post_content, 
+                    post_mood, triggers_conversation, generates_gossip
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $postId = generateId();
+            $stmt->execute([
+                $postId,
+                $contact['aei_id'],
+                $contactId,
+                $postData['post_type'],
+                $postData['post_content'],
+                $postData['post_mood'],
+                $postData['triggers_conversation'],
+                $postData['generates_gossip']
+            ]);
+            
+            return $postId;
+            
+        } catch (Exception $e) {
+            error_log("Error generating social media activity: " . $e->getMessage());
+            return false;
+        }
+    }
 }
 ?>

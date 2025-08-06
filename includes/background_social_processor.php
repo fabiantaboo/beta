@@ -273,5 +273,30 @@ class BackgroundSocialProcessor {
             ];
         }
     }
+    
+    /**
+     * Get comprehensive social analytics for an AEI
+     */
+    public function getComprehensiveSocialAnalytics($aeiId) {
+        try {
+            $basicStats = $this->getAEISocialStatistics($aeiId);
+            $advancedStats = $this->socialContactManager->getAdvancedSocialStatistics($aeiId);
+            
+            // Get social context
+            $stmt = $this->pdo->prepare("SELECT * FROM aei_social_context WHERE aei_id = ?");
+            $stmt->execute([$aeiId]);
+            $socialContext = $stmt->fetch();
+            
+            return [
+                'basic_stats' => $basicStats,
+                'advanced_stats' => $advancedStats,
+                'social_context' => $socialContext
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Error getting comprehensive social analytics: " . $e->getMessage());
+            return null;
+        }
+    }
 }
 ?>
