@@ -71,13 +71,13 @@ class BackgroundSocialProcessor {
             $interactions = [];
             
             foreach ($contacts as $contact) {
-                // 1. Evolve contact life (25% chance per processing cycle)
-                if (mt_rand(1, 100) <= 25) {
+                // 1. Evolve contact life (60% chance per processing cycle - much more frequent)
+                if (mt_rand(1, 100) <= 60) {
                     $this->socialContactManager->evolveContactLife($contact['id']);
                 }
                 
                 // 2. Check if contact wants to reach out to AEI
-                $contactProbability = $this->calculateContactProbability($contact);
+                $contactProbability = $this->calculateAdvancedContactProbability($contact);
                 
                 if (mt_rand(1, 100) <= ($contactProbability * 100)) {
                     $interaction = $this->socialContactManager->generateContactToAEIInteraction(
@@ -89,7 +89,30 @@ class BackgroundSocialProcessor {
                         $interactions[] = $interaction;
                     }
                 }
+                
+                // 3. Additional chance for spontaneous interactions based on attachment style
+                $spontaneousChance = $this->calculateSpontaneousInteractionChance($contact);
+                if (mt_rand(1, 100) <= ($spontaneousChance * 100)) {
+                    $interaction = $this->socialContactManager->generateContactToAEIInteraction(
+                        $contact['id'], 
+                        $aeiId,
+                        'spontaneous'
+                    );
+                    
+                    if ($interaction) {
+                        $interactions[] = $interaction;
+                    }
+                }
             }
+            
+            // 4. Generate cross-contact interactions and group events
+            $this->processAdvancedSocialDynamics($aeiId, $contacts);
+            
+            // 5. Generate social media activity
+            $this->processSocialMediaActivity($aeiId, $contacts);
+            
+            // 6. Process seasonal/cultural events
+            $this->processSeasonalCulturalEvents($aeiId);
             
             // 3. Update AEI social context if there were new interactions
             if (!empty($interactions)) {
@@ -104,34 +127,131 @@ class BackgroundSocialProcessor {
     }
     
     /**
-     * Calculates probability that a contact reaches out
+     * Advanced probability calculation with psychological and temporal factors
      */
-    private function calculateContactProbability($contact) {
-        // Base frequency probabilities per day
+    private function calculateAdvancedContactProbability($contact) {
+        // Much higher base frequencies for 6-hour intervals (4x per day)
         $baseFrequency = [
-            'daily' => 0.8,
-            'weekly' => 0.3,
-            'monthly' => 0.1,
-            'rarely' => 0.05
+            'daily' => 0.35,        // ~70% chance per day across 4 intervals
+            'weekly' => 0.15,       // ~45% chance per day
+            'monthly' => 0.08,      // ~25% chance per day
+            'rarely' => 0.03        // ~10% chance per day
         ];
         
-        $baseProbability = $baseFrequency[$contact['contact_frequency']] ?? 0.2;
+        $baseProbability = $baseFrequency[$contact['contact_frequency']] ?? 0.12;
         
-        // Adjust based on relationship strength
-        $relationshipMultiplier = $contact['relationship_strength'] / 100;
+        // Relationship strength multiplier (higher impact)
+        $relationshipMultiplier = 0.5 + ($contact['relationship_strength'] / 100) * 1.5;
         
-        // Time since last contact - increase probability if it's been a while
+        // Attachment style multipliers
+        $attachmentMultiplier = $this->getAttachmentStyleContactMultiplier($contact['attachment_style']);
+        
+        // Time since last contact with more aggressive scaling
         $daysSinceLastContact = $this->getDaysSinceLastContact($contact['id']);
-        $timeMultiplier = min(2.0, ($daysSinceLastContact + 1) / 7); // Max 2x after a week
+        $timeMultiplier = 1.0;
         
-        // Reduce if contacted recently
-        if ($daysSinceLastContact < 1) {
-            $timeMultiplier = 0.1;
+        if ($daysSinceLastContact == 0) {
+            $timeMultiplier = 0.2; // Still some chance same day
+        } elseif ($daysSinceLastContact == 1) {
+            $timeMultiplier = 0.8; // Lower chance next day
+        } elseif ($daysSinceLastContact >= 2) {
+            $timeMultiplier = min(3.0, 1.0 + ($daysSinceLastContact - 1) * 0.3); // Increases significantly
         }
         
-        $finalProbability = min(1.0, $baseProbability * $relationshipMultiplier * $timeMultiplier);
+        // Life phase multiplier
+        $lifePhaseMultiplier = $this->getLifePhaseContactMultiplier($contact['life_phase'] ?? 'maintenance');
         
-        return $finalProbability;
+        // Trust and intimacy boost
+        $trustBoost = 1.0 + (($contact['trust_level'] ?? 0.5) * 0.5);
+        $intimacyBoost = 1.0 + (($contact['intimacy_level'] ?? 0.5) * 0.3);
+        
+        // Seasonal modifier
+        $seasonalMultiplier = $this->getSeasonalContactMultiplier();
+        
+        $finalProbability = min(0.95, $baseProbability * 
+                                     $relationshipMultiplier * 
+                                     $attachmentMultiplier * 
+                                     $timeMultiplier * 
+                                     $lifePhaseMultiplier * 
+                                     $trustBoost * 
+                                     $intimacyBoost * 
+                                     $seasonalMultiplier);
+        
+        return max(0.01, $finalProbability); // Minimum 1% chance
+    }
+    
+    /**
+     * Calculate chance for spontaneous interactions based on attachment style
+     */
+    private function calculateSpontaneousInteractionChance($contact) {
+        $attachmentBonuses = [
+            'anxious' => 0.25,      // High need for contact
+            'secure' => 0.15,       // Balanced approach
+            'avoidant' => 0.05,     // Lower spontaneous contact
+            'disorganized' => 0.18  // Unpredictable but frequent
+        ];
+        
+        $baseChance = $attachmentBonuses[$contact['attachment_style']] ?? 0.12;
+        
+        // Current emotional state modifier
+        $emotionalStateMultiplier = 1.0;
+        if (!empty($contact['current_emotional_state'])) {
+            $emotions = json_decode($contact['current_emotional_state'], true);
+            if ($emotions) {
+                // Negative emotions increase contact need
+                $negativeScore = ($emotions['sadness'] ?? 0) + ($emotions['fear'] ?? 0) + ($emotions['anger'] ?? 0);
+                $emotionalStateMultiplier = 1.0 + ($negativeScore * 0.8);
+            }
+        }
+        
+        return min(0.35, $baseChance * $emotionalStateMultiplier);
+    }
+    
+    /**
+     * Get contact multiplier based on attachment style
+     */
+    private function getAttachmentStyleContactMultiplier($attachmentStyle) {
+        $multipliers = [
+            'anxious' => 1.4,       // More frequent contact need
+            'secure' => 1.2,        // Healthy contact patterns
+            'avoidant' => 0.8,      // Less frequent contact
+            'disorganized' => 1.1   // Inconsistent but average
+        ];
+        
+        return $multipliers[$attachmentStyle] ?? 1.0;
+    }
+    
+    /**
+     * Get contact multiplier based on life phase
+     */
+    private function getLifePhaseContactMultiplier($lifePhase) {
+        $multipliers = [
+            'exploration' => 1.3,   // Young, more social
+            'establishment' => 1.1, // Building relationships
+            'maintenance' => 1.0,   // Stable social patterns
+            'legacy' => 0.9        // More selective socializing
+        ];
+        
+        return $multipliers[$lifePhase] ?? 1.0;
+    }
+    
+    /**
+     * Get seasonal contact multiplier
+     */
+    private function getSeasonalContactMultiplier() {
+        $month = date('n');
+        
+        // Winter (Dec, Jan, Feb) - more contact seeking
+        if (in_array($month, [12, 1, 2])) return 1.3;
+        
+        // Spring (Mar, Apr, May) - moderate increase
+        if (in_array($month, [3, 4, 5])) return 1.1;
+        
+        // Summer (Jun, Jul, Aug) - baseline
+        if (in_array($month, [6, 7, 8])) return 1.0;
+        
+        // Fall (Sep, Oct, Nov) - slight increase
+        return 1.15;
     }
     
     /**
@@ -272,6 +392,382 @@ class BackgroundSocialProcessor {
                 'error' => $e->getMessage()
             ];
         }
+    }
+    
+    /**
+     * Process advanced social dynamics (cross-contact relationships, group events)
+     */
+    private function processAdvancedSocialDynamics($aeiId, $contacts) {
+        try {
+            // 25% chance to create/update cross-contact relationships
+            if (mt_rand(1, 100) <= 25 && count($contacts) >= 2) {
+                $this->generateCrossContactRelationship($aeiId, $contacts);
+            }
+            
+            // 15% chance to create group event
+            if (mt_rand(1, 100) <= 15 && count($contacts) >= 3) {
+                $this->generateGroupEvent($aeiId, $contacts);
+            }
+            
+            // 20% chance to update relationship dynamics
+            if (mt_rand(1, 100) <= 20) {
+                $this->evolveRelationshipDynamics($aeiId, $contacts);
+            }
+            
+        } catch (Exception $e) {
+            error_log("Error processing advanced social dynamics: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Process social media activity simulation
+     */
+    private function processSocialMediaActivity($aeiId, $contacts) {
+        try {
+            foreach ($contacts as $contact) {
+                // 30% chance for contact to post something
+                if (mt_rand(1, 100) <= 30) {
+                    $this->generateSocialMediaPost($contact, $aeiId);
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Error processing social media activity: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Process seasonal and cultural events
+     */
+    private function processSeasonalCulturalEvents($aeiId) {
+        try {
+            // 10% chance for seasonal event to affect social dynamics
+            if (mt_rand(1, 100) <= 10) {
+                $this->generateSeasonalEvent($aeiId);
+            }
+            
+            // Update seasonal context if needed
+            $this->updateSeasonalContext($aeiId);
+            
+        } catch (Exception $e) {
+            error_log("Error processing seasonal/cultural events: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Generate cross-contact relationship
+     */
+    private function generateCrossContactRelationship($aeiId, $contacts) {
+        try {
+            // Pick two random contacts
+            $contactA = $contacts[array_rand($contacts)];
+            $contactB = $contacts[array_rand($contacts)];
+            
+            if ($contactA['id'] == $contactB['id']) return;
+            
+            // Check if relationship already exists
+            $stmt = $this->pdo->prepare("
+                SELECT id FROM aei_contact_relationships 
+                WHERE aei_id = ? AND 
+                ((contact_a_id = ? AND contact_b_id = ?) OR 
+                 (contact_a_id = ? AND contact_b_id = ?))
+            ");
+            $stmt->execute([$aeiId, $contactA['id'], $contactB['id'], $contactB['id'], $contactA['id']]);
+            
+            if ($stmt->fetch()) return; // Already exists
+            
+            // Create new relationship
+            $relationshipTypes = ['friends', 'acquaintances', 'colleagues', 'rivals', 'family_friends'];
+            $relationshipType = $relationshipTypes[array_rand($relationshipTypes)];
+            
+            $dramaPotential = $relationshipType === 'rivals' || mt_rand(1, 100) <= 15;
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO aei_contact_relationships (
+                    aei_id, contact_a_id, contact_b_id, relationship_type,
+                    relationship_strength, creates_drama_potential,
+                    affects_aei_interactions, mutual_awareness_level
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            $stmt->execute([
+                $aeiId,
+                $contactA['id'],
+                $contactB['id'], 
+                $relationshipType,
+                mt_rand(20, 90), // Random strength
+                $dramaPotential,
+                mt_rand(1, 100) <= 40, // 40% chance to affect AEI interactions
+                mt_rand(1, 100) <= 60  // 60% chance for high mutual awareness
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Error generating cross-contact relationship: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Generate group event
+     */
+    private function generateGroupEvent($aeiId, $contacts) {
+        try {
+            $eventTypes = [
+                'birthday_party', 'dinner_gathering', 'movie_night', 'game_night',
+                'wedding', 'graduation', 'holiday_celebration', 'work_event',
+                'casual_meetup', 'celebration'
+            ];
+            
+            $eventType = $eventTypes[array_rand($eventTypes)];
+            
+            // Select 3-5 random participants
+            $participantCount = mt_rand(3, min(5, count($contacts)));
+            $participants = array_rand($contacts, $participantCount);
+            if (!is_array($participants)) $participants = [$participants];
+            
+            $participantNames = [];
+            foreach ($participants as $index) {
+                $participantNames[] = $contacts[$index]['name'];
+            }
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO aei_group_events (
+                    aei_id, event_type, event_description, participants_count,
+                    participant_contacts, social_dynamics_created
+                ) VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            
+            $description = $this->generateEventDescription($eventType, $participantNames);
+            
+            $stmt->execute([
+                $aeiId,
+                $eventType,
+                $description,
+                count($participantNames),
+                json_encode($participantNames),
+                mt_rand(1, 100) <= 60 // 60% chance to create new dynamics
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Error generating group event: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Generate social media post
+     */
+    private function generateSocialMediaPost($contact, $aeiId) {
+        try {
+            $platforms = ['instagram', 'facebook', 'twitter', 'linkedin'];
+            $platform = $platforms[array_rand($platforms)];
+            
+            // Simple post content generation
+            $postTypes = [
+                'life_update', 'photo_share', 'thought_share', 'event_announcement',
+                'mood_post', 'achievement', 'question', 'memory_share'
+            ];
+            $postType = $postTypes[array_rand($postTypes)];
+            
+            $content = $this->generateSocialMediaContent($contact, $postType);
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO aei_social_media_simulation (
+                    aei_id, contact_id, platform, post_type, post_content,
+                    likes_count, comments_count, shares_count,
+                    aei_reaction, aei_comment
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            
+            // 70% chance AEI reacts to the post
+            $aeiReacts = mt_rand(1, 100) <= 70;
+            $aeiComment = null;
+            
+            if ($aeiReacts && mt_rand(1, 100) <= 30) { // 30% of reactions include comment
+                $aeiComment = $this->generateAEIComment($content);
+            }
+            
+            $stmt->execute([
+                $aeiId,
+                $contact['id'],
+                $platform,
+                $postType,
+                $content,
+                mt_rand(5, 50), // Likes
+                mt_rand(0, 12), // Comments
+                mt_rand(0, 8),  // Shares
+                $aeiReacts,
+                $aeiComment
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Error generating social media post: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Simple social media content generator
+     */
+    private function generateSocialMediaContent($contact, $postType) {
+        $templates = [
+            'life_update' => [
+                "Starting a new chapter in my life!",
+                "Exciting changes ahead 🌟",
+                "Life has been keeping me busy lately",
+                "Grateful for all the opportunities coming my way"
+            ],
+            'photo_share' => [
+                "Beautiful day out! ☀️",
+                "Captured this amazing moment",
+                "Love this view 📸",
+                "Perfect lighting today"
+            ],
+            'thought_share' => [
+                "Sometimes you just need to appreciate the small things",
+                "Random thought: life is pretty amazing",
+                "Reflecting on how much I've grown this year",
+                "Feeling philosophical today"
+            ],
+            'mood_post' => [
+                "Feeling blessed today 💕",
+                "Having one of those great days!",
+                "Mood: optimistic ✨",
+                "Feeling grateful for good friends"
+            ]
+        ];
+        
+        $options = $templates[$postType] ?? $templates['life_update'];
+        return $options[array_rand($options)];
+    }
+    
+    /**
+     * Generate AEI comment on social media
+     */
+    private function generateAEIComment($postContent) {
+        $responses = [
+            "Love this! 💕",
+            "So happy for you!",
+            "This made me smile 😊",
+            "Beautiful post!",
+            "Thanks for sharing this",
+            "Hope you're doing well!",
+            "Great to see you happy!"
+        ];
+        
+        return $responses[array_rand($responses)];
+    }
+    
+    /**
+     * Generate event description
+     */
+    private function generateEventDescription($eventType, $participants) {
+        $participantList = implode(', ', array_slice($participants, 0, 3));
+        if (count($participants) > 3) {
+            $participantList .= ' and others';
+        }
+        
+        $descriptions = [
+            'birthday_party' => "Birthday celebration with $participantList - great fun and lots of laughs!",
+            'dinner_gathering' => "Lovely dinner gathering with $participantList - amazing food and conversation.",
+            'movie_night' => "Movie night with $participantList - watched a great film together.",
+            'game_night' => "Fun game night with $participantList - competitive but friendly!",
+            'casual_meetup' => "Casual meetup with $participantList - good to catch up with everyone."
+        ];
+        
+        return $descriptions[$eventType] ?? "Social gathering with $participantList - great time together.";
+    }
+    
+    /**
+     * Evolve relationship dynamics
+     */
+    private function evolveRelationshipDynamics($aeiId, $contacts) {
+        try {
+            foreach ($contacts as $contact) {
+                // Small chance to update trust/intimacy levels
+                if (mt_rand(1, 100) <= 15) {
+                    $trustChange = mt_rand(-5, 10) / 100; // Slight bias toward positive
+                    $intimacyChange = mt_rand(-3, 8) / 100;
+                    
+                    $newTrust = max(0, min(1, ($contact['trust_level'] ?? 0.5) + $trustChange));
+                    $newIntimacy = max(0, min(1, ($contact['intimacy_level'] ?? 0.5) + $intimacyChange));
+                    
+                    $stmt = $this->pdo->prepare("
+                        UPDATE aei_social_contacts 
+                        SET trust_level = ?, intimacy_level = ?
+                        WHERE id = ?
+                    ");
+                    $stmt->execute([$newTrust, $newIntimacy, $contact['id']]);
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Error evolving relationship dynamics: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Generate seasonal event
+     */
+    private function generateSeasonalEvent($aeiId) {
+        $month = date('n');
+        $season = $this->getCurrentSeason($month);
+        
+        try {
+            $stmt = $this->pdo->prepare("
+                INSERT INTO aei_seasonal_cultural_context (aei_id, current_season, cultural_period, social_energy_modifier, context_description)
+                VALUES (?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    current_season = VALUES(current_season),
+                    cultural_period = VALUES(cultural_period),
+                    social_energy_modifier = VALUES(social_energy_modifier),
+                    context_description = VALUES(context_description)
+            ");
+            
+            $culturalPeriod = $this->getCulturalPeriod($month);
+            $energyModifier = $this->getSeasonalContactMultiplier();
+            $description = "Seasonal influence: $season brings $culturalPeriod energy to social interactions.";
+            
+            $stmt->execute([$aeiId, $season, $culturalPeriod, $energyModifier, $description]);
+            
+        } catch (Exception $e) {
+            error_log("Error generating seasonal event: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Update seasonal context
+     */
+    private function updateSeasonalContext($aeiId) {
+        // Implementation for updating seasonal context
+        // This would be called regularly to keep context current
+    }
+    
+    /**
+     * Get current season
+     */
+    private function getCurrentSeason($month) {
+        if (in_array($month, [12, 1, 2])) return 'winter';
+        if (in_array($month, [3, 4, 5])) return 'spring';
+        if (in_array($month, [6, 7, 8])) return 'summer';
+        return 'fall';
+    }
+    
+    /**
+     * Get cultural period
+     */
+    private function getCulturalPeriod($month) {
+        $periods = [
+            1 => 'new_year',
+            2 => 'winter_reflection', 
+            3 => 'spring_renewal',
+            4 => 'spring_growth',
+            5 => 'spring_celebration',
+            6 => 'summer_beginning',
+            7 => 'summer_peak',
+            8 => 'summer_endings',
+            9 => 'autumn_transitions',
+            10 => 'autumn_harvest',
+            11 => 'autumn_reflection',
+            12 => 'winter_holidays'
+        ];
+        
+        return $periods[$month] ?? 'normal';
     }
     
     /**
