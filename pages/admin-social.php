@@ -7,7 +7,8 @@ require_once __DIR__ . '/../includes/social_contact_manager.php';
 $processor = new BackgroundSocialProcessor($pdo);
 $socialManager = new SocialContactManager($pdo);
 
-$notifications = [];
+$error = null;
+$success = null;
 
 // Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -18,29 +19,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
             try {
                 $result = $processor->processAllAEISocial();
                 if ($result['success']) {
-                    $notifications[] = [
-                        'type' => 'success',
-                        'title' => 'Alle AEIs verarbeitet!',
-                        'message' => $result['message'] ?? 'Processing erfolgreich',
-                        'details' => $result['details'] ?? null
-                    ];
+                    $details = $result['details'] ?? [];
+                    $message = "✅ ALLE AEIs ERFOLGREICH VERARBEITET!\n\n";
+                    $message .= "📊 Ergebnisse:\n";
+                    $message .= "• {$details['processed_successfully']}/{$details['total_aeis']} AEIs erfolgreich verarbeitet\n";
+                    $message .= "• {$details['total_interactions']} Interaktionen insgesamt generiert\n";
+                    
+                    if (!empty($details['errors'])) {
+                        $message .= "\n⚠️ Warnungen:\n";
+                        foreach (array_slice($details['errors'], 0, 3) as $err) {
+                            $message .= "• " . $err . "\n";
+                        }
+                    }
+                    $success = $message;
                 } else {
-                    $notifications[] = [
-                        'type' => 'error',
-                        'title' => 'Fehler beim Processing',
-                        'message' => $result['error'] ?? 'Unbekannter Fehler',
-                        'error_code' => $result['error_code'] ?? null,
-                        'details' => $result['details'] ?? null
-                    ];
+                    $details = $result['details'] ?? [];
+                    $errorMsg = "❌ PROCESSING FEHLER\n\n";
+                    $errorMsg .= "Hauptfehler: " . ($result['error'] ?? 'Unbekannter Fehler') . "\n";
+                    if (isset($result['error_code'])) {
+                        $errorMsg .= "Error Code: " . $result['error_code'] . "\n";
+                    }
+                    if (!empty($details['errors'])) {
+                        $errorMsg .= "\nDetailfehler:\n";
+                        foreach (array_slice($details['errors'], 0, 3) as $err) {
+                            $errorMsg .= "• " . $err . "\n";
+                        }
+                    }
+                    $error = $errorMsg;
                 }
             } catch (Exception $e) {
-                $notifications[] = [
-                    'type' => 'error',
-                    'title' => 'Kritischer Fehler',
-                    'message' => 'Exception: ' . $e->getMessage(),
-                    'error_code' => 'EXCEPTION',
-                    'details' => ['exception_trace' => $e->getTraceAsString()]
-                ];
+                $error = "💥 KRITISCHER FEHLER\n\nException: " . $e->getMessage() . "\n\nBitte Logs prüfen für Details.";
             }
             break;
             
@@ -50,26 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                 try {
                     $result = $processor->initializeAEISocialEnvironment($aeiId);
                     if ($result) {
-                        $notifications[] = [
-                            'type' => 'success',
-                            'title' => 'AEI Social Environment initialisiert',
-                            'message' => 'Soziales Umfeld wurde erfolgreich eingerichtet'
-                        ];
+                        $success = "✅ AEI SOCIAL ENVIRONMENT INITIALISIERT\n\nSoziales Umfeld wurde erfolgreich für die AEI eingerichtet!";
                     } else {
-                        $notifications[] = [
-                            'type' => 'error',
-                            'title' => 'Initialisierung fehlgeschlagen',
-                            'message' => 'Konnte soziales Umfeld nicht einrichten',
-                            'error_code' => 'INIT_FAILED'
-                        ];
+                        $error = "❌ INITIALISIERUNG FEHLGESCHLAGEN\n\nKonnte das soziale Umfeld nicht einrichten.\nMögliche Ursachen:\n• AEI bereits initialisiert\n• Datenbankfehler\n• API-Problem";
                     }
                 } catch (Exception $e) {
-                    $notifications[] = [
-                        'type' => 'error',
-                        'title' => 'Initialisierungsfehler',
-                        'message' => 'Exception: ' . $e->getMessage(),
-                        'error_code' => 'INIT_EXCEPTION'
-                    ];
+                    $error = "💥 INITIALISIERUNGSFEHLER\n\nException: " . $e->getMessage() . "\n\nBitte Logs prüfen.";
                 }
             }
             break;
@@ -80,28 +74,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                 try {
                     $result = $processor->processSingleAEI($aeiId);
                     if ($result['success']) {
-                        $notifications[] = [
-                            'type' => 'success',
-                            'title' => 'AEI erfolgreich verarbeitet!',
-                            'message' => $result['message'] ?? 'Processing erfolgreich',
-                            'details' => $result['details'] ?? null
-                        ];
+                        $details = $result['details'] ?? [];
+                        $message = "✅ AEI ERFOLGREICH VERARBEITET!\n\n";
+                        $message .= "📊 Aktivitäten generiert:\n";
+                        $message .= "• {$details['interactions_generated']} neue Interaktionen\n";
+                        $message .= "• {$details['social_media_posts']} Social Media Posts\n";
+                        $message .= "• {$details['group_events_created']} Gruppen-Events\n";
+                        $message .= "• {$details['cross_contact_relationships']} Cross-Contact Beziehungen\n";
+                        $message .= "\n👥 {$details['contacts_processed']} Kontakte verarbeitet\n";
+                        
+                        if (!empty($details['warnings'])) {
+                            $message .= "\n⚠️ Hinweise:\n";
+                            foreach ($details['warnings'] as $warning) {
+                                $message .= "• " . $warning . "\n";
+                            }
+                        }
+                        
+                        if (!empty($details['errors'])) {
+                            $message .= "\n🔧 Teil-Fehler (nicht kritisch):\n";
+                            foreach (array_slice($details['errors'], 0, 2) as $err) {
+                                $message .= "• " . $err . "\n";
+                            }
+                        }
+                        
+                        $success = $message;
                     } else {
-                        $notifications[] = [
-                            'type' => 'error',
-                            'title' => 'AEI Processing Fehler',
-                            'message' => $result['error'] ?? 'Unbekannter Fehler',
-                            'error_code' => $result['error_code'] ?? null,
-                            'details' => $result['details'] ?? null
-                        ];
+                        $details = $result['details'] ?? [];
+                        $errorMsg = "❌ AEI PROCESSING FEHLER\n\n";
+                        $errorMsg .= "Hauptfehler: " . ($result['error'] ?? 'Unbekannter Fehler') . "\n";
+                        
+                        if (isset($result['error_code'])) {
+                            $errorMsg .= "Error Code: " . $result['error_code'] . "\n";
+                        }
+                        
+                        if (!empty($details['errors'])) {
+                            $errorMsg .= "\nDetailfehler:\n";
+                            foreach (array_slice($details['errors'], 0, 3) as $err) {
+                                $errorMsg .= "• " . $err . "\n";
+                            }
+                        }
+                        
+                        if (isset($details['contacts_processed'])) {
+                            $errorMsg .= "\n📊 Versucht: {$details['contacts_processed']} Kontakte zu verarbeiten";
+                        }
+                        
+                        $error = $errorMsg;
                     }
                 } catch (Exception $e) {
-                    $notifications[] = [
-                        'type' => 'error',
-                        'title' => 'Kritischer Processing Fehler',
-                        'message' => 'Exception: ' . $e->getMessage(),
-                        'error_code' => 'PROCESSING_EXCEPTION'
-                    ];
+                    $error = "💥 KRITISCHER PROCESSING FEHLER\n\nException: " . $e->getMessage() . "\n\nBitte Logs und Datenbankverbindung prüfen.";
                 }
             }
             break;
@@ -109,18 +129,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
         case 'cleanup':
             try {
                 $count = $processor->cleanupOldInteractions();
-                $notifications[] = [
-                    'type' => 'success',
-                    'title' => 'Cleanup erfolgreich',
-                    'message' => "$count alte Interaktionen wurden entfernt"
-                ];
+                $success = "✅ CLEANUP ERFOLGREICH\n\n$count alte Interaktionen wurden erfolgreich entfernt.\n\nDatenbank ist jetzt bereinigt!";
             } catch (Exception $e) {
-                $notifications[] = [
-                    'type' => 'error',
-                    'title' => 'Cleanup Fehler',
-                    'message' => 'Exception: ' . $e->getMessage(),
-                    'error_code' => 'CLEANUP_EXCEPTION'
-                ];
+                $error = "❌ CLEANUP FEHLER\n\nException: " . $e->getMessage() . "\n\nKonnte alte Interaktionen nicht entfernen.";
             }
             break;
     }
@@ -363,10 +374,7 @@ if ($selectedAeiId) {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <?php renderAdminPageHeader('Social System Management', 'Manage AEI social environments and background processing'); ?>
 
-        <!-- Toast Notifications Container -->
-        <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2">
-            <!-- Toasts will be inserted here by JavaScript -->
-        </div>
+        <?php renderAdminAlerts($error, $success); ?>
 
         <!-- Statistics -->
         <?php if ($stats): ?>
@@ -1586,164 +1594,23 @@ document.getElementById('dialogModal').addEventListener('click', function(e) {
     }
 });
 
-// TOAST NOTIFICATION SYSTEM
-let toastCounter = 0;
-
-function showToast(type, title, message, details = null, duration = 5000) {
-    const toastId = `toast-${++toastCounter}`;
-    const container = document.getElementById('toast-container');
-    
-    // Toast types and their styling
-    const toastStyles = {
-        success: {
-            bg: 'bg-green-500',
-            text: 'text-white',
-            icon: 'fa-check-circle'
-        },
-        error: {
-            bg: 'bg-red-500',
-            text: 'text-white',
-            icon: 'fa-exclamation-circle'
-        },
-        warning: {
-            bg: 'bg-yellow-500',
-            text: 'text-white',
-            icon: 'fa-exclamation-triangle'
-        },
-        info: {
-            bg: 'bg-blue-500',
-            text: 'text-white',
-            icon: 'fa-info-circle'
-        }
-    };
-    
-    const style = toastStyles[type] || toastStyles.info;
-    const hasDetails = details && (details.errors?.length > 0 || details.warnings?.length > 0 || details.processing_details);
-    
-    const toastHtml = `
-        <div id="${toastId}" class="transform transition-all duration-300 translate-x-full">
-            <div class="${style.bg} ${style.text} rounded-lg shadow-lg p-4 max-w-sm w-full">
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas ${style.icon} text-lg"></i>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <div class="font-medium text-sm">${escapeHtml(title)}</div>
-                        <div class="mt-1 text-sm opacity-90">${escapeHtml(message)}</div>
-                        ${hasDetails ? `
-                        <div class="mt-2">
-                            <button onclick="toggleToastDetails('${toastId}')" 
-                                    class="text-xs underline opacity-75 hover:opacity-100">
-                                Details anzeigen
-                            </button>
-                        </div>
-                        ` : ''}
-                    </div>
-                    <div class="ml-3 flex-shrink-0">
-                        <button onclick="removeToast('${toastId}')" 
-                                class="opacity-75 hover:opacity-100">
-                            <i class="fas fa-times text-sm"></i>
-                        </button>
-                    </div>
-                </div>
-                ${hasDetails ? `
-                <div id="${toastId}-details" class="mt-3 hidden">
-                    <div class="border-t border-white border-opacity-20 pt-2">
-                        ${details.errors?.length > 0 ? `
-                        <div class="mb-2">
-                            <div class="font-medium text-xs">Fehler:</div>
-                            <ul class="text-xs mt-1 space-y-1">
-                                ${details.errors.map(error => `<li>• ${escapeHtml(error)}</li>`).join('')}
-                            </ul>
-                        </div>
-                        ` : ''}
-                        ${details.warnings?.length > 0 ? `
-                        <div class="mb-2">
-                            <div class="font-medium text-xs">Warnungen:</div>
-                            <ul class="text-xs mt-1 space-y-1">
-                                ${details.warnings.map(warning => `<li>• ${escapeHtml(warning)}</li>`).join('')}
-                            </ul>
-                        </div>
-                        ` : ''}
-                        ${details.processing_details ? `
-                        <div class="text-xs">
-                            <div class="font-medium">Verarbeitung:</div>
-                            <div class="mt-1 space-y-1">
-                                ${details.contacts_processed ? `<div>Kontakte: ${details.contacts_processed}</div>` : ''}
-                                ${details.interactions_generated ? `<div>Interaktionen: ${details.interactions_generated}</div>` : ''}
-                                ${details.social_media_posts ? `<div>Social Media: ${details.social_media_posts}</div>` : ''}
-                                ${details.group_events_created ? `<div>Events: ${details.group_events_created}</div>` : ''}
-                                ${details.cross_contact_relationships ? `<div>Cross-Contacts: ${details.cross_contact_relationships}</div>` : ''}
-                            </div>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-                ` : ''}
-            </div>
-        </div>
-    `;
-    
-    container.insertAdjacentHTML('beforeend', toastHtml);
-    
-    // Animate in
-    const toastElement = document.getElementById(toastId);
-    setTimeout(() => {
-        toastElement.classList.remove('translate-x-full');
-        toastElement.classList.add('translate-x-0');
-    }, 10);
-    
-    // Auto remove after duration
-    if (duration > 0) {
-        setTimeout(() => removeToast(toastId), duration);
-    }
-}
-
-function toggleToastDetails(toastId) {
-    const details = document.getElementById(`${toastId}-details`);
-    if (details) {
-        details.classList.toggle('hidden');
-    }
-}
-
-function removeToast(toastId) {
-    const toastElement = document.getElementById(toastId);
-    if (toastElement) {
-        toastElement.classList.add('translate-x-full');
-        setTimeout(() => {
-            toastElement.remove();
-        }, 300);
-    }
-}
-
-// Show notifications on page load
-document.addEventListener('DOMContentLoaded', function() {
-    <?php foreach ($notifications as $notification): ?>
-    showToast(
-        '<?= $notification['type'] ?>',
-        '<?= addslashes($notification['title']) ?>',
-        '<?= addslashes($notification['message']) ?>',
-        <?= isset($notification['details']) ? json_encode($notification['details']) : 'null' ?>,
-        <?= $notification['type'] === 'error' ? '8000' : '5000' ?> // Error toasts stay longer
-    );
-    <?php endforeach; ?>
-});
-
-// AJAX form submission with toast feedback
+// Enhanced form submission with loading state
 document.querySelectorAll('form').forEach(form => {
     form.addEventListener('submit', function(e) {
         const submitButton = form.querySelector('button[type="submit"]');
-        const originalText = submitButton.innerHTML;
-        
-        // Show loading state
-        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verarbeitung...';
-        submitButton.disabled = true;
-        
-        // Reset after form submission (for page reload case)
-        setTimeout(() => {
-            submitButton.innerHTML = originalText;
-            submitButton.disabled = false;
-        }, 1000);
+        if (submitButton) {
+            const originalText = submitButton.innerHTML;
+            
+            // Show loading state
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Verarbeitung...';
+            submitButton.disabled = true;
+            
+            // Reset after form submission (for page reload case)
+            setTimeout(() => {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            }, 1000);
+        }
     });
 });
 </script>
