@@ -42,6 +42,17 @@ class BackgroundSocialProcessor {
             
             foreach ($socialAEIs as $aei) {
                 try {
+                    // Auto-initialize AEI social environment if needed
+                    if (!$aei['social_initialized'] || $aei['contact_count'] == 0) {
+                        error_log("Auto-initializing social environment for AEI: {$aei['name']}");
+                        $initResult = $this->initializeAEISocialEnvironment($aei['id']);
+                        if (!$initResult) {
+                            $globalResults['failed_processing']++;
+                            $globalResults['errors'][] = "Failed to auto-initialize social environment for {$aei['name']}";
+                            continue;
+                        }
+                    }
+                    
                     $result = $this->processSingleAEI($aei['id']);
                     
                     if ($result['success']) {
@@ -114,16 +125,24 @@ class BackgroundSocialProcessor {
      */
     private function getAEIsWithSocialContacts() {
         try {
+            // First try to get AEIs with existing social contacts
             $stmt = $this->pdo->prepare("
-                SELECT DISTINCT a.id, a.name 
+                SELECT DISTINCT a.id, a.name, 
+                       COALESCE(a.social_initialized, FALSE) as social_initialized,
+                       COUNT(c.id) as contact_count
                 FROM aeis a
-                JOIN aei_social_contacts c ON a.id = c.aei_id
+                LEFT JOIN aei_social_contacts c ON a.id = c.aei_id AND c.is_active = TRUE
                 WHERE a.is_active = TRUE 
-                AND a.social_initialized = TRUE
-                AND c.is_active = TRUE
+                GROUP BY a.id, a.name, a.social_initialized
+                HAVING contact_count > 0 OR social_initialized = FALSE
+                ORDER BY contact_count DESC, a.name
             ");
             $stmt->execute();
-            return $stmt->fetchAll();
+            $result = $stmt->fetchAll();
+            
+            error_log("getAEIsWithSocialContacts found " . count($result) . " AEIs for processing");
+            
+            return $result;
         } catch (PDOException $e) {
             error_log("Error getting AEIs with social contacts: " . $e->getMessage());
             return [];

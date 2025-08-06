@@ -16,17 +16,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
     
     switch ($action) {
         case 'process_all':
+            $startTime = microtime(true);
             try {
+                // Enhanced pre-check with detailed debugging info
+                $stmt = $pdo->query("
+                    SELECT 
+                        COUNT(DISTINCT a.id) as total_aeis,
+                        COUNT(DISTINCT CASE WHEN COALESCE(a.social_initialized, FALSE) = TRUE THEN a.id END) as social_aeis,
+                        COUNT(DISTINCT CASE WHEN COALESCE(a.social_initialized, FALSE) = FALSE THEN a.id END) as uninitialized_aeis,
+                        COUNT(DISTINCT c.id) as total_contacts
+                    FROM aeis a
+                    LEFT JOIN aei_social_contacts c ON a.id = c.aei_id AND c.is_active = TRUE
+                    WHERE a.is_active = TRUE
+                ");
+                $preCheck = $stmt->fetch();
+                
+                // Log detailed pre-processing state for debugging
+                error_log("ADMIN SOCIAL PROCESSING PRE-CHECK:");
+                error_log("- Total AEIs: {$preCheck['total_aeis']}");
+                error_log("- Initialized AEIs: {$preCheck['social_aeis']}");
+                error_log("- Uninitialized AEIs: {$preCheck['uninitialized_aeis']}");
+                error_log("- Total Contacts: {$preCheck['total_contacts']}");
+                
                 $result = $processor->processAllAEISocial();
+                $executionTime = round(microtime(true) - $startTime, 2);
+                
                 if ($result['success']) {
                     $details = $result['details'] ?? [];
-                    $message = "✅ ALLE AEIs ERFOLGREICH VERARBEITET!\n\n";
-                    $message .= "📊 Ergebnisse:\n";
-                    $message .= "• {$details['processed_successfully']}/{$details['total_aeis']} AEIs erfolgreich verarbeitet\n";
-                    $message .= "• {$details['total_interactions']} Interaktionen insgesamt generiert\n";
+                    $message = "✅ ALL AEI PROCESSING COMPLETED!\n\n";
+                    $message .= "⏱️ Execution time: {$executionTime}s\n\n";
+                    $message .= "📊 System Status:\n";
+                    $message .= "• {$preCheck['total_aeis']} total AEIs in system\n";
+                    $message .= "• {$preCheck['social_aeis']} AEIs with social environment\n";
+                    $message .= "• {$preCheck['uninitialized_aeis']} AEIs require initialization\n";
+                    $message .= "• {$preCheck['total_contacts']} active contacts total\n\n";
+                    
+                    if ($details['total_aeis'] > 0) {
+                        $message .= "📈 Processing Results:\n";
+                        $message .= "• {$details['processed_successfully']}/{$details['total_aeis']} AEIs processed successfully\n";
+                        $message .= "• {$details['total_interactions']} new interactions generated\n";
+                        
+                        if (!empty($details['processing_details'])) {
+                            $message .= "\n🔍 AEI Details:\n";
+                            $count = 0;
+                            foreach ($details['processing_details'] as $aeiId => $aeiDetail) {
+                                if ($count < 3) { // Show first 3
+                                    $status = $aeiDetail['status'] === 'success' ? '✓' : '✗';
+                                    $message .= "• $status {$aeiDetail['name']}: ";
+                                    if ($aeiDetail['status'] === 'success') {
+                                        $interactions = $aeiDetail['details']['interactions_generated'] ?? 0;
+                                        $message .= "$interactions interactions\n";
+                                    } else {
+                                        $message .= "Error\n";
+                                    }
+                                }
+                                $count++;
+                            }
+                        }
+                    } else {
+                        $message .= "ℹ️ No AEIs with social contacts found\n";
+                        $message .= "\n💡 To use the Social System:\n";
+                        $message .= "1. Initialize AEIs individually (Initialize Button)\n";
+                        $message .= "2. Then run 'Process All' again\n";
+                    }
                     
                     if (!empty($details['errors'])) {
-                        $message .= "\n⚠️ Warnungen:\n";
+                        $message .= "\n⚠️ Warnings:\n";
                         foreach (array_slice($details['errors'], 0, 3) as $err) {
                             $message .= "• " . $err . "\n";
                         }
@@ -34,21 +89,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                     $success = $message;
                 } else {
                     $details = $result['details'] ?? [];
-                    $errorMsg = "❌ PROCESSING FEHLER\n\n";
-                    $errorMsg .= "Hauptfehler: " . ($result['error'] ?? 'Unbekannter Fehler') . "\n";
+                    $errorMsg = "❌ PROCESSING ERROR\n\n";
+                    $errorMsg .= "⏱️ Execution time: {$executionTime}s\n";
+                    $errorMsg .= "Main error: " . ($result['error'] ?? 'Unknown error') . "\n";
                     if (isset($result['error_code'])) {
                         $errorMsg .= "Error Code: " . $result['error_code'] . "\n";
                     }
                     if (!empty($details['errors'])) {
-                        $errorMsg .= "\nDetailfehler:\n";
+                        $errorMsg .= "\nDetailed errors:\n";
                         foreach (array_slice($details['errors'], 0, 3) as $err) {
                             $errorMsg .= "• " . $err . "\n";
                         }
                     }
+                    $errorMsg .= "\n📊 System Status:\n";
+                    $errorMsg .= "• {$preCheck['total_aeis']} total AEIs in system\n";
+                    $errorMsg .= "• {$preCheck['social_aeis']} AEIs with social environment\n";
                     $error = $errorMsg;
                 }
             } catch (Exception $e) {
-                $error = "💥 KRITISCHER FEHLER\n\nException: " . $e->getMessage() . "\n\nBitte Logs prüfen für Details.";
+                $executionTime = round(microtime(true) - $startTime, 2);
+                $error = "💥 CRITICAL ERROR\n\n⏱️ Error after: {$executionTime}s\nException: " . $e->getMessage() . "\n\nPlease check logs for details.";
             }
             break;
             
@@ -58,12 +118,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                 try {
                     $result = $processor->initializeAEISocialEnvironment($aeiId);
                     if ($result) {
-                        $success = "✅ AEI SOCIAL ENVIRONMENT INITIALISIERT\n\nSoziales Umfeld wurde erfolgreich für die AEI eingerichtet!";
+                        $success = "✅ AEI SOCIAL ENVIRONMENT INITIALIZED\n\nSocial environment successfully set up for the AEI!";
                     } else {
-                        $error = "❌ INITIALISIERUNG FEHLGESCHLAGEN\n\nKonnte das soziale Umfeld nicht einrichten.\nMögliche Ursachen:\n• AEI bereits initialisiert\n• Datenbankfehler\n• API-Problem";
+                        $error = "❌ INITIALIZATION FAILED\n\nCould not set up social environment.\nPossible causes:\n• AEI already initialized\n• Database error\n• API problem";
                     }
                 } catch (Exception $e) {
-                    $error = "💥 INITIALISIERUNGSFEHLER\n\nException: " . $e->getMessage() . "\n\nBitte Logs prüfen.";
+                    $error = "💥 INITIALIZATION ERROR\n\nException: " . $e->getMessage() . "\n\nPlease check logs.";
                 }
             }
             break;
@@ -71,17 +131,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
         case 'process_single':
             $aeiId = $_POST['aei_id'] ?? '';
             if ($aeiId) {
+                $startTime = microtime(true);
                 try {
+                    // Get AEI info first
+                    $stmt = $pdo->prepare("SELECT name, social_initialized FROM aeis WHERE id = ?");
+                    $stmt->execute([$aeiId]);
+                    $aeiInfo = $stmt->fetch();
+                    
                     $result = $processor->processSingleAEI($aeiId);
+                    $executionTime = round(microtime(true) - $startTime, 2);
+                    
                     if ($result['success']) {
                         $details = $result['details'] ?? [];
-                        $message = "✅ AEI ERFOLGREICH VERARBEITET!\n\n";
+                        $message = "✅ AEI PROCESSED SUCCESSFULLY!\n\n";
+                        $message .= "🤖 AEI: " . ($aeiInfo['name'] ?? 'Unbekannt') . "\n";
+                        $message .= "⏱️ Execution time: {$executionTime}s\n\n";
                         $message .= "📊 Aktivitäten generiert:\n";
                         $message .= "• {$details['interactions_generated']} neue Interaktionen\n";
                         $message .= "• {$details['social_media_posts']} Social Media Posts\n";
-                        $message .= "• {$details['group_events_created']} Gruppen-Events\n";
-                        $message .= "• {$details['cross_contact_relationships']} Cross-Contact Beziehungen\n";
-                        $message .= "\n👥 {$details['contacts_processed']} Kontakte verarbeitet\n";
+                        $message .= "• {$details['group_events_created']} group events\n";
+                        $message .= "• {$details['cross_contact_relationships']} cross-contact relationships\n";
+                        $message .= "\n👥 {$details['contacts_processed']} contacts processed\n";
+                        
+                        if ($details['interactions_generated'] == 0 && $details['contacts_processed'] > 0) {
+                            $message .= "\n💭 No new interactions generated - this is normal!\n";
+                            $message .= "Interactions are created based on probabilities.\n";
+                            $message .= "Contacts were still checked for life evolution.\n";
+                        }
                         
                         if (!empty($details['warnings'])) {
                             $message .= "\n⚠️ Hinweise:\n";
@@ -101,6 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                     } else {
                         $details = $result['details'] ?? [];
                         $errorMsg = "❌ AEI PROCESSING FEHLER\n\n";
+                        $errorMsg .= "🤖 AEI: " . ($aeiInfo['name'] ?? 'Unbekannt') . "\n";
+                        $errorMsg .= "⏱️ Fehler nach: {$executionTime}s\n";
                         $errorMsg .= "Hauptfehler: " . ($result['error'] ?? 'Unbekannter Fehler') . "\n";
                         
                         if (isset($result['error_code'])) {
@@ -115,14 +193,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                         }
                         
                         if (isset($details['contacts_processed'])) {
-                            $errorMsg .= "\n📊 Versucht: {$details['contacts_processed']} Kontakte zu verarbeiten";
+                            $errorMsg .= "\n📊 Versucht: {$details['contacts_processed']} Kontakte zu verarbeiten\n";
                         }
+                        
+                        $errorMsg .= "\n🔍 Debug-Info:\n";
+                        $errorMsg .= "• Social Initialized: " . ($aeiInfo['social_initialized'] ? 'Ja' : 'Nein') . "\n";
+                        $errorMsg .= "• AEI ID: " . $aeiId . "\n";
                         
                         $error = $errorMsg;
                     }
                 } catch (Exception $e) {
-                    $error = "💥 KRITISCHER PROCESSING FEHLER\n\nException: " . $e->getMessage() . "\n\nBitte Logs und Datenbankverbindung prüfen.";
+                    $executionTime = round(microtime(true) - $startTime, 2);
+                    $error = "💥 KRITISCHER PROCESSING FEHLER\n\n🤖 AEI: " . ($aeiInfo['name'] ?? 'Unbekannt') . "\n⏱️ Fehler nach: {$executionTime}s\nException: " . $e->getMessage() . "\n\nBitte Logs und Datenbankverbindung prüfen.";
                 }
+            } else {
+                $error = "❌ FEHLER\n\nKeine AEI ID übermittelt. Bitte Seite neu laden und erneut versuchen.";
             }
             break;
             
