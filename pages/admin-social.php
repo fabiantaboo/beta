@@ -141,9 +141,11 @@ if ($selectedAeiId) {
                 c.relationship_type,
                 c.relationship_strength,
                 c.personality_traits,
-                c.current_life_situation
+                c.current_life_situation,
+                a.name as aei_name
             FROM aei_contact_interactions i
             JOIN aei_social_contacts c ON i.contact_id = c.id
+            JOIN aeis a ON i.aei_id = a.id
             WHERE i.aei_id = ?
             ORDER BY i.occurred_at DESC
             LIMIT 20
@@ -547,6 +549,13 @@ if ($selectedAeiId) {
                                         "<?= htmlspecialchars($interaction['contact_message']) ?>"
                                     </div>
                                     <?php endif; ?>
+                                    <div class="mt-2">
+                                        <button onclick="showDialog('<?= $interaction['id'] ?>')" 
+                                                class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 text-xs leading-4 font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                            <i class="fas fa-comments mr-1"></i>
+                                            Full Dialog
+                                        </button>
+                                    </div>
                                 </td>
                                 <td class="py-4 px-6">
                                     <div class="space-y-1">
@@ -641,3 +650,156 @@ if ($selectedAeiId) {
 
     </div>
 </div>
+
+<!-- Dialog Modal -->
+<div id="dialogModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Full Dialog</h3>
+            <button onclick="closeDialog()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="dialogContent" class="space-y-4">
+            <!-- Dialog content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<script>
+function showDialog(interactionId) {
+    const modal = document.getElementById('dialogModal');
+    const content = document.getElementById('dialogContent');
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    
+    // Load dialog content
+    content.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>';
+    
+    // Fetch dialog data
+    fetch(`/admin/social-dialog?interaction_id=${interactionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayDialog(data.interaction);
+            } else {
+                content.innerHTML = '<div class="text-red-500">Error loading dialog: ' + data.error + '</div>';
+            }
+        })
+        .catch(error => {
+            content.innerHTML = '<div class="text-red-500">Error loading dialog: ' + error.message + '</div>';
+        });
+}
+
+function displayDialog(interaction) {
+    const content = document.getElementById('dialogContent');
+    
+    let html = `
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="font-semibold text-gray-900 dark:text-white">${escapeHtml(interaction.contact_name)}</h4>
+                <span class="text-xs text-gray-500 dark:text-gray-400">${formatDate(interaction.occurred_at)}</span>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Context: ${escapeHtml(interaction.interaction_context)}</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Type: ${interaction.interaction_type.replace(/_/g, ' ')}</p>
+        </div>
+    `;
+    
+    // Contact message
+    if (interaction.contact_message) {
+        html += `
+            <div class="flex items-start space-x-3 mb-4">
+                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    ${interaction.contact_name.charAt(0).toUpperCase()}
+                </div>
+                <div class="flex-1">
+                    <div class="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-3">
+                        <p class="text-sm text-gray-900 dark:text-white">${escapeHtml(interaction.contact_message)}</p>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${escapeHtml(interaction.contact_name)} • ${formatTime(interaction.occurred_at)}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // AEI response
+    if (interaction.aei_response) {
+        html += `
+            <div class="flex items-start space-x-3 mb-4">
+                <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg p-3">
+                        <p class="text-sm text-gray-900 dark:text-white">${escapeHtml(interaction.aei_response)}</p>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${escapeHtml(interaction.aei_name)} • ${formatTime(interaction.occurred_at)}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // AEI thoughts (internal)
+    if (interaction.aei_thoughts) {
+        html += `
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 mt-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-brain text-yellow-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Internal Thoughts</p>
+                        <p class="text-sm text-yellow-700 dark:text-yellow-300 mt-1">${escapeHtml(interaction.aei_thoughts)}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Status info
+    html += `
+        <div class="border-t border-gray-200 dark:border-gray-600 pt-4 mt-4">
+            <div class="flex flex-wrap gap-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${interaction.processed_for_emotions ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400' : 'bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-400'}">
+                    <i class="fas ${interaction.processed_for_emotions ? 'fa-check-circle' : 'fa-clock'} mr-1"></i>
+                    ${interaction.processed_for_emotions ? 'Emotionally Processed' : 'Pending Processing'}
+                </span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${interaction.mentioned_in_chat ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}">
+                    <i class="fas ${interaction.mentioned_in_chat ? 'fa-comment' : 'fa-comment-slash'} mr-1"></i>
+                    ${interaction.mentioned_in_chat ? 'Mentioned in Chat' : 'Not Mentioned Yet'}
+                </span>
+            </div>
+        </div>
+    `;
+    
+    content.innerHTML = html;
+}
+
+function closeDialog() {
+    document.getElementById('dialogModal').classList.add('hidden');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+}
+
+function formatTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString();
+}
+
+// Close modal when clicking outside
+document.getElementById('dialogModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDialog();
+    }
+});
+</script>

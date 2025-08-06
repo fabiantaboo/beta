@@ -192,6 +192,10 @@ function createTablesIfNotExist($pdo) {
             interaction_context TEXT,
             contact_message TEXT,
             
+            -- AEI Response (simulated internal dialogue)
+            aei_response TEXT,
+            aei_thoughts TEXT,
+            
             -- Emotional impact on AEI
             aei_emotional_response JSON,
             relationship_impact INT DEFAULT 0,
@@ -546,6 +550,31 @@ Be conversational, helpful, and maintain your unique personality. Keep responses
         
     } catch (PDOException $e) {
         error_log("Comprehensive migration error: " . $e->getMessage());
+    }
+    
+    // Add social dialog columns to aei_contact_interactions if they don't exist
+    try {
+        $stmt = $pdo->query("DESCRIBE aei_contact_interactions");
+        if ($stmt) {
+            $interactionColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            $dialogColumns = [
+                'aei_response' => "ALTER TABLE aei_contact_interactions ADD COLUMN aei_response TEXT NULL AFTER contact_message",
+                'aei_thoughts' => "ALTER TABLE aei_contact_interactions ADD COLUMN aei_thoughts TEXT NULL AFTER aei_response"
+            ];
+            
+            foreach ($dialogColumns as $columnName => $alterSQL) {
+                if (!in_array($columnName, $interactionColumns)) {
+                    try {
+                        $pdo->exec($alterSQL);
+                    } catch (PDOException $e) {
+                        // Column might already exist, ignore error
+                    }
+                }
+            }
+        }
+    } catch (PDOException $e) {
+        // Error reading columns, ignore
     }
     
     // Create admin account if it doesn't exist

@@ -263,9 +263,78 @@ class SocialContactManager {
                 return false;
             }
             
-            return $this->storeContactInteraction($aeiId, $contactId, $interaction);
+            $interactionId = $this->storeContactInteraction($aeiId, $contactId, $interaction);
+            
+            // Generate AEI's internal response to this interaction
+            if ($interactionId) {
+                $this->generateAEIResponse($interactionId, $aeiId, $contactId, $interaction);
+            }
+            
+            return $interactionId;
         } catch (Exception $e) {
             error_log("Error generating contact interaction: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Generate AEI's internal response to contact interaction
+     */
+    private function generateAEIResponse($interactionId, $aeiId, $contactId, $interaction) {
+        try {
+            $aei = $this->getAEI($aeiId);
+            $contact = $this->getContact($contactId);
+            
+            if (!$aei || !$contact) {
+                return false;
+            }
+            
+            $prompt = "
+            You are {$aei['name']}, an AEI with your own thoughts and feelings.
+            Your {$contact['relationship_type']} {$contact['name']} just contacted you.
+            
+            What they said: \"{$interaction['contact_message']}\"
+            Context: {$interaction['interaction_context']}
+            Interaction type: {$interaction['interaction_type']}
+            
+            Generate your internal response and thoughts:
+            - How do you respond to them? (what you would say back)
+            - What are your private thoughts about this situation?
+            
+            Respond with JSON:
+            {
+                \"aei_response\": \"What you say back to {$contact['name']}\",
+                \"aei_thoughts\": \"Your private internal thoughts about this situation\"
+            }
+            
+            Be natural, caring, and authentic to your relationship with {$contact['name']}.
+            ";
+            
+            $systemPrompt = "You are an empathetic AEI generating authentic responses to social interactions. Be genuine and emotionally appropriate.";
+            $messages = [['role' => 'user', 'content' => $prompt]];
+            $response = callAnthropicAPI($messages, $systemPrompt, 800);
+            
+            $aeiDialog = json_decode($response, true);
+            if (!$aeiDialog) {
+                error_log("Failed to parse AEI dialog JSON: " . $response);
+                return false;
+            }
+            
+            // Store AEI's response in the interaction
+            $stmt = $this->pdo->prepare("
+                UPDATE aei_contact_interactions 
+                SET aei_response = ?, aei_thoughts = ?
+                WHERE id = ?
+            ");
+            
+            return $stmt->execute([
+                $aeiDialog['aei_response'] ?? '',
+                $aeiDialog['aei_thoughts'] ?? '',
+                $interactionId
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Error generating AEI response: " . $e->getMessage());
             return false;
         }
     }
