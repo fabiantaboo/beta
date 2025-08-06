@@ -1,6 +1,11 @@
 <?php
 requireAdmin();
 
+// Ensure error logging is enabled
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../error.log');
+error_log("Admin social page loaded");
+
 require_once __DIR__ . '/../includes/background_social_processor.php';
 require_once __DIR__ . '/../includes/social_contact_manager.php';
 
@@ -11,11 +16,14 @@ $error = null;
 $success = null;
 
 // Handle POST actions
+error_log("POST request received: " . json_encode($_POST));
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'] ?? '')) {
     $action = $_POST['action'] ?? '';
+    error_log("=== ADMIN SOCIAL ACTION: $action ===");
     
     switch ($action) {
         case 'process_all':
+            error_log("Process All button clicked - starting processing");
             $startTime = microtime(true);
             try {
                 // Enhanced pre-check with detailed debugging info
@@ -130,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
             
         case 'process_single':
             $aeiId = $_POST['aei_id'] ?? '';
+            error_log("Process Single button clicked for AEI ID: $aeiId");
             if ($aeiId) {
                 $startTime = microtime(true);
                 try {

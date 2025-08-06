@@ -25,6 +25,7 @@ class Router {
             'admin/beta' => ['page' => 'admin-beta'],
             'admin/emotions' => ['page' => 'admin-emotions'],
             'admin/social' => ['page' => 'admin-social'],
+            'admin/logs' => ['page' => 'admin-logs'],
             'dashboard' => ['page' => 'dashboard'],
             'create-aei' => ['page' => 'create-aei'],
             'chat' => ['page' => 'chat'],

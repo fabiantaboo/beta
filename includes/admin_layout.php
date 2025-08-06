@@ -8,6 +8,7 @@ function renderAdminNavigation($currentPage = '') {
         'admin-beta' => ['name' => 'Beta Codes', 'icon' => 'fas fa-ticket-alt', 'url' => '/admin/beta'],
         'admin-emotions' => ['name' => 'Emotions', 'icon' => 'fas fa-brain', 'url' => '/admin/emotions'],
         'admin-social' => ['name' => 'Social System', 'icon' => 'fas fa-users-cog', 'url' => '/admin/social'],
+        'admin-logs' => ['name' => 'Error Logs', 'icon' => 'fas fa-file-alt', 'url' => '/admin/logs'],
     ];
     
     ?>

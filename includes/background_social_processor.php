@@ -19,6 +19,7 @@ class BackgroundSocialProcessor {
      * Main processing for all AEIs with social environments
      */
     public function processAllAEISocial() {
+        error_log("=== PROCESS ALL AEI SOCIAL STARTED ===");
         $globalResults = [
             'total_aeis' => 0,
             'processed_successfully' => 0,
@@ -29,33 +30,44 @@ class BackgroundSocialProcessor {
         ];
         
         try {
+            error_log("Getting AEIs with social contacts...");
             $socialAEIs = $this->getAEIsWithSocialContacts();
+            error_log("Found " . count($socialAEIs) . " AEIs for processing");
             $globalResults['total_aeis'] = count($socialAEIs);
             
             if (empty($socialAEIs)) {
+                error_log("No AEIs found for social processing - returning early");
                 return [
                     'success' => true,
-                    'message' => 'Keine AEIs mit sozialen Kontakten gefunden',
+                    'message' => 'No AEIs with social contacts found',
                     'details' => $globalResults
                 ];
             }
             
             foreach ($socialAEIs as $aei) {
                 try {
+                    error_log("Processing AEI: {$aei['name']} (ID: {$aei['id']})");
+                    
                     // Auto-initialize AEI social environment if needed
                     if (!$aei['social_initialized'] || $aei['contact_count'] == 0) {
                         error_log("Auto-initializing social environment for AEI: {$aei['name']}");
                         $initResult = $this->initializeAEISocialEnvironment($aei['id']);
                         if (!$initResult) {
+                            error_log("Failed to initialize AEI {$aei['name']}");
                             $globalResults['failed_processing']++;
                             $globalResults['errors'][] = "Failed to auto-initialize social environment for {$aei['name']}";
                             continue;
                         }
+                        error_log("Successfully initialized AEI {$aei['name']}");
                     }
                     
+                    error_log("Starting processSingleAEI for {$aei['name']}");
                     $result = $this->processSingleAEI($aei['id']);
                     
+                    error_log("processSingleAEI result for {$aei['name']}: " . json_encode($result));
+                    
                     if ($result['success']) {
+                        error_log("AEI {$aei['name']} processed successfully");
                         $globalResults['processed_successfully']++;
                         if (isset($result['details']['interactions_generated'])) {
                             $globalResults['total_interactions'] += $result['details']['interactions_generated'];
@@ -66,18 +78,19 @@ class BackgroundSocialProcessor {
                             'details' => $result['details'] ?? []
                         ];
                     } else {
+                        error_log("AEI {$aei['name']} processing failed: " . ($result['error'] ?? 'Unknown error'));
                         $globalResults['failed_processing']++;
-                        $globalResults['errors'][] = "AEI {$aei['name']}: " . ($result['error'] ?? 'Unbekannter Fehler');
+                        $globalResults['errors'][] = "AEI {$aei['name']}: " . ($result['error'] ?? 'Unknown error');
                         $globalResults['processing_details'][$aei['id']] = [
                             'name' => $aei['name'],
                             'status' => 'error',
-                            'error' => $result['error'] ?? 'Unbekannter Fehler',
+                            'error' => $result['error'] ?? 'Unknown error',
                             'details' => $result['details'] ?? []
                         ];
                     }
                 } catch (Exception $e) {
                     $globalResults['failed_processing']++;
-                    $errorMsg = "Kritischer Fehler bei AEI {$aei['name']}: " . $e->getMessage();
+                    $errorMsg = "Critical error processing AEI {$aei['name']}: " . $e->getMessage();
                     $globalResults['errors'][] = $errorMsg;
                     $globalResults['processing_details'][$aei['id']] = [
                         'name' => $aei['name'],
@@ -85,21 +98,23 @@ class BackgroundSocialProcessor {
                         'error' => $e->getMessage()
                     ];
                     error_log($errorMsg);
+                    error_log("Exception trace: " . $e->getTraceAsString());
                 }
             }
             
             // Generate summary message
-            $message = "Social Processing für alle AEIs abgeschlossen!\n";
-            $message .= "• {$globalResults['processed_successfully']}/{$globalResults['total_aeis']} AEIs erfolgreich verarbeitet\n";
-            $message .= "• {$globalResults['total_interactions']} Interaktionen insgesamt generiert\n";
+            $message = "Social processing for all AEIs completed!\n";
+            $message .= "• {$globalResults['processed_successfully']}/{$globalResults['total_aeis']} AEIs processed successfully\n";
+            $message .= "• {$globalResults['total_interactions']} interactions generated total\n";
             
             if ($globalResults['failed_processing'] > 0) {
-                $message .= "• {$globalResults['failed_processing']} AEIs mit Fehlern";
+                $message .= "• {$globalResults['failed_processing']} AEIs with errors";
             }
             
             $success = $globalResults['failed_processing'] == 0 || $globalResults['processed_successfully'] > 0;
             
             error_log("Background social processor: Processed {$globalResults['processed_successfully']}/{$globalResults['total_aeis']} AEIs successfully");
+            error_log("=== PROCESS ALL AEI SOCIAL COMPLETED ===");
             
             return [
                 'success' => $success,
@@ -459,6 +474,7 @@ class BackgroundSocialProcessor {
      * Process social updates for a specific AEI (useful for manual triggers)
      */
     public function processSingleAEI($aeiId) {
+        error_log("=== PROCESS SINGLE AEI STARTED: $aeiId ===");
         $processingDetails = [
             'aei_id' => $aeiId,
             'contacts_processed' => 0,
@@ -472,18 +488,22 @@ class BackgroundSocialProcessor {
         
         try {
             // Validate AEI exists
+            error_log("Validating AEI exists: $aeiId");
             $stmt = $this->pdo->prepare("SELECT id, name, social_initialized FROM aeis WHERE id = ? AND is_active = TRUE");
             $stmt->execute([$aeiId]);
             $aei = $stmt->fetch();
             
             if (!$aei) {
+                error_log("AEI not found or inactive: $aeiId");
                 return [
                     'success' => false,
-                    'error' => 'AEI nicht gefunden oder inaktiv',
+                    'error' => 'AEI not found or inactive',
                     'error_code' => 'AEI_NOT_FOUND',
                     'details' => $processingDetails
                 ];
             }
+            
+            error_log("Found AEI: {$aei['name']}, Social initialized: " . ($aei['social_initialized'] ? 'YES' : 'NO'));
             
             // First ensure social environment is initialized
             if (!$this->socialContactManager->isAEISocialInitialized($aeiId)) {
