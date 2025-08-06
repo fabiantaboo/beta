@@ -19,25 +19,93 @@ class BackgroundSocialProcessor {
      * Main processing for all AEIs with social environments
      */
     public function processAllAEISocial() {
+        $globalResults = [
+            'total_aeis' => 0,
+            'processed_successfully' => 0,
+            'failed_processing' => 0,
+            'total_interactions' => 0,
+            'errors' => [],
+            'processing_details' => []
+        ];
+        
         try {
             $socialAEIs = $this->getAEIsWithSocialContacts();
-            $processedCount = 0;
+            $globalResults['total_aeis'] = count($socialAEIs);
+            
+            if (empty($socialAEIs)) {
+                return [
+                    'success' => true,
+                    'message' => 'Keine AEIs mit sozialen Kontakten gefunden',
+                    'details' => $globalResults
+                ];
+            }
             
             foreach ($socialAEIs as $aei) {
                 try {
-                    $this->processAEISocialLife($aei['id']);
-                    $processedCount++;
+                    $result = $this->processSingleAEI($aei['id']);
+                    
+                    if ($result['success']) {
+                        $globalResults['processed_successfully']++;
+                        if (isset($result['details']['interactions_generated'])) {
+                            $globalResults['total_interactions'] += $result['details']['interactions_generated'];
+                        }
+                        $globalResults['processing_details'][$aei['id']] = [
+                            'name' => $aei['name'],
+                            'status' => 'success',
+                            'details' => $result['details'] ?? []
+                        ];
+                    } else {
+                        $globalResults['failed_processing']++;
+                        $globalResults['errors'][] = "AEI {$aei['name']}: " . ($result['error'] ?? 'Unbekannter Fehler');
+                        $globalResults['processing_details'][$aei['id']] = [
+                            'name' => $aei['name'],
+                            'status' => 'error',
+                            'error' => $result['error'] ?? 'Unbekannter Fehler',
+                            'details' => $result['details'] ?? []
+                        ];
+                    }
                 } catch (Exception $e) {
-                    error_log("Error processing social life for AEI {$aei['id']}: " . $e->getMessage());
-                    continue;
+                    $globalResults['failed_processing']++;
+                    $errorMsg = "Kritischer Fehler bei AEI {$aei['name']}: " . $e->getMessage();
+                    $globalResults['errors'][] = $errorMsg;
+                    $globalResults['processing_details'][$aei['id']] = [
+                        'name' => $aei['name'],
+                        'status' => 'critical_error',
+                        'error' => $e->getMessage()
+                    ];
+                    error_log($errorMsg);
                 }
             }
             
-            error_log("Background social processor: Processed $processedCount AEIs");
-            return $processedCount;
+            // Generate summary message
+            $message = "Social Processing für alle AEIs abgeschlossen!\n";
+            $message .= "• {$globalResults['processed_successfully']}/{$globalResults['total_aeis']} AEIs erfolgreich verarbeitet\n";
+            $message .= "• {$globalResults['total_interactions']} Interaktionen insgesamt generiert\n";
+            
+            if ($globalResults['failed_processing'] > 0) {
+                $message .= "• {$globalResults['failed_processing']} AEIs mit Fehlern";
+            }
+            
+            $success = $globalResults['failed_processing'] == 0 || $globalResults['processed_successfully'] > 0;
+            
+            error_log("Background social processor: Processed {$globalResults['processed_successfully']}/{$globalResults['total_aeis']} AEIs successfully");
+            
+            return [
+                'success' => $success,
+                'message' => $message,
+                'details' => $globalResults
+            ];
+            
         } catch (Exception $e) {
-            error_log("Error in background social processor: " . $e->getMessage());
-            return 0;
+            error_log("Critical error in processAllAEISocial: " . $e->getMessage());
+            $globalResults['errors'][] = 'Kritischer Fehler: ' . $e->getMessage();
+            
+            return [
+                'success' => false,
+                'error' => 'Kritischer Fehler beim Verarbeiten aller AEIs: ' . $e->getMessage(),
+                'error_code' => 'GLOBAL_CRITICAL_ERROR',
+                'details' => $globalResults
+            ];
         }
     }
     
@@ -372,24 +440,172 @@ class BackgroundSocialProcessor {
      * Process social updates for a specific AEI (useful for manual triggers)
      */
     public function processSingleAEI($aeiId) {
+        $processingDetails = [
+            'aei_id' => $aeiId,
+            'contacts_processed' => 0,
+            'interactions_generated' => 0,
+            'social_media_posts' => 0,
+            'group_events_created' => 0,
+            'cross_contact_relationships' => 0,
+            'errors' => [],
+            'warnings' => []
+        ];
+        
         try {
-            // First ensure social environment is initialized
-            if (!$this->socialContactManager->isAEISocialInitialized($aeiId)) {
-                $this->initializeAEISocialEnvironment($aeiId);
+            // Validate AEI exists
+            $stmt = $this->pdo->prepare("SELECT id, name, social_initialized FROM aeis WHERE id = ? AND is_active = TRUE");
+            $stmt->execute([$aeiId]);
+            $aei = $stmt->fetch();
+            
+            if (!$aei) {
+                return [
+                    'success' => false,
+                    'error' => 'AEI nicht gefunden oder inaktiv',
+                    'error_code' => 'AEI_NOT_FOUND',
+                    'details' => $processingDetails
+                ];
             }
             
-            // Process social life
-            $interactionCount = $this->processAEISocialLife($aeiId);
+            // First ensure social environment is initialized
+            if (!$this->socialContactManager->isAEISocialInitialized($aeiId)) {
+                try {
+                    $initResult = $this->initializeAEISocialEnvironment($aeiId);
+                    if (!$initResult) {
+                        return [
+                            'success' => false,
+                            'error' => 'Konnte soziales Umfeld nicht initialisieren',
+                            'error_code' => 'SOCIAL_INIT_FAILED',
+                            'details' => $processingDetails
+                        ];
+                    }
+                    $processingDetails['warnings'][] = 'Soziales Umfeld wurde erst initialisiert';
+                } catch (Exception $e) {
+                    return [
+                        'success' => false,
+                        'error' => 'Fehler beim Initialisieren des sozialen Umfelds: ' . $e->getMessage(),
+                        'error_code' => 'SOCIAL_INIT_ERROR',
+                        'details' => $processingDetails
+                    ];
+                }
+            }
+            
+            // Get contacts for processing
+            $contacts = $this->socialContactManager->getAEIContacts($aeiId);
+            $processingDetails['contacts_processed'] = count($contacts);
+            
+            if (empty($contacts)) {
+                $processingDetails['warnings'][] = 'Keine aktiven Kontakte gefunden';
+                return [
+                    'success' => true,
+                    'message' => 'Social Processing abgeschlossen, aber keine Kontakte vorhanden',
+                    'details' => $processingDetails
+                ];
+            }
+            
+            // Process each component with detailed error tracking
+            $interactions = [];
+            
+            // 1. Process contact interactions
+            try {
+                foreach ($contacts as $contact) {
+                    // Evolve contact life
+                    if (mt_rand(1, 100) <= 60) {
+                        $this->socialContactManager->evolveContactLife($contact['id']);
+                    }
+                    
+                    // Check contact probability
+                    $contactProbability = $this->calculateAdvancedContactProbability($contact);
+                    if (mt_rand(1, 100) <= ($contactProbability * 100)) {
+                        $interaction = $this->socialContactManager->generateContactToAEIInteraction($contact['id'], $aeiId);
+                        if ($interaction) {
+                            $interactions[] = $interaction;
+                            $processingDetails['interactions_generated']++;
+                        }
+                    }
+                    
+                    // Spontaneous interactions
+                    $spontaneousChance = $this->calculateSpontaneousInteractionChance($contact);
+                    if (mt_rand(1, 100) <= ($spontaneousChance * 100)) {
+                        $interaction = $this->socialContactManager->generateContactToAEIInteraction($contact['id'], $aeiId, 'spontaneous');
+                        if ($interaction) {
+                            $interactions[] = $interaction;
+                            $processingDetails['interactions_generated']++;
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                $processingDetails['errors'][] = 'Kontakt-Interaktionen: ' . $e->getMessage();
+            }
+            
+            // 2. Process advanced social dynamics
+            try {
+                if (count($contacts) >= 2 && mt_rand(1, 100) <= 25) {
+                    $this->generateCrossContactRelationship($aeiId, $contacts);
+                    $processingDetails['cross_contact_relationships']++;
+                }
+                
+                if (count($contacts) >= 3 && mt_rand(1, 100) <= 15) {
+                    $this->generateGroupEvent($aeiId, $contacts);
+                    $processingDetails['group_events_created']++;
+                }
+                
+                if (mt_rand(1, 100) <= 20) {
+                    $this->evolveRelationshipDynamics($aeiId, $contacts);
+                }
+            } catch (Exception $e) {
+                $processingDetails['errors'][] = 'Erweiterte Dynamiken: ' . $e->getMessage();
+            }
+            
+            // 3. Process social media activity
+            try {
+                foreach ($contacts as $contact) {
+                    if (mt_rand(1, 100) <= 30) {
+                        $this->generateSocialMediaPost($contact, $aeiId);
+                        $processingDetails['social_media_posts']++;
+                    }
+                }
+            } catch (Exception $e) {
+                $processingDetails['errors'][] = 'Social Media: ' . $e->getMessage();
+            }
+            
+            // 4. Process seasonal events
+            try {
+                $this->processSeasonalCulturalEvents($aeiId);
+            } catch (Exception $e) {
+                $processingDetails['errors'][] = 'Saisonale Events: ' . $e->getMessage();
+            }
+            
+            // 5. Update social context
+            if (!empty($interactions)) {
+                try {
+                    $this->updateAEISocialContext($aeiId, $interactions);
+                } catch (Exception $e) {
+                    $processingDetails['errors'][] = 'Social Context Update: ' . $e->getMessage();
+                }
+            }
+            
+            // Generate detailed success message
+            $message = "Social Processing erfolgreich für {$aei['name']}!\n";
+            $message .= "• {$processingDetails['interactions_generated']} neue Interaktionen\n";
+            $message .= "• {$processingDetails['social_media_posts']} Social Media Posts\n";
+            $message .= "• {$processingDetails['group_events_created']} Gruppen-Events\n";
+            $message .= "• {$processingDetails['cross_contact_relationships']} neue Cross-Contact Beziehungen";
             
             return [
                 'success' => true,
-                'interactions_generated' => $interactionCount
+                'message' => $message,
+                'details' => $processingDetails
             ];
+            
         } catch (Exception $e) {
-            error_log("Error processing single AEI social updates: " . $e->getMessage());
+            error_log("Critical error in processSingleAEI: " . $e->getMessage());
+            $processingDetails['errors'][] = 'Kritischer Fehler: ' . $e->getMessage();
+            
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => 'Kritischer Fehler beim Social Processing: ' . $e->getMessage(),
+                'error_code' => 'CRITICAL_ERROR',
+                'details' => $processingDetails
             ];
         }
     }

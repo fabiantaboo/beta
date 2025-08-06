@@ -90,12 +90,54 @@ class SocialContactManager {
             
             $systemPrompt = "You are a character generator. Create realistic, diverse social contacts. Respond only with valid JSON.";
             $messages = [['role' => 'user', 'content' => $prompt]];
+            
             $response = callAnthropicAPI($messages, $systemPrompt, 1000);
             
+            // Enhanced JSON parsing with error details
             $contactData = json_decode($response, true);
-            if (!$contactData) {
-                error_log("Failed to parse contact JSON: " . $response);
-                return null;
+            $jsonError = json_last_error();
+            
+            if ($jsonError !== JSON_ERROR_NONE || !$contactData) {
+                $errorDetails = [
+                    'json_error' => json_last_error_msg(),
+                    'raw_response' => $response,
+                    'aei_id' => $aeiId,
+                    'relationship_type' => $relationshipType
+                ];
+                
+                error_log("LLM JSON Parsing Error in generateContact: " . json_encode($errorDetails));
+                
+                // Attempt to extract JSON from response if wrapped in text
+                $cleanedResponse = $this->extractJSONFromResponse($response);
+                if ($cleanedResponse) {
+                    $contactData = json_decode($cleanedResponse, true);
+                    if ($contactData) {
+                        error_log("Successfully recovered JSON after cleaning for AEI $aeiId");
+                    }
+                }
+                
+                if (!$contactData) {
+                    throw new Exception("LLM Response JSON Parsing Failed: " . json_last_error_msg() . " | Response: " . substr($response, 0, 200));
+                }
+            }
+            
+            // Validate required fields
+            $requiredFields = ['name', 'personality_traits', 'relationship_strength', 'contact_frequency'];
+            foreach ($requiredFields as $field) {
+                if (!isset($contactData[$field]) || empty($contactData[$field])) {
+                    throw new Exception("Missing required field '$field' in LLM response for AEI $aeiId");
+                }
+            }
+            
+            // Validate data types
+            if (!is_numeric($contactData['relationship_strength']) || 
+                $contactData['relationship_strength'] < 0 || 
+                $contactData['relationship_strength'] > 100) {
+                throw new Exception("Invalid relationship_strength value: " . $contactData['relationship_strength']);
+            }
+            
+            if (!in_array($contactData['contact_frequency'], ['daily', 'weekly', 'monthly', 'rarely'])) {
+                throw new Exception("Invalid contact_frequency value: " . $contactData['contact_frequency']);
             }
             
             // Add additional fields
@@ -105,10 +147,41 @@ class SocialContactManager {
             $contactData['recent_life_events'] = [];
             
             return $contactData;
+            
         } catch (Exception $e) {
-            error_log("Error generating contact: " . $e->getMessage());
-            return null;
+            $errorDetails = [
+                'error' => $e->getMessage(),
+                'aei_id' => $aeiId,
+                'relationship_type' => $relationshipType,
+                'trace' => $e->getTraceAsString()
+            ];
+            error_log("Critical error in generateContact: " . json_encode($errorDetails));
+            
+            // Return structured error for better handling
+            throw new Exception("Contact Generation Failed for AEI $aeiId ($relationshipType): " . $e->getMessage());
         }
+    }
+    
+    /**
+     * Attempt to extract JSON from potentially wrapped response
+     */
+    private function extractJSONFromResponse($response) {
+        // Try to find JSON within the response
+        if (preg_match('/\{.*\}/s', $response, $matches)) {
+            return $matches[0];
+        }
+        
+        // Try to find JSON between ```json blocks
+        if (preg_match('/```json\s*(\{.*\})\s*```/s', $response, $matches)) {
+            return $matches[1];
+        }
+        
+        // Try to find JSON between ``` blocks
+        if (preg_match('/```\s*(\{.*\})\s*```/s', $response, $matches)) {
+            return $matches[1];
+        }
+        
+        return null;
     }
     
     /**
@@ -230,17 +303,17 @@ class SocialContactManager {
     /**
      * Generates contact reaching out to AEI using existing Anthropic API
      */
-    public function generateContactToAEIInteraction($contactId, $aeiId) {
+    public function generateContactToAEIInteraction($contactId, $aeiId, $interactionType = null) {
         try {
             $contact = $this->getContact($contactId);
             $aei = $this->getAEI($aeiId);
             
             if (!$contact || !$aei) {
-                return false;
+                throw new Exception("Contact or AEI not found (Contact: $contactId, AEI: $aeiId)");
             }
             
-            $personalityTraits = json_decode($contact['personality_traits'], true);
-            $recentEvents = json_decode($contact['recent_life_events'], true);
+            $personalityTraits = json_decode($contact['personality_traits'], true) ?: [];
+            $recentEvents = json_decode($contact['recent_life_events'], true) ?: [];
             
             $prompt = "
             {$contact['name']} wants to reach out to {$aei['name']}.
@@ -248,8 +321,9 @@ class SocialContactManager {
             Relationship: {$contact['relationship_type']} (Strength: {$contact['relationship_strength']}/100)
             {$contact['name']}'s personality: " . implode(', ', $personalityTraits) . "
             {$contact['name']}'s situation: {$contact['current_life_situation']}
-            Recent events: " . implode(', ', $recentEvents ?: []) . "
+            Recent events: " . implode(', ', $recentEvents) . "
             Concerns: {$contact['current_concerns']}
+            " . ($interactionType === 'spontaneous' ? "This is a spontaneous, unplanned interaction." : "") . "
             
             What does {$contact['name']} share with {$aei['name']}?
             
@@ -267,23 +341,78 @@ class SocialContactManager {
             $messages = [['role' => 'user', 'content' => $prompt]];
             $response = callAnthropicAPI($messages, $systemPrompt, 800);
             
+            // Enhanced JSON parsing with error recovery
             $interaction = json_decode($response, true);
-            if (!$interaction) {
-                error_log("Failed to parse interaction JSON: " . $response);
-                return false;
+            $jsonError = json_last_error();
+            
+            if ($jsonError !== JSON_ERROR_NONE || !$interaction) {
+                $errorDetails = [
+                    'json_error' => json_last_error_msg(),
+                    'raw_response' => substr($response, 0, 500),
+                    'contact_id' => $contactId,
+                    'aei_id' => $aeiId,
+                    'contact_name' => $contact['name'],
+                    'aei_name' => $aei['name']
+                ];
+                
+                error_log("LLM JSON Parsing Error in generateContactToAEIInteraction: " . json_encode($errorDetails));
+                
+                // Try to recover JSON
+                $cleanedResponse = $this->extractJSONFromResponse($response);
+                if ($cleanedResponse) {
+                    $interaction = json_decode($cleanedResponse, true);
+                    if ($interaction) {
+                        error_log("Successfully recovered interaction JSON for Contact {$contact['name']} -> AEI {$aei['name']}");
+                    }
+                }
+                
+                if (!$interaction) {
+                    throw new Exception("LLM Response JSON Parsing Failed for interaction: " . json_last_error_msg() . " | Response: " . substr($response, 0, 200));
+                }
+            }
+            
+            // Validate interaction structure
+            $requiredFields = ['interaction_type', 'interaction_context', 'contact_message', 'emotional_tone'];
+            foreach ($requiredFields as $field) {
+                if (!isset($interaction[$field]) || empty($interaction[$field])) {
+                    throw new Exception("Missing required field '$field' in interaction response for {$contact['name']} -> {$aei['name']}");
+                }
+            }
+            
+            // Validate interaction type
+            $validTypes = ['shares_news', 'asks_for_advice', 'invites_to_activity', 'shares_problem', 'celebrates_together', 'casual_chat'];
+            if (!in_array($interaction['interaction_type'], $validTypes)) {
+                error_log("Invalid interaction_type '{$interaction['interaction_type']}', defaulting to 'casual_chat'");
+                $interaction['interaction_type'] = 'casual_chat';
             }
             
             $interactionId = $this->storeContactInteraction($aeiId, $contactId, $interaction);
             
+            if (!$interactionId) {
+                throw new Exception("Failed to store interaction in database for {$contact['name']} -> {$aei['name']}");
+            }
+            
             // Generate AEI's internal response to this interaction
-            if ($interactionId) {
+            try {
                 $this->generateAEIResponse($interactionId, $aeiId, $contactId, $interaction);
+            } catch (Exception $e) {
+                error_log("Warning: Failed to generate AEI response for interaction $interactionId: " . $e->getMessage());
+                // Don't fail the whole interaction if AEI response generation fails
             }
             
             return $interactionId;
+            
         } catch (Exception $e) {
-            error_log("Error generating contact interaction: " . $e->getMessage());
-            return false;
+            $errorDetails = [
+                'error' => $e->getMessage(),
+                'contact_id' => $contactId,
+                'aei_id' => $aeiId,
+                'interaction_type' => $interactionType,
+                'trace' => $e->getTraceAsString()
+            ];
+            error_log("Critical error in generateContactToAEIInteraction: " . json_encode($errorDetails));
+            
+            throw new Exception("Contact-to-AEI Interaction Generation Failed: " . $e->getMessage());
         }
     }
     
