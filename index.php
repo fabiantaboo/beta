@@ -18,9 +18,6 @@ if (isset($_GET['action'])) {
         session_destroy();
         header("Location: /");
         exit;
-    } elseif ($_GET['action'] === 'social_dialog_api') {
-        require_once 'api/social-dialog.php';
-        exit;
     }
 }
 

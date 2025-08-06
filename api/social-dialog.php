@@ -7,8 +7,8 @@ ini_set('log_errors', 1);
 
 session_start();
 
-include_once '../config/database.php';
-include_once '../includes/functions.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 // Clear any unwanted output
 ob_clean();

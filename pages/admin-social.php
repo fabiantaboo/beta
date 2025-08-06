@@ -678,7 +678,7 @@ function showDialog(interactionId) {
     content.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin text-2xl text-gray-400"></i></div>';
     
     // Fetch dialog data
-    fetch(`/admin/social-dialog?interaction_id=${interactionId}`)
+    fetch(`/api/social-dialog.php?interaction_id=${interactionId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
