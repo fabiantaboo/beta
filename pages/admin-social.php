@@ -17,11 +17,20 @@ $success = null;
 
 // Handle POST actions
 error_log("POST request received: " . json_encode($_POST));
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-    $action = $_POST['action'] ?? '';
-    error_log("=== ADMIN SOCIAL ACTION: $action ===");
+error_log("REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
+error_log("POST keys: " . implode(', ', array_keys($_POST)));
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    error_log("CSRF token provided: " . ($_POST['csrf_token'] ?? 'NONE'));
+    error_log("CSRF token valid: " . (verifyCSRFToken($_POST['csrf_token'] ?? '') ? 'YES' : 'NO'));
     
-    switch ($action) {
+    if (verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        $action = $_POST['action'] ?? '';
+        error_log("=== ADMIN SOCIAL ACTION: '$action' ===");
+        error_log("Action value type: " . gettype($action));
+        error_log("Action empty check: " . (empty($action) ? 'EMPTY' : 'NOT EMPTY'));
+        
+        switch ($action) {
         case 'process_all':
             error_log("Process All button clicked - starting processing");
             $startTime = microtime(true);
@@ -228,6 +237,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                 $error = "❌ CLEANUP FEHLER\n\nException: " . $e->getMessage() . "\n\nKonnte alte Interaktionen nicht entfernen.";
             }
             break;
+        }
+    } else {
+        error_log("CSRF token validation failed");
     }
 }
 
