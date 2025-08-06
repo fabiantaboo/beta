@@ -50,30 +50,40 @@ class SocialContactManager {
     private function generateContact($aeiId, $relationshipType, $aei) {
         try {
             $prompt = "
-            Generate a realistic social contact for the AEI character '{$aei['name']}'. 
+            You are creating a realistic social contact for the AEI '{$aei['name']}'. 
+            Create a UNIQUE, diverse character that would naturally fit into their social circle.
             
             AEI Profile:
             - Name: {$aei['name']}
-            - Age: {$aei['age']}
+            - Age: {$aei['age']}  
             - Gender: {$aei['gender']}
             - Personality: {$aei['personality']}
             - Background: {$aei['background']}
             - Occupation: {$aei['occupation']}
+            - Interests: {$aei['interests']}
             
-            Relationship Type: $relationshipType
+            Required Relationship Type: $relationshipType
             
-            Create a contact that would realistically know this AEI based on their background and personality.
+            IMPORTANT REQUIREMENTS:
+            - Generate a REALISTIC, UNIQUE name (not generic names like 'Chen' or 'Alex')
+            - Use diverse ethnic backgrounds and cultures for variety
+            - Make the personality traits SPECIFIC and interesting
+            - Create believable life situations that could lead to interesting conversations
+            - Match relationship strength to relationship type (family=70-90, friends=60-85, colleagues=40-70)
+            - Consider the AEI's interests and background for natural connections
+            
+            Examples of good diverse names: Marcus Thompson, Priya Sharma, Sofia Rodriguez, Kenji Nakamura, Fatima Al-Zahra, Emma O'Connor, etc.
             
             Respond with JSON only:
             {
-                \"name\": \"Contact's full name\",
-                \"personality_traits\": [\"trait1\", \"trait2\", \"trait3\"],
-                \"appearance_description\": \"Brief physical description\",
-                \"background_story\": \"How they know the AEI (2-3 sentences)\",
-                \"current_life_situation\": \"Job, living situation, relationship status\",
-                \"current_concerns\": \"What worries them currently\",
-                \"current_goals\": \"What they want to achieve\",
-                \"relationship_strength\": 50-90,
+                \"name\": \"Realistic full name with cultural diversity\",
+                \"personality_traits\": [\"specific_trait1\", \"specific_trait2\", \"specific_trait3\"],
+                \"appearance_description\": \"Brief but distinctive physical description\",
+                \"background_story\": \"Detailed story of how they know the AEI (3-4 sentences)\",
+                \"current_life_situation\": \"Detailed current job, living situation, relationship status\",
+                \"current_concerns\": \"Specific current worries or challenges they face\",
+                \"current_goals\": \"Concrete goals they're working toward\",
+                \"relationship_strength\": \"appropriate number 40-90 based on relationship type\",
                 \"contact_frequency\": \"daily|weekly|monthly|rarely\"
             }
             ";
