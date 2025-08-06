@@ -244,7 +244,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
         $emotions = new Emotions($pdo);
         
         // Get recent chat history (including the current message that was just saved)
-        $chatHistory = getChatHistory($sessionId, 15);
+        $chatHistory = getChatHistory($sessionId, 40);
         if ($includeDebugData) {
             $debugData['chat_history'] = $chatHistory;
         }
