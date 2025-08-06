@@ -149,6 +149,82 @@ function createTablesIfNotExist($pdo) {
             setting_value TEXT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )",
+        'aei_social_contacts' => "CREATE TABLE IF NOT EXISTS aei_social_contacts (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            
+            -- Base personality (stable)
+            personality_traits JSON,
+            appearance_description TEXT,
+            background_story TEXT,
+            
+            -- Relationship with AEI
+            relationship_type ENUM('close_friend', 'friend', 'family', 'work_colleague', 'romantic_interest', 'acquaintance') NOT NULL,
+            relationship_strength INT DEFAULT 50,
+            contact_frequency ENUM('daily', 'weekly', 'monthly', 'rarely') DEFAULT 'weekly',
+            
+            -- Dynamic life (develops in background)
+            current_life_situation TEXT,
+            recent_life_events JSON,
+            current_concerns TEXT,
+            current_goals TEXT,
+            
+            -- Interaction tracking
+            last_contact_initiated TIMESTAMP,
+            last_life_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_active BOOLEAN DEFAULT TRUE,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            INDEX idx_aei_contacts (aei_id, relationship_type),
+            INDEX idx_active_contacts (aei_id, is_active)
+        )",
+        'aei_contact_interactions' => "CREATE TABLE IF NOT EXISTS aei_contact_interactions (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            contact_id VARCHAR(32) NOT NULL,
+            
+            -- Interaction details
+            interaction_type ENUM('shares_news', 'asks_for_advice', 'invites_to_activity', 'shares_problem', 'celebrates_together', 'casual_chat') NOT NULL,
+            interaction_context TEXT,
+            contact_message TEXT,
+            
+            -- Emotional impact on AEI
+            aei_emotional_response JSON,
+            relationship_impact INT DEFAULT 0,
+            
+            -- Processing
+            processed_for_emotions BOOLEAN DEFAULT FALSE,
+            mentioned_in_chat BOOLEAN DEFAULT FALSE,
+            
+            occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            FOREIGN KEY (contact_id) REFERENCES aei_social_contacts(id) ON DELETE CASCADE,
+            INDEX idx_aei_interactions (aei_id, occurred_at),
+            INDEX idx_unprocessed (aei_id, processed_for_emotions)
+        )",
+        'aei_social_context' => "CREATE TABLE IF NOT EXISTS aei_social_context (
+            aei_id VARCHAR(32) PRIMARY KEY,
+            
+            -- Current social state
+            social_satisfaction INT DEFAULT 70,
+            social_energy_level INT DEFAULT 50,
+            
+            -- Chat integration
+            recent_social_summary TEXT,
+            current_social_concerns TEXT,
+            topics_to_mention JSON,
+            
+            -- Unprocessed interactions
+            unprocessed_interactions_count INT DEFAULT 0,
+            
+            last_social_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE
         )"
     ];
 
@@ -308,6 +384,22 @@ try {
                 ];
                 
                 foreach ($newColumns as $columnName => $alterSQL) {
+                    if (!in_array($columnName, $aeiColumns)) {
+                        try {
+                            $pdo->exec($alterSQL);
+                        } catch (PDOException $e) {
+                            // Column might already exist, ignore error
+                        }
+                    }
+                }
+                
+                // Add social columns if they don't exist
+                $socialColumns = [
+                    'social_initialized' => "ALTER TABLE aeis ADD COLUMN social_initialized BOOLEAN DEFAULT FALSE AFTER is_active",
+                    'social_personality_seed' => "ALTER TABLE aeis ADD COLUMN social_personality_seed VARCHAR(32) NULL AFTER social_initialized"
+                ];
+                
+                foreach ($socialColumns as $columnName => $alterSQL) {
                     if (!in_array($columnName, $aeiColumns)) {
                         try {
                             $pdo->exec($alterSQL);

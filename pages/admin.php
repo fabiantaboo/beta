@@ -155,6 +155,16 @@ try {
                         <span class="text-sm font-medium text-gray-900 dark:text-white">Manage Users</span>
                     </a>
                 </div>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <a href="/admin/emotions" class="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-heart text-red-500 mr-3"></i>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">Emotion Monitor</span>
+                    </a>
+                    <a href="/admin/social" class="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-network-wired text-orange-500 mr-3"></i>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">Social System</span>
+                    </a>
+                </div>
             </div>
             
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">

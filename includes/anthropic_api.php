@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/template_engine.php';
 require_once __DIR__ . '/emotions.php';
+require_once __DIR__ . '/aei_social_context.php';
 
 function getAnthropicApiKey() {
     global $pdo;
@@ -16,18 +17,48 @@ function getAnthropicApiKey() {
     }
 }
 
-function generateSystemPrompt($aei, $user) {
+function generateSystemPrompt($aei, $user, $sessionId = null) {
+    global $pdo;
+    
     try {
         // If AEI has a custom system prompt, use it directly
         if (!empty($aei['system_prompt'])) {
-            return $aei['system_prompt'];
+            $basePrompt = $aei['system_prompt'];
+        } else {
+            // Otherwise, use the global template system
+            $template = TemplateEngine::getGlobalTemplate();
+            $data = TemplateEngine::buildTemplateData($aei, $user);
+            
+            // NEW: Add social context variables
+            if ($sessionId && isset($aei['social_initialized']) && $aei['social_initialized']) {
+                $aeiSocialContext = new AEISocialContext($pdo);
+                
+                $socialData = [
+                    'social_summary' => $aeiSocialContext->getSocialSummary($aei['id']),
+                    'recent_contact_news' => $aeiSocialContext->getRecentContactNews($aei['id']),
+                    'social_concerns' => $aeiSocialContext->getCurrentConcerns($aei['id']),
+                    'friend_names' => $aeiSocialContext->getImportantContactNames($aei['id']),
+                    'social_energy' => $aeiSocialContext->getSocialEnergyDescription($aei['id']),
+                    'topics_to_mention' => $aeiSocialContext->getTopicsToMention($aei['id'])
+                ];
+                
+                $data = array_merge($data, $socialData);
+            }
+            
+            $basePrompt = TemplateEngine::render($template, $data);
         }
         
-        // Otherwise, use the global template system
-        $template = TemplateEngine::getGlobalTemplate();
-        $data = TemplateEngine::buildTemplateData($aei, $user);
+        // Add social context for chat if available
+        if ($sessionId && isset($aei['social_initialized']) && $aei['social_initialized']) {
+            $aeiSocialContext = new AEISocialContext($pdo);
+            $socialChatContext = $aeiSocialContext->generateSocialChatContext($aei['id']);
+            
+            if (!empty($socialChatContext)) {
+                $basePrompt .= "\n" . $socialChatContext;
+            }
+        }
         
-        return TemplateEngine::render($template, $data);
+        return $basePrompt;
     } catch (Exception $e) {
         error_log("System prompt generation error: " . $e->getMessage());
         error_log("AEI data: " . print_r($aei, true));
@@ -216,8 +247,21 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId) {
         // Get current emotional state
         $currentEmotions = $emotions->getEmotionalState($sessionId);
         
-        // Generate system prompt with emotional context
-        $baseSystemPrompt = generateSystemPrompt($aei, $user);
+        // Process unprocessed social interactions BEFORE generating response
+        if (isset($aei['social_initialized']) && $aei['social_initialized']) {
+            $aeiSocialContext = new AEISocialContext($pdo);
+            $socialEmotionalImpact = $aeiSocialContext->processUnprocessedSocialUpdates($aei['id']);
+            
+            // Apply social emotional impact to current state
+            if (!empty($socialEmotionalImpact)) {
+                $emotions->adjustEmotionalState($sessionId, $socialEmotionalImpact, 0.3);
+                // Refresh current emotions after social impact
+                $currentEmotions = $emotions->getEmotionalState($sessionId);
+            }
+        }
+        
+        // Generate system prompt with emotional and social context
+        $baseSystemPrompt = generateSystemPrompt($aei, $user, $sessionId);
         $emotionContext = $emotions->generateEmotionContext($currentEmotions);
         $systemPrompt = $baseSystemPrompt . "\n\n" . $emotionContext;
         

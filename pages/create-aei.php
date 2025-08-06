@@ -1,5 +1,6 @@
 <?php
 requireOnboarding();
+require_once __DIR__ . '/../includes/background_social_processor.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -68,6 +69,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $aeiId = generateId();
                 $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $stmt->execute([$aeiId, getUserSession(), $name, $age, $gender, $personality, $appearance, $background, $interests, $communication, $quirks, $occupation, $goals, $relationship]);
+                
+                // Initialize social environment for new AEI
+                try {
+                    $socialProcessor = new BackgroundSocialProcessor($pdo);
+                    $socialProcessor->initializeAEISocialEnvironment($aeiId);
+                    error_log("Initialized social environment for new AEI: $aeiId");
+                } catch (Exception $e) {
+                    error_log("Failed to initialize social environment for AEI $aeiId: " . $e->getMessage());
+                    // Continue without blocking AEI creation
+                }
+                
                 redirectTo('dashboard');
             } catch (PDOException $e) {
                 error_log("Database error creating AEI: " . $e->getMessage());
