@@ -549,21 +549,29 @@ if ($selectedAeiId) {
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Global Actions</h3>
                 
-                <form method="post" class="space-y-4">
-                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                <div class="space-y-4">
+                    <!-- Process All Form -->
+                    <form method="post">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                        <input type="hidden" name="action" value="process_all">
+                        <button type="submit" 
+                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ayuni-blue hover:bg-ayuni-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-blue transition-colors">
+                            <i class="fas fa-play mr-2"></i>
+                            Process All AEI Social Environments
+                        </button>
+                    </form>
                     
-                    <button type="submit" name="action" value="process_all" 
-                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ayuni-blue hover:bg-ayuni-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-blue transition-colors">
-                        <i class="fas fa-play mr-2"></i>
-                        Process All AEI Social Environments
-                    </button>
-                    
-                    <button type="submit" name="action" value="cleanup"
-                            class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
-                        <i class="fas fa-trash-alt mr-2"></i>
-                        Cleanup Old Interactions
-                    </button>
-                </form>
+                    <!-- Cleanup Form -->
+                    <form method="post">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                        <input type="hidden" name="action" value="cleanup">
+                        <button type="submit"
+                                class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                            <i class="fas fa-trash-alt mr-2"></i>
+                            Cleanup Old Interactions
+                        </button>
+                    </form>
+                </div>
             </div>
 
             <!-- Last Cron Run -->
@@ -646,26 +654,31 @@ if ($selectedAeiId) {
                             <td class="py-4 px-6 text-sm text-gray-900 dark:text-white"><?= $aei['contact_count'] ?></td>
                             <td class="py-4 px-6 text-sm text-gray-900 dark:text-white"><?= number_format($aei['interaction_count']) ?></td>
                             <td class="py-4 px-6">
-                                <form method="post" class="inline-flex">
-                                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                                    <input type="hidden" name="aei_id" value="<?= $aei['id'] ?>">
-                                    
-                                    <div class="flex space-x-2">
-                                        <?php if (!$aei['social_initialized']): ?>
-                                        <button type="submit" name="action" value="initialize_aei"
+                                <div class="flex space-x-2">
+                                    <?php if (!$aei['social_initialized']): ?>
+                                    <form method="post" class="inline-flex">
+                                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                        <input type="hidden" name="aei_id" value="<?= $aei['id'] ?>">
+                                        <input type="hidden" name="action" value="initialize_aei">
+                                        <button type="submit"
                                                 class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-ayuni-aqua hover:bg-ayuni-aqua/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-aqua transition-colors">
                                             <i class="fas fa-plus mr-1"></i>
                                             Initialize
                                         </button>
-                                        <?php else: ?>
-                                        <button type="submit" name="action" value="process_single"
+                                    </form>
+                                    <?php else: ?>
+                                    <form method="post" class="inline-flex">
+                                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                                        <input type="hidden" name="aei_id" value="<?= $aei['id'] ?>">
+                                        <input type="hidden" name="action" value="process_single">
+                                        <button type="submit"
                                                 class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-ayuni-blue hover:bg-ayuni-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-blue transition-colors">
                                             <i class="fas fa-sync mr-1"></i>
                                             Process
                                         </button>
-                                        <?php endif; ?>
-                                    </div>
-                                </form>
+                                    </form>
+                                    <?php endif; ?>
+                                </div>
                                 
                                 <?php if ($aei['social_initialized']): ?>
                                 <div class="mt-2">
