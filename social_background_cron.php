@@ -4,7 +4,8 @@
  * Run this script every 6 hours to process AEI social environments
  * 
  * Example crontab entry:
- * 0 */6 * * * /usr/bin/php /path/to/ayuni-beta/social_background_cron.php
+ * 0 STAR/6 * * * /usr/bin/php /path/to/ayuni-beta/social_background_cron.php
+ * (Replace STAR with asterisk symbol)
  */
 
 // Prevent execution via web browser
