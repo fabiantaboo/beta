@@ -118,6 +118,78 @@ try {
 } catch (PDOException $e) {
     $lastRunData = null;
 }
+
+// Get detailed interaction data for selected AEI
+$selectedAeiId = $_GET['aei_id'] ?? '';
+$selectedAeiDetails = null;
+$recentInteractions = [];
+$contacts = [];
+$emotionalHistory = [];
+
+if ($selectedAeiId) {
+    try {
+        // Get AEI details
+        $stmt = $pdo->prepare("SELECT * FROM aeis WHERE id = ?");
+        $stmt->execute([$selectedAeiId]);
+        $selectedAeiDetails = $stmt->fetch();
+        
+        // Get recent interactions with details
+        $stmt = $pdo->prepare("
+            SELECT 
+                i.*,
+                c.name as contact_name,
+                c.relationship_type,
+                c.relationship_strength,
+                c.personality_traits,
+                c.current_life_situation
+            FROM aei_contact_interactions i
+            JOIN aei_social_contacts c ON i.contact_id = c.id
+            WHERE i.aei_id = ?
+            ORDER BY i.occurred_at DESC
+            LIMIT 20
+        ");
+        $stmt->execute([$selectedAeiId]);
+        $recentInteractions = $stmt->fetchAll();
+        
+        // Get all contacts for this AEI
+        $stmt = $pdo->prepare("
+            SELECT 
+                c.*,
+                COUNT(i.id) as total_interactions,
+                MAX(i.occurred_at) as last_interaction,
+                AVG(CASE WHEN i.relationship_impact IS NOT NULL THEN i.relationship_impact ELSE 0 END) as avg_impact
+            FROM aei_social_contacts c
+            LEFT JOIN aei_contact_interactions i ON c.id = i.contact_id
+            WHERE c.aei_id = ? AND c.is_active = TRUE
+            GROUP BY c.id
+            ORDER BY c.relationship_strength DESC, total_interactions DESC
+        ");
+        $stmt->execute([$selectedAeiId]);
+        $contacts = $stmt->fetchAll();
+        
+        // Get emotional history from chat sessions
+        $stmt = $pdo->prepare("
+            SELECT 
+                cs.*,
+                COUNT(cm.id) as message_count,
+                AVG(cm.aei_joy) as avg_joy,
+                AVG(cm.aei_sadness) as avg_sadness,
+                AVG(cm.aei_love) as avg_love,
+                AVG(cm.aei_trust) as avg_trust
+            FROM chat_sessions cs
+            LEFT JOIN chat_messages cm ON cs.id = cm.session_id AND cm.sender_type = 'aei'
+            WHERE cs.aei_id = ?
+            GROUP BY cs.id
+            ORDER BY cs.last_message_at DESC
+            LIMIT 10
+        ");
+        $stmt->execute([$selectedAeiId]);
+        $emotionalHistory = $stmt->fetchAll();
+        
+    } catch (PDOException $e) {
+        error_log("Error getting detailed AEI data: " . $e->getMessage());
+    }
+}
 ?>
 
 <div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark">
@@ -296,20 +368,32 @@ try {
                                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                                     <input type="hidden" name="aei_id" value="<?= $aei['id'] ?>">
                                     
-                                    <?php if (!$aei['social_initialized']): ?>
-                                    <button type="submit" name="action" value="initialize_aei"
-                                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-ayuni-aqua hover:bg-ayuni-aqua/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-aqua transition-colors">
-                                        <i class="fas fa-plus mr-1"></i>
-                                        Initialize
-                                    </button>
-                                    <?php else: ?>
-                                    <button type="submit" name="action" value="process_single"
-                                            class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-ayuni-blue hover:bg-ayuni-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-blue transition-colors">
-                                        <i class="fas fa-sync mr-1"></i>
-                                        Process
-                                    </button>
-                                    <?php endif; ?>
+                                    <div class="flex space-x-2">
+                                        <?php if (!$aei['social_initialized']): ?>
+                                        <button type="submit" name="action" value="initialize_aei"
+                                                class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-ayuni-aqua hover:bg-ayuni-aqua/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-aqua transition-colors">
+                                            <i class="fas fa-plus mr-1"></i>
+                                            Initialize
+                                        </button>
+                                        <?php else: ?>
+                                        <button type="submit" name="action" value="process_single"
+                                                class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-ayuni-blue hover:bg-ayuni-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ayuni-blue transition-colors">
+                                            <i class="fas fa-sync mr-1"></i>
+                                            Process
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
                                 </form>
+                                
+                                <?php if ($aei['social_initialized']): ?>
+                                <div class="mt-2">
+                                    <a href="/admin/social?aei_id=<?= $aei['id'] ?>" 
+                                       class="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+                                        <i class="fas fa-chart-line mr-1"></i>
+                                        Details
+                                    </a>
+                                </div>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -325,5 +409,235 @@ try {
                 <?php endif; ?>
             </div>
         </div>
+
+        <?php if ($selectedAeiDetails): ?>
+        <!-- Detailed AEI Social Monitoring -->
+        <div class="mt-8 space-y-8">
+            <!-- AEI Details Header -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-gradient-to-r from-ayuni-blue to-ayuni-aqua rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-robot text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($selectedAeiDetails['name']) ?></h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Detailed Social Monitoring</p>
+                        </div>
+                    </div>
+                    <a href="/admin/social" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <i class="fas fa-times text-xl"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Social Contacts Details -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Social Contacts (<?= count($contacts) ?>)</h3>
+                </div>
+                <div class="p-6">
+                    <?php if (!empty($contacts)): ?>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <?php foreach ($contacts as $contact): ?>
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900 dark:text-white"><?= htmlspecialchars($contact['name']) ?></h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 capitalize"><?= str_replace('_', ' ', $contact['relationship_type']) ?></p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white"><?= $contact['relationship_strength'] ?>%</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500">Relationship</div>
+                                </div>
+                            </div>
+                            
+                            <?php 
+                            $personality = json_decode($contact['personality_traits'], true);
+                            if ($personality): ?>
+                            <div class="mb-3">
+                                <div class="text-xs font-medium text-gray-500 dark:text-gray-500 mb-1">Personality:</div>
+                                <div class="flex flex-wrap gap-1">
+                                    <?php foreach (array_slice($personality, 0, 3) as $trait): ?>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
+                                        <?= htmlspecialchars($trait) ?>
+                                    </span>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            
+                            <div class="mb-3">
+                                <div class="text-xs font-medium text-gray-500 dark:text-gray-500 mb-1">Current Situation:</div>
+                                <p class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2"><?= htmlspecialchars($contact['current_life_situation']) ?></p>
+                            </div>
+                            
+                            <div class="flex justify-between items-center text-xs text-gray-500 dark:text-gray-500">
+                                <div>
+                                    <i class="fas fa-comments mr-1"></i>
+                                    <?= $contact['total_interactions'] ?> interactions
+                                </div>
+                                <div>
+                                    <?php if ($contact['last_interaction']): ?>
+                                    Last: <?= date('M j, H:i', strtotime($contact['last_interaction'])) ?>
+                                    <?php else: ?>
+                                    No interactions yet
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?>
+                    <p class="text-gray-500 dark:text-gray-400 text-center py-8">No contacts found</p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Recent Social Interactions -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Social Interactions (<?= count($recentInteractions) ?>)</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <?php if (!empty($recentInteractions)): ?>
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200 dark:border-gray-700">
+                                <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Time</th>
+                                <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
+                                <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+                                <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Content</th>
+                                <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Memory Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <?php foreach ($recentInteractions as $interaction): ?>
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <td class="py-4 px-6 text-sm text-gray-900 dark:text-white">
+                                    <div><?= date('M j, Y', strtotime($interaction['occurred_at'])) ?></div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500"><?= date('H:i:s', strtotime($interaction['occurred_at'])) ?></div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white"><?= htmlspecialchars($interaction['contact_name']) ?></div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500 capitalize"><?= str_replace('_', ' ', $interaction['relationship_type']) ?></div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                        <?php 
+                                        $typeColors = [
+                                            'shares_news' => 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400',
+                                            'asks_for_advice' => 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400',
+                                            'invites_to_activity' => 'bg-purple-100 dark:bg-purple-900/20 text-purple-800 dark:text-purple-400',
+                                            'shares_problem' => 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400',
+                                            'celebrates_together' => 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400',
+                                            'casual_chat' => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                                        ];
+                                        echo $typeColors[$interaction['interaction_type']] ?? $typeColors['casual_chat'];
+                                        ?>">
+                                        <?= str_replace('_', ' ', ucfirst($interaction['interaction_type'])) ?>
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <div class="text-sm text-gray-900 dark:text-white max-w-xs truncate">
+                                        <?= htmlspecialchars($interaction['interaction_context']) ?>
+                                    </div>
+                                    <?php if ($interaction['contact_message']): ?>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500 mt-1 max-w-xs truncate">
+                                        "<?= htmlspecialchars($interaction['contact_message']) ?>"
+                                    </div>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center text-xs">
+                                            <?php if ($interaction['processed_for_emotions']): ?>
+                                            <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                            <span class="text-green-600 dark:text-green-400">Emotionally Processed</span>
+                                            <?php else: ?>
+                                            <i class="fas fa-clock text-orange-500 mr-1"></i>
+                                            <span class="text-orange-600 dark:text-orange-400">Pending Emotion Processing</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="flex items-center text-xs">
+                                            <?php if ($interaction['mentioned_in_chat']): ?>
+                                            <i class="fas fa-comment text-blue-500 mr-1"></i>
+                                            <span class="text-blue-600 dark:text-blue-400">Mentioned in Chat</span>
+                                            <?php else: ?>
+                                            <i class="fas fa-comment-slash text-gray-400 mr-1"></i>
+                                            <span class="text-gray-500 dark:text-gray-500">Not Mentioned Yet</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <?php else: ?>
+                    <div class="px-6 py-12 text-center">
+                        <div class="w-12 h-12 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                            <i class="fas fa-comments text-gray-400 text-xl"></i>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400">No interactions found</p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Emotional Impact History -->
+            <?php if (!empty($emotionalHistory)): ?>
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Emotional State History</h3>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <?php foreach ($emotionalHistory as $session): ?>
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        Chat Session - <?= date('M j, Y H:i', strtotime($session['last_message_at'])) ?>
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500"><?= $session['message_count'] ?> messages</div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                                        <?= number_format(($session['avg_joy'] ?? 0.5) * 100) ?>%
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500">Joy</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                        <?= number_format(($session['avg_sadness'] ?? 0.5) * 100) ?>%
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500">Sadness</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-red-600 dark:text-red-400">
+                                        <?= number_format(($session['avg_love'] ?? 0.5) * 100) ?>%
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500">Love</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                                        <?= number_format(($session['avg_trust'] ?? 0.5) * 100) ?>%
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-500">Trust</div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
     </div>
 </div>
