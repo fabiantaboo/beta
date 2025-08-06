@@ -585,6 +585,21 @@ function updateDebugPanel(debugData) {
         </div>
     </div>`;
     
+    // Complete API Request JSON
+    if (debugData.api_request_payload) {
+        html += `<div class="border-b border-gray-700 pb-2">
+            <span class="text-orange-400 font-semibold">Complete API Request JSON:</span>
+            <div class="ml-2 mt-2 relative">
+                <button onclick="copyApiRequest()" class="absolute top-2 right-2 px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs hover:bg-gray-600 transition-colors z-10">
+                    <i class="fas fa-copy mr-1"></i>Copy JSON
+                </button>
+                <div class="p-3 bg-black rounded border border-gray-600 max-h-80 overflow-y-auto">
+                    <pre class="whitespace-pre-wrap text-xs text-green-400" id="api-request-json">${JSON.stringify(debugData.api_request_payload, null, 2)}</pre>
+                </div>
+            </div>
+        </div>`;
+    }
+    
     // Full System Prompt - This is the key part!
     if (debugData.full_system_prompt) {
         html += `<div class="border-b border-gray-700 pb-2">
@@ -686,6 +701,28 @@ function copyDebugData() {
         }, 2000);
     }).catch(() => {
         alert('Failed to copy debug data to clipboard');
+    });
+}
+
+function copyApiRequest() {
+    if (!currentDebugData || !currentDebugData.api_request_payload) {
+        alert('No API request data available to copy');
+        return;
+    }
+    
+    navigator.clipboard.writeText(JSON.stringify(currentDebugData.api_request_payload, null, 2)).then(() => {
+        // Show temporary confirmation
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+        button.classList.add('bg-green-700');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-green-700');
+        }, 2000);
+    }).catch(() => {
+        alert('Failed to copy API request to clipboard');
     });
 }
 

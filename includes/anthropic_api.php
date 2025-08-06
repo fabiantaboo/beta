@@ -288,6 +288,14 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             $debugData['api_model'] = 'claude-3-5-sonnet-20241022';
             $debugData['max_tokens'] = 8000;
             $debugData['timestamp'] = date('Y-m-d H:i:s');
+            
+            // Capture the complete API request payload
+            $debugData['api_request_payload'] = [
+                'model' => 'claude-3-5-sonnet-20241022',
+                'max_tokens' => 8000,
+                'system' => $systemPrompt,
+                'messages' => $chatHistory
+            ];
         }
         
         // Call Anthropic API
