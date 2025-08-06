@@ -166,6 +166,10 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
         $aeiInfo .= '<button onclick="toggleEmotions()" class="text-xs text-ayuni-blue hover:text-ayuni-blue/80 transition-colors" title="View emotional state (Admin only)">';
         $aeiInfo .= '<i class="fas fa-brain mr-1"></i>Emotions';
         $aeiInfo .= '</button>';
+        $aeiInfo .= '<span class="text-xs text-gray-400 dark:text-gray-500">•</span>';
+        $aeiInfo .= '<button onclick="toggleDebugPanel()" class="text-xs text-red-500 hover:text-red-400 transition-colors" title="View API debug information (Admin only)">';
+        $aeiInfo .= '<i class="fas fa-bug mr-1"></i>Debug';
+        $aeiInfo .= '</button>';
     }
     
     $aeiInfo .= '</div>';

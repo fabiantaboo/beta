@@ -107,8 +107,18 @@ try {
     
     $userMessageTime = getCurrentTimestamp();
     
-    // Generate AI response with complete context
-    $aeiResponse = generateAIResponse($message, $aei, $user, $sessionId);
+    // Generate AI response with complete context (include debug data for admins)
+    $isAdmin = isAdmin();
+    $aeiResponseData = generateAIResponse($message, $aei, $user, $sessionId, $isAdmin);
+    
+    // Handle debug response format
+    if ($isAdmin && is_array($aeiResponseData)) {
+        $aeiResponse = $aeiResponseData['response'];
+        $debugData = $aeiResponseData['debug_data'];
+    } else {
+        $aeiResponse = $aeiResponseData;
+        $debugData = null;
+    }
     
     // Save AI response
     $aeiResponseId = generateId();
@@ -133,7 +143,7 @@ try {
     ob_clean();
     
     // Return successful response with both messages
-    echo json_encode([
+    $response = [
         'success' => true,
         'messages' => [
             [
@@ -151,7 +161,14 @@ try {
                 'sender_name' => htmlspecialchars($aei['name'])
             ]
         ]
-    ]);
+    ];
+    
+    // Add debug data for admins
+    if ($isAdmin && $debugData) {
+        $response['debug_data'] = $debugData;
+    }
+    
+    echo json_encode($response);
     
 } catch (Exception $e) {
     // Rollback transaction on any error

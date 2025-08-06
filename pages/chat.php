@@ -161,6 +161,39 @@ if ($isCurrentUserAdmin) {
     </div>
     <?php endif; ?>
 
+    <!-- Debug Panel (Admin only) -->
+    <?php if ($isCurrentUserAdmin): ?>
+    <div id="debug-panel" class="hidden bg-gray-900 text-green-400 border-b border-gray-700 shadow-lg max-h-96 overflow-y-auto">
+        <div class="max-w-4xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-medium text-white flex items-center">
+                    <i class="fas fa-bug text-red-400 mr-2"></i>
+                    API Debug Information - Last Request
+                </h3>
+                <div class="flex items-center space-x-2">
+                    <button 
+                        onclick="copyDebugData()" 
+                        class="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs hover:bg-gray-600 transition-colors"
+                        title="Copy debug data to clipboard"
+                    >
+                        <i class="fas fa-copy mr-1"></i>Copy
+                    </button>
+                    <button 
+                        onclick="toggleDebugPanel()" 
+                        class="text-gray-400 hover:text-gray-200"
+                        title="Close debug panel"
+                    >
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="debug-content" class="text-xs font-mono space-y-3">
+                <div class="text-gray-400">No debug data available yet. Send a message to see API details.</div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0">
         <!-- Messages Area -->
         <div class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" id="messages-container">
@@ -430,6 +463,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 addMessage(aiMessage);
             }
             
+            // Handle debug data for admins
+            <?php if ($isCurrentUserAdmin): ?>
+            if (data.debug_data) {
+                updateDebugPanel(data.debug_data);
+            }
+            <?php endif; ?>
+            
         } catch (error) {
             console.error('Chat error:', error);
             showAlert(error.message || 'Failed to send message. Please try again.');
@@ -506,4 +546,154 @@ function toggleEmotions() {
     console.log('Emotion panel is only available for administrators.');
     <?php endif; ?>
 }
+
+// Debug panel functions (Admin only)
+<?php if ($isCurrentUserAdmin): ?>
+let currentDebugData = null;
+
+function toggleDebugPanel() {
+    const panel = document.getElementById('debug-panel');
+    if (panel && panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        panel.classList.add('animate-fade-in');
+    } else if (panel) {
+        panel.classList.add('hidden');
+        panel.classList.remove('animate-fade-in');
+    }
+}
+
+function updateDebugPanel(debugData) {
+    currentDebugData = debugData;
+    const content = document.getElementById('debug-content');
+    if (!content) return;
+    
+    let html = '<div class="space-y-4">';
+    
+    // Timestamp
+    html += `<div class="border-b border-gray-700 pb-2">
+        <span class="text-yellow-400 font-semibold">Request Timestamp:</span>
+        <span class="text-white ml-2">${debugData.timestamp || 'Unknown'}</span>
+    </div>`;
+    
+    // API Configuration
+    html += `<div class="border-b border-gray-700 pb-2">
+        <span class="text-yellow-400 font-semibold">API Configuration:</span>
+        <div class="ml-4 mt-1 text-gray-300">
+            Model: <span class="text-cyan-400">${debugData.api_model || 'claude-3-5-sonnet-20241022'}</span><br>
+            Max Tokens: <span class="text-cyan-400">${debugData.max_tokens || 8000}</span><br>
+            Response Length: <span class="text-cyan-400">${debugData.response_length || 'Unknown'} chars</span>
+        </div>
+    </div>`;
+    
+    // Full System Prompt - This is the key part!
+    if (debugData.full_system_prompt) {
+        html += `<div class="border-b border-gray-700 pb-2">
+            <span class="text-red-400 font-semibold">Complete System Prompt:</span>
+            <div class="ml-2 mt-2 p-3 bg-gray-800 rounded border border-gray-600 max-h-64 overflow-y-auto">
+                <pre class="whitespace-pre-wrap text-xs text-gray-200">${escapeHtml(debugData.full_system_prompt)}</pre>
+            </div>
+        </div>`;
+    }
+    
+    // Chat History sent to API
+    if (debugData.chat_history && debugData.chat_history.length > 0) {
+        html += `<div class="border-b border-gray-700 pb-2">
+            <span class="text-green-400 font-semibold">Chat History (${debugData.chat_history.length} messages):</span>
+            <div class="ml-2 mt-2 space-y-2 max-h-48 overflow-y-auto">`;
+        
+        debugData.chat_history.forEach(msg => {
+            const roleColor = msg.role === 'user' ? 'text-blue-400' : 'text-purple-400';
+            html += `<div class="p-2 bg-gray-800 rounded border border-gray-600">
+                <div class="${roleColor} font-semibold text-xs mb-1">${msg.role.toUpperCase()}</div>
+                <div class="text-gray-300 text-xs whitespace-pre-wrap">${escapeHtml(msg.content)}</div>
+            </div>`;
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Current Emotions
+    if (debugData.current_emotions) {
+        html += `<div class="border-b border-gray-700 pb-2">
+            <span class="text-purple-400 font-semibold">Current Emotional State:</span>
+            <div class="ml-2 mt-1 grid grid-cols-3 gap-1 text-xs">`;
+        
+        Object.entries(debugData.current_emotions).forEach(([emotion, value]) => {
+            const intensity = parseFloat(value);
+            const color = intensity > 0.5 ? 'text-red-400' : intensity > 0.3 ? 'text-yellow-400' : 'text-gray-500';
+            html += `<div class="${color}">${emotion}: ${intensity.toFixed(1)}</div>`;
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // API Response
+    if (debugData.api_response) {
+        html += `<div class="border-b border-gray-700 pb-2">
+            <span class="text-cyan-400 font-semibold">API Response:</span>
+            <div class="ml-2 mt-2 p-3 bg-gray-800 rounded border border-gray-600 max-h-48 overflow-y-auto">
+                <pre class="whitespace-pre-wrap text-xs text-gray-200">${escapeHtml(debugData.api_response)}</pre>
+            </div>
+        </div>`;
+    }
+    
+    // Social Context (if available)
+    if (debugData.social_emotional_impact) {
+        html += `<div class="border-b border-gray-700 pb-2">
+            <span class="text-orange-400 font-semibold">Social Context:</span>
+            <div class="ml-2 mt-1 p-2 bg-gray-800 rounded border border-gray-600">
+                <pre class="whitespace-pre-wrap text-xs text-gray-300">${JSON.stringify(debugData.social_emotional_impact, null, 2)}</pre>
+            </div>
+        </div>`;
+    }
+    
+    // Errors (if any)
+    if (debugData.error || debugData.emotion_analysis_error) {
+        html += `<div class="border-b border-red-600 pb-2">
+            <span class="text-red-400 font-semibold">Errors:</span>
+            <div class="ml-2 mt-1 text-red-300 text-xs">`;
+        
+        if (debugData.error) {
+            html += `<div>General Error: ${escapeHtml(debugData.error)}</div>`;
+        }
+        if (debugData.emotion_analysis_error) {
+            html += `<div>Emotion Analysis: ${escapeHtml(debugData.emotion_analysis_error)}</div>`;
+        }
+        
+        html += `</div></div>`;
+    }
+    
+    html += '</div>';
+    content.innerHTML = html;
+}
+
+function copyDebugData() {
+    if (!currentDebugData) {
+        alert('No debug data available to copy');
+        return;
+    }
+    
+    navigator.clipboard.writeText(JSON.stringify(currentDebugData, null, 2)).then(() => {
+        // Show temporary confirmation
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+        button.classList.add('bg-green-700');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-green-700');
+        }, 2000);
+    }).catch(() => {
+        alert('Failed to copy debug data to clipboard');
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+<?php endif; ?>
+
 </script>

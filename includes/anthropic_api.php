@@ -234,8 +234,10 @@ Do not include any explanation or additional text - ONLY the JSON object.";
     return $emotionData;
 }
 
-function generateAIResponse($userMessage, $aei, $user, $sessionId) {
+function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebugData = false) {
     global $pdo;
+    
+    $debugData = [];
     
     try {
         // Initialize emotions instance
@@ -243,20 +245,34 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId) {
         
         // Get recent chat history (including the current message that was just saved)
         $chatHistory = getChatHistory($sessionId, 15);
+        if ($includeDebugData) {
+            $debugData['chat_history'] = $chatHistory;
+        }
         
         // Get current emotional state
         $currentEmotions = $emotions->getEmotionalState($sessionId);
+        if ($includeDebugData) {
+            $debugData['current_emotions'] = $currentEmotions;
+        }
         
         // Process unprocessed social interactions BEFORE generating response
         if (isset($aei['social_initialized']) && $aei['social_initialized']) {
             $aeiSocialContext = new AEISocialContext($pdo);
             $socialEmotionalImpact = $aeiSocialContext->processUnprocessedSocialUpdates($aei['id']);
             
+            if ($includeDebugData) {
+                $debugData['social_emotional_impact'] = $socialEmotionalImpact;
+            }
+            
             // Apply social emotional impact to current state
             if (!empty($socialEmotionalImpact)) {
                 $emotions->adjustEmotionalState($sessionId, $socialEmotionalImpact, 0.3);
                 // Refresh current emotions after social impact
                 $currentEmotions = $emotions->getEmotionalState($sessionId);
+                
+                if ($includeDebugData) {
+                    $debugData['emotions_after_social'] = $currentEmotions;
+                }
             }
         }
         
@@ -265,27 +281,71 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId) {
         $emotionContext = $emotions->generateEmotionContext($currentEmotions);
         $systemPrompt = $baseSystemPrompt . "\n\n" . $emotionContext;
         
+        if ($includeDebugData) {
+            $debugData['base_system_prompt'] = $baseSystemPrompt;
+            $debugData['emotion_context'] = $emotionContext;
+            $debugData['full_system_prompt'] = $systemPrompt;
+            $debugData['api_model'] = 'claude-3-5-sonnet-20241022';
+            $debugData['max_tokens'] = 8000;
+            $debugData['timestamp'] = date('Y-m-d H:i:s');
+        }
+        
         // Call Anthropic API
         $response = callAnthropicAPI($chatHistory, $systemPrompt);
+        
+        if ($includeDebugData) {
+            $debugData['api_response'] = $response;
+            $debugData['response_length'] = strlen($response);
+        }
         
         // Analyze emotional state after the conversation
         try {
             $conversationHistory = $emotions->getConversationHistory($sessionId, 10);
             $newEmotions = analyzeEmotionalState($conversationHistory, $aei['name']);
             
+            if ($includeDebugData) {
+                $debugData['analyzed_emotions'] = $newEmotions;
+            }
+            
             // Validate and update emotions
             if ($emotions->validateEmotionData($newEmotions)) {
                 $emotions->adjustEmotionalState($sessionId, $newEmotions, 0.3);
+                
+                if ($includeDebugData) {
+                    $debugData['emotions_validated'] = true;
+                    $debugData['final_emotions'] = $emotions->getEmotionalState($sessionId);
+                }
+            } else if ($includeDebugData) {
+                $debugData['emotions_validated'] = false;
             }
         } catch (Exception $e) {
             error_log("Emotion analysis error: " . $e->getMessage());
-            // Continue without emotion update
+            if ($includeDebugData) {
+                $debugData['emotion_analysis_error'] = $e->getMessage();
+            }
+        }
+        
+        if ($includeDebugData) {
+            return [
+                'response' => $response,
+                'debug_data' => $debugData
+            ];
         }
         
         return $response;
         
     } catch (Exception $e) {
         error_log("AI Response Error: " . $e->getMessage());
+        
+        if ($includeDebugData) {
+            $debugData['error'] = $e->getMessage();
+            $debugData['trace'] = $e->getTraceAsString();
+            
+            return [
+                'response' => "I'm temporarily unavailable. Please try again in a moment.",
+                'debug_data' => $debugData
+            ];
+        }
         
         // Don't expose internal errors to users - return generic fallback
         return "I'm temporarily unavailable. Please try again in a moment.";
