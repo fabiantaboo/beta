@@ -425,7 +425,8 @@ if ($isCurrentUserAdmin) {
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(229, 231, 235, 0.3); /* gray-200 with low opacity */
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -439,22 +440,26 @@ if ($isCurrentUserAdmin) {
 }
 
 /* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+    background: rgba(55, 65, 81, 0.3); /* gray-700 with low opacity */
+}
+
 .dark ::-webkit-scrollbar-thumb {
-    background: rgba(75, 85, 99, 0.5); /* gray-600 with opacity */
+    background: rgba(75, 85, 99, 0.6); /* gray-600 with opacity */
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-    background: rgba(55, 65, 81, 0.7); /* gray-700 with opacity */
+    background: rgba(55, 65, 81, 0.8); /* gray-700 with opacity */
 }
 
 /* Firefox scrollbar */
 .messages-container {
     scrollbar-width: thin;
-    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    scrollbar-color: rgba(156, 163, 175, 0.5) rgba(229, 231, 235, 0.3);
 }
 
 .dark .messages-container {
-    scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+    scrollbar-color: rgba(75, 85, 99, 0.6) rgba(55, 65, 81, 0.3);
 }
 
 /* Hide scrollbar on mobile for cleaner look */
