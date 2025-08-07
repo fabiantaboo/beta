@@ -417,6 +417,57 @@ if ($isCurrentUserAdmin) {
         transform: translateY(0);
     }
 }
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5); /* gray-400 with opacity */
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 0.7); /* gray-500 with opacity */
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.5); /* gray-600 with opacity */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(55, 65, 81, 0.7); /* gray-700 with opacity */
+}
+
+/* Firefox scrollbar */
+.messages-container {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.dark .messages-container {
+    scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 640px) {
+    ::-webkit-scrollbar {
+        width: 0px;
+        height: 0px;
+    }
+    
+    .messages-container {
+        scrollbar-width: none;
+    }
+}
 </style>
 
 <script>

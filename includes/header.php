@@ -190,7 +190,7 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
                 </div>
                 
                 <!-- Right: Theme Toggle at far right -->
-                <div class="flex-shrink-0">
+                <div class="flex-shrink-0 mr-1">
                     <button 
                         id="theme-toggle" 
                         onclick="toggleTheme()" 
