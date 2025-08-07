@@ -242,7 +242,7 @@ if ($isCurrentUserAdmin) {
         </div>
 
         <!-- Message Input -->
-        <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 sm:p-4">
+        <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-t-2xl">
             <!-- Error/Success Messages -->
             <div id="chat-alerts" class="hidden mb-4"></div>
             
