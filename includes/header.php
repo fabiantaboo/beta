@@ -99,22 +99,12 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
         <div class="w-full px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-center h-16">
                 <!-- Container aligned with chat -->
-                <div class="max-w-4xl w-full flex items-center px-4">
-                    <!-- Back Button + Theme Toggle + AEI Info -->
+                <div class="max-w-4xl w-full flex items-center justify-between px-4">
+                    <!-- Left: Back Button + AEI Info -->
                     <div class="flex items-center space-x-4">
                         <a href="/dashboard" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Back to Dashboard">
                             <i class="fas fa-arrow-left text-lg"></i>
                         </a>
-                        
-                        <button 
-                            id="theme-toggle" 
-                            onclick="toggleTheme()" 
-                            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
-                            title="Toggle theme"
-                        >
-                            <i class="fas fa-sun sun-icon text-lg"></i>
-                            <i class="fas fa-moon moon-icon text-lg"></i>
-                        </button>
                         
                         <div class="flex items-center space-x-3">
                         <!-- AEI Avatar with emotion indicator -->
@@ -194,6 +184,19 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
                                 <?php endif; ?>
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- Right: Theme Toggle -->
+                    <div>
+                        <button 
+                            id="theme-toggle" 
+                            onclick="toggleTheme()" 
+                            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
+                            title="Toggle theme"
+                        >
+                            <i class="fas fa-sun sun-icon text-lg"></i>
+                            <i class="fas fa-moon moon-icon text-lg"></i>
+                        </button>
                     </div>
                 </div>
             </div>
