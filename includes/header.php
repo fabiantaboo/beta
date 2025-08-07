@@ -106,7 +106,7 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
                 </div>
 
                 <!-- Center: AEI Info -->
-                <div class="flex-1 flex items-center justify-center px-4">
+                <div class="flex-1 flex items-center px-4">
                     <div class="flex items-center space-x-3">
                         <!-- AEI Avatar with emotion indicator -->
                         <div class="relative">
@@ -167,9 +167,9 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
                         </div>
                         
                         <!-- AEI Name and Status -->
-                        <div class="text-center sm:text-left">
+                        <div>
                             <h1 class="text-lg font-semibold text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></h1>
-                            <div class="flex items-center justify-center sm:justify-start space-x-1">
+                            <div class="flex items-center space-x-1">
                                 <div class="w-2 h-2 bg-green-500 rounded-full"></div>
                                 <span class="text-xs text-gray-500 dark:text-gray-400">Online</span>
                                 
