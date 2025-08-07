@@ -611,23 +611,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error || 'Failed to send message');
             }
             
-            // Only add AI response (user message was already added)
-            const aiMessage = data.messages.find(msg => msg.sender_type === 'aei');
-            if (aiMessage) {
-                addMessage(aiMessage);
-            }
-            
-            // Handle debug data for admins
-            <?php if ($isCurrentUserAdmin): ?>
-            if (data.debug_data) {
-                updateDebugPanel(data.debug_data);
-            }
-            <?php endif; ?>
+            // Return the response data so we can update the user message with correct image URL
+            return data;
             
         } catch (error) {
             console.error('Chat error:', error);
             showAlert(error.message || 'Failed to send message. Please try again.');
             hideTyping();
+            throw error;
         }
     }
     
@@ -648,28 +639,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const imageFile = selectedImage;
         messageInput.value = '';
         
-        // Add user message immediately with image preview
-        const userMessageData = {
-            sender_type: 'user',
-            message_text: userMessage
-        };
-        
-        if (selectedImage) {
-            userMessageData.has_image = true;
-            userMessageData.image_filename = URL.createObjectURL(selectedImage);
-            userMessageData.image_original_name = selectedImage.name;
-        }
-        
-        addMessage(userMessageData);
-        
         // Clear image preview
         removeImagePreview();
         
         // Show typing indicator
         showTyping();
         
-        // Send message with image (only AI response will be added)
-        await sendAIMessage(userMessage, imageFile);
+        try {
+            // Send message with image and wait for response
+            const data = await sendAIMessage(userMessage, imageFile);
+            
+            // Add both messages from server response (this ensures correct image URLs)
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    addMessage(msg);
+                });
+            }
+            
+            // Handle debug data for admins
+            <?php if ($isCurrentUserAdmin): ?>
+            if (data.debug_data) {
+                updateDebugPanel(data.debug_data);
+            }
+            <?php endif; ?>
+            
+        } catch (error) {
+            // Error already handled in sendAIMessage
+        }
         
         // Re-enable form
         sendButton.disabled = false;
