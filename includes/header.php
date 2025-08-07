@@ -97,16 +97,17 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
     ?>
     <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <div class="w-full px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-center h-16">
-                <!-- Container aligned with chat -->
-                <div class="max-w-4xl w-full flex items-center justify-between px-4">
-                    <!-- Left: Back Button + AEI Info -->
-                    <div class="flex items-center space-x-4">
-                        <a href="/dashboard" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Back to Dashboard">
-                            <i class="fas fa-arrow-left text-lg"></i>
-                        </a>
-                        
-                        <div class="flex items-center space-x-3">
+            <div class="flex items-center h-16">
+                <!-- Left side with chat container alignment -->
+                <div class="flex-1 flex justify-center">
+                    <div class="max-w-4xl w-full flex items-center px-4">
+                        <!-- Back Button + AEI Info -->
+                        <div class="flex items-center space-x-4">
+                            <a href="/dashboard" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Back to Dashboard">
+                                <i class="fas fa-arrow-left text-lg"></i>
+                            </a>
+                            
+                            <div class="flex items-center space-x-3">
                         <!-- AEI Avatar with emotion indicator -->
                         <div class="relative">
                             <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
@@ -185,19 +186,21 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Right: Theme Toggle -->
-                    <div>
-                        <button 
-                            id="theme-toggle" 
-                            onclick="toggleTheme()" 
-                            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
-                            title="Toggle theme"
-                        >
-                            <i class="fas fa-sun sun-icon text-lg"></i>
-                            <i class="fas fa-moon moon-icon text-lg"></i>
-                        </button>
                     </div>
+                </div>
+                
+                <!-- Right: Theme Toggle at far right -->
+                <div class="flex-shrink-0">
+                    <button 
+                        id="theme-toggle" 
+                        onclick="toggleTheme()" 
+                        class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
+                        title="Toggle theme"
+                    >
+                        <i class="fas fa-sun sun-icon text-lg"></i>
+                        <i class="fas fa-moon moon-icon text-lg"></i>
+                    </button>
+                </div>
                 </div>
             </div>
         </div>
