@@ -646,10 +646,13 @@ document.addEventListener('DOMContentLoaded', function() {
         sendText.textContent = 'Sending...';
         messageInput.disabled = true;
         
-        // Clear input
+        // Clear input and capture image file
         const userMessage = message;
         const imageFile = selectedImage;
         messageInput.value = '';
+        
+        // IMPORTANT: Reset selectedImage immediately to prevent it being sent again
+        selectedImage = null;
         
         // Add user message immediately with temporary preview
         const userMessageData = {
@@ -658,11 +661,11 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         
         let tempImageUrl = null;
-        if (selectedImage) {
-            tempImageUrl = URL.createObjectURL(selectedImage);
+        if (imageFile) {
+            tempImageUrl = URL.createObjectURL(imageFile);
             userMessageData.has_image = true;
             userMessageData.image_filename = tempImageUrl;
-            userMessageData.image_original_name = selectedImage.name;
+            userMessageData.image_original_name = imageFile.name;
         }
         
         const userMessageElement = addMessage(userMessageData);
