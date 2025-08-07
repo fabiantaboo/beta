@@ -96,7 +96,7 @@ function renderHeader($config = []) {
 function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions = []) {
     ?>
     <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
             <div class="flex items-center h-16">
                 <!-- Left: Back Button -->
                 <div class="flex-shrink-0">
@@ -105,9 +105,10 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
                     </a>
                 </div>
 
-                <!-- Center: AEI Info -->
-                <div class="flex-1 flex items-center px-8">
-                    <div class="flex items-center space-x-3">
+                <!-- Center: AEI Info aligned with chat container -->
+                <div class="flex-1 flex justify-center">
+                    <div class="max-w-4xl w-full flex items-center px-4">
+                        <div class="flex items-center space-x-3">
                         <!-- AEI Avatar with emotion indicator -->
                         <div class="relative">
                             <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
