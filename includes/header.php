@@ -106,7 +106,7 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
                 </div>
 
                 <!-- Center: AEI Info -->
-                <div class="flex-1 flex items-center px-4">
+                <div class="flex-1 flex items-center px-8">
                     <div class="flex items-center space-x-3">
                         <!-- AEI Avatar with emotion indicator -->
                         <div class="relative">
