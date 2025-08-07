@@ -525,13 +525,22 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let imageHtml = '';
         if (message.has_image && message.image_filename) {
+            // Handle both temporary blob URLs and server URLs
+            const imageSrc = message.image_filename.startsWith('blob:') 
+                ? message.image_filename 
+                : `/uploads/chat_images/${message.image_filename}`;
+            
+            const onClickCode = message.image_filename.startsWith('blob:')
+                ? '' // No modal for temporary images
+                : `onclick="openImageModal('${message.image_filename}', '${message.image_original_name || 'Shared image'}')"`;
+            
             imageHtml = `
                 <div class="mb-2">
                     <img 
-                        src="/uploads/chat_images/${message.image_filename}" 
+                        src="${imageSrc}" 
                         alt="${message.image_original_name || 'Shared image'}"
-                        class="max-w-full h-auto rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
-                        onclick="openImageModal('${message.image_filename}', '${message.image_original_name || 'Shared image'}')"
+                        class="max-w-full h-auto rounded-lg shadow-sm ${message.image_filename.startsWith('blob:') ? '' : 'cursor-pointer hover:opacity-90'} transition-opacity"
+                        ${onClickCode}
                         loading="lazy"
                     >
                 </div>
@@ -560,6 +569,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         container.appendChild(messageDiv);
         scrollToBottom();
+        
+        // Return the message element so it can be updated later
+        return messageDiv;
     }
     
     // Show typing indicator
@@ -639,6 +651,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const imageFile = selectedImage;
         messageInput.value = '';
         
+        // Add user message immediately with temporary preview
+        const userMessageData = {
+            sender_type: 'user',
+            message_text: userMessage
+        };
+        
+        let tempImageUrl = null;
+        if (selectedImage) {
+            tempImageUrl = URL.createObjectURL(selectedImage);
+            userMessageData.has_image = true;
+            userMessageData.image_filename = tempImageUrl;
+            userMessageData.image_original_name = selectedImage.name;
+        }
+        
+        const userMessageElement = addMessage(userMessageData);
+        
         // Clear image preview
         removeImagePreview();
         
@@ -649,11 +677,29 @@ document.addEventListener('DOMContentLoaded', function() {
             // Send message with image and wait for response
             const data = await sendAIMessage(userMessage, imageFile);
             
-            // Add both messages from server response (this ensures correct image URLs)
+            // Update user message with correct image URL if there was an image
             if (data.messages && data.messages.length > 0) {
-                data.messages.forEach(msg => {
-                    addMessage(msg);
-                });
+                const serverUserMessage = data.messages.find(msg => msg.sender_type === 'user');
+                const serverAiMessage = data.messages.find(msg => msg.sender_type === 'aei');
+                
+                // Update the user message image URL if needed
+                if (serverUserMessage && serverUserMessage.has_image && userMessageElement) {
+                    const imageElement = userMessageElement.querySelector('img');
+                    if (imageElement && tempImageUrl) {
+                        // Clean up temporary URL
+                        URL.revokeObjectURL(tempImageUrl);
+                        // Update with server URL
+                        imageElement.src = '/uploads/chat_images/' + serverUserMessage.image_filename;
+                        imageElement.onclick = function() {
+                            openImageModal(serverUserMessage.image_filename, serverUserMessage.image_original_name);
+                        };
+                    }
+                }
+                
+                // Add AI response
+                if (serverAiMessage) {
+                    addMessage(serverAiMessage);
+                }
             }
             
             // Handle debug data for admins
@@ -665,6 +711,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             // Error already handled in sendAIMessage
+            // Clean up temporary URL on error
+            if (tempImageUrl) {
+                URL.revokeObjectURL(tempImageUrl);
+            }
         }
         
         // Re-enable form
