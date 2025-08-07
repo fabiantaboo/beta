@@ -11,6 +11,7 @@ include_once '../config/database.php';
 include_once '../includes/functions.php';
 include_once '../includes/anthropic_api.php';
 include_once '../includes/emotions.php';
+include_once '../includes/image_upload.php';
 
 // Clear any unwanted output
 ob_clean();
@@ -30,13 +31,39 @@ if (!isLoggedIn()) {
     exit;
 }
 
-// Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
+// Handle both JSON and FormData input (for image uploads)
+$input = null;
+$uploadedImage = null;
 
-if (!$input) {
-    http_response_code(400);
-    echo json_encode(['error' => 'Invalid JSON input']);
-    exit;
+if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+    // FormData request with image
+    $input = [
+        'message' => $_POST['message'] ?? '',
+        'aei_id' => $_POST['aei_id'] ?? '',
+        'csrf_token' => $_POST['csrf_token'] ?? ''
+    ];
+    
+    // Handle image upload
+    $imageHandler = new ImageUploadHandler();
+    $uploadResult = $imageHandler->handleUpload($_FILES['image']);
+    
+    if (!$uploadResult['success']) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Image upload failed: ' . $uploadResult['error']]);
+        exit;
+    }
+    
+    $uploadedImage = $uploadResult;
+    
+} else {
+    // JSON request (text only)
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$input) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid input']);
+        exit;
+    }
 }
 
 // Validate CSRF token
@@ -50,9 +77,9 @@ if (!verifyCSRFToken($input['csrf_token'] ?? '')) {
 $message = sanitizeInput($input['message'] ?? '');
 $aeiId = sanitizeInput($input['aei_id'] ?? '');
 
-if (empty($message) || empty($aeiId)) {
+if ((empty($message) && !$uploadedImage) || empty($aeiId)) {
     http_response_code(400);
-    echo json_encode(['error' => 'Message and AEI ID are required']);
+    echo json_encode(['error' => 'Message or image and AEI ID are required']);
     exit;
 }
 
@@ -102,14 +129,30 @@ try {
     
     // Save user message
     $messageId = generateId();
-    $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'user', ?)");
-    $stmt->execute([$messageId, $sessionId, $message]);
+    
+    if ($uploadedImage) {
+        // Save message with image
+        $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text, has_image, image_filename, image_original_name, image_mime_type, image_size) VALUES (?, ?, 'user', ?, TRUE, ?, ?, ?, ?)");
+        $stmt->execute([
+            $messageId, 
+            $sessionId, 
+            $message,
+            $uploadedImage['filename'],
+            $uploadedImage['original_name'],
+            $uploadedImage['mime_type'],
+            $uploadedImage['size']
+        ]);
+    } else {
+        // Save text-only message
+        $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'user', ?)");
+        $stmt->execute([$messageId, $sessionId, $message]);
+    }
     
     $userMessageTime = getCurrentTimestamp();
     
     // Generate AI response with complete context (include debug data for admins)
     $isAdmin = isAdmin();
-    $aeiResponseData = generateAIResponse($message, $aei, $user, $sessionId, $isAdmin);
+    $aeiResponseData = generateAIResponse($message, $aei, $user, $sessionId, $isAdmin, $uploadedImage);
     
     // Handle debug response format
     if ($isAdmin && is_array($aeiResponseData)) {
@@ -151,7 +194,12 @@ try {
                 'sender_type' => 'user',
                 'message_text' => $message,
                 'created_at' => $userMessageTime,
-                'sender_name' => 'You'
+                'sender_name' => 'You',
+                'has_image' => $uploadedImage ? true : false,
+                'image_filename' => $uploadedImage['filename'] ?? null,
+                'image_original_name' => $uploadedImage['original_name'] ?? null,
+                'image_mime_type' => $uploadedImage['mime_type'] ?? null,
+                'image_size' => $uploadedImage['size'] ?? null
             ],
             [
                 'id' => $aeiResponseId,

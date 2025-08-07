@@ -68,13 +68,46 @@ function generateSystemPrompt($aei, $user, $sessionId = null) {
     }
 }
 
-function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000) {
+function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageData = null) {
     $apiKey = getAnthropicApiKey();
     
     if (!$apiKey) {
         throw new Exception("Anthropic API key not configured");
     }
     
+    // If image data is provided, modify the last user message to include the image
+    if ($imageData && !empty($messages)) {
+        $lastMessageIndex = count($messages) - 1;
+        if ($messages[$lastMessageIndex]['role'] === 'user') {
+            // Convert text content to array format and add image
+            $textContent = $messages[$lastMessageIndex]['content'];
+            $messages[$lastMessageIndex]['content'] = [
+                [
+                    'type' => 'image',
+                    'source' => [
+                        'type' => 'base64',
+                        'media_type' => $imageData['mime_type'],
+                        'data' => $imageData['data']
+                    ]
+                ]
+            ];
+            
+            // Add text content if it exists
+            if (!empty($textContent)) {
+                array_unshift($messages[$lastMessageIndex]['content'], [
+                    'type' => 'text',
+                    'text' => $textContent
+                ]);
+            } else {
+                // If no text, add a default prompt
+                array_unshift($messages[$lastMessageIndex]['content'], [
+                    'type' => 'text',
+                    'text' => 'What do you see in this image?'
+                ]);
+            }
+        }
+    }
+
     $payload = [
         'model' => 'claude-3-5-sonnet-20241022',
         'max_tokens' => $maxTokens,
@@ -234,7 +267,7 @@ Do not include any explanation or additional text - ONLY the JSON object.";
     return $emotionData;
 }
 
-function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebugData = false) {
+function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebugData = false, $uploadedImage = null) {
     global $pdo;
     
     $debugData = [];
@@ -298,8 +331,26 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             ];
         }
         
-        // Call Anthropic API
-        $response = callAnthropicAPI($chatHistory, $systemPrompt);
+        // Prepare image data if available
+        $imageData = null;
+        if ($uploadedImage) {
+            include_once 'image_upload.php';
+            $imageHandler = new ImageUploadHandler();
+            $imagePath = $imageHandler->getImagePath($uploadedImage['filename']);
+            $imageData = imageToBase64($imagePath);
+            
+            if ($includeDebugData) {
+                $debugData['image_info'] = [
+                    'filename' => $uploadedImage['filename'],
+                    'original_name' => $uploadedImage['original_name'],
+                    'mime_type' => $uploadedImage['mime_type'],
+                    'size' => $uploadedImage['size']
+                ];
+            }
+        }
+
+        // Call Anthropic API with optional image data
+        $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData);
         
         if ($includeDebugData) {
             $debugData['api_response'] = $response;

@@ -217,7 +217,20 @@ if ($isCurrentUserAdmin) {
                                 </span>
                             </div>
                             <div class="<?= $message['sender_type'] === 'user' ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600' ?> rounded-2xl px-4 py-2 shadow-sm">
-                                <p class="text-sm"><?= nl2br(htmlspecialchars($message['message_text'])) ?></p>
+                                <?php if ($message['has_image'] && !empty($message['image_filename'])): ?>
+                                    <div class="mb-2">
+                                        <img 
+                                            src="/uploads/chat_images/<?= htmlspecialchars($message['image_filename']) ?>" 
+                                            alt="<?= htmlspecialchars($message['image_original_name'] ?? 'Shared image') ?>"
+                                            class="max-w-full h-auto rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                                            onclick="openImageModal('<?= htmlspecialchars($message['image_filename']) ?>', '<?= htmlspecialchars($message['image_original_name'] ?? 'Shared image') ?>')"
+                                            loading="lazy"
+                                        >
+                                    </div>
+                                <?php endif; ?>
+                                <?php if (!empty($message['message_text'])): ?>
+                                    <p class="text-sm"><?= nl2br(htmlspecialchars($message['message_text'])) ?></p>
+                                <?php endif; ?>
                                 <p class="text-xs opacity-70 mt-1">
                                     <?= date('H:i', strtotime($message['created_at'])) ?>
                                 </p>
@@ -254,31 +267,86 @@ if ($isCurrentUserAdmin) {
                 </div>
             </div>
             
-            <form id="chat-form" class="flex space-x-2 sm:space-x-4">
+            <form id="chat-form" class="space-y-3">
                 <input type="hidden" id="csrf-token" value="<?= generateCSRFToken() ?>">
-                <div class="flex-1">
-                    <textarea 
-                        id="message-input"
-                        name="message" 
-                        rows="1"
-                        required
-                        maxlength="2000"
-                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
-                        placeholder="Type your message..."
-                    ></textarea>
+                
+                <!-- Image Upload Preview -->
+                <div id="image-preview" class="hidden">
+                    <div class="flex items-start space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div class="flex-shrink-0">
+                            <img id="preview-image" src="" alt="Preview" class="w-16 h-16 object-cover rounded-lg">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p id="preview-filename" class="text-sm font-medium text-gray-900 dark:text-white truncate"></p>
+                            <p id="preview-filesize" class="text-xs text-gray-500 dark:text-gray-400"></p>
+                        </div>
+                        <button 
+                            type="button" 
+                            onclick="removeImagePreview()"
+                            class="flex-shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                            title="Remove image"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
-                <button 
-                    type="submit" 
-                    id="send-button"
-                    class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-4 sm:px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <i class="fas fa-paper-plane sm:mr-2"></i>
-                    <span id="send-text" class="hidden sm:inline">Send</span>
-                </button>
+                
+                <div class="flex space-x-2 sm:space-x-4">
+                    <!-- Image Upload Button -->
+                    <div class="flex-shrink-0">
+                        <input type="file" id="image-input" name="image" accept="image/*" class="hidden">
+                        <button 
+                            type="button" 
+                            onclick="document.getElementById('image-input').click()"
+                            class="bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                            title="Upload image"
+                            id="image-upload-btn"
+                        >
+                            <i class="fas fa-image"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex-1">
+                        <textarea 
+                            id="message-input"
+                            name="message" 
+                            rows="1"
+                            maxlength="2000"
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
+                            placeholder="Type your message or upload an image..."
+                        ></textarea>
+                    </div>
+                    <button 
+                        type="submit" 
+                        id="send-button"
+                        class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-4 sm:px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <i class="fas fa-paper-plane sm:mr-2"></i>
+                        <span id="send-text" class="hidden sm:inline">Send</span>
+                    </button>
+                </div>
             </form>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
                 Press Enter to send, Shift+Enter for new line
             </p>
+        </div>
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div id="image-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="max-w-4xl max-h-full p-4">
+        <div class="relative">
+            <img id="modal-image" src="" alt="" class="max-w-full max-h-full object-contain rounded-lg">
+            <button 
+                onclick="closeImageModal()"
+                class="absolute top-4 right-4 bg-black bg-opacity-50 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-opacity-70 transition-colors"
+            >
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="text-center mt-4">
+            <p id="modal-image-name" class="text-white text-sm"></p>
         </div>
     </div>
 </div>
@@ -363,6 +431,54 @@ document.addEventListener('DOMContentLoaded', function() {
     const csrfToken = document.getElementById('csrf-token').value;
     const aeiId = '<?= htmlspecialchars($aeiId) ?>';
     const aeiName = '<?= htmlspecialchars($aei['name']) ?>';
+    const imageInput = document.getElementById('image-input');
+    const imagePreview = document.getElementById('image-preview');
+    const previewImage = document.getElementById('preview-image');
+    const previewFilename = document.getElementById('preview-filename');
+    const previewFilesize = document.getElementById('preview-filesize');
+    let selectedImage = null;
+    
+    // Image upload handling
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            showAlert('Unsupported file type. Please select a JPEG, PNG, GIF, or WebP image.', 'error');
+            return;
+        }
+        
+        // Validate file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+            showAlert('File too large. Maximum size is 10MB.', 'error');
+            return;
+        }
+        
+        // Store selected image
+        selectedImage = file;
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewFilename.textContent = file.name;
+            previewFilesize.textContent = formatFileSize(file.size);
+            imagePreview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
     
     // Scroll to bottom
     function scrollToBottom() {
@@ -407,6 +523,26 @@ document.addEventListener('DOMContentLoaded', function() {
             hour12: false 
         });
         
+        let imageHtml = '';
+        if (message.has_image && message.image_filename) {
+            imageHtml = `
+                <div class="mb-2">
+                    <img 
+                        src="/uploads/chat_images/${message.image_filename}" 
+                        alt="${message.image_original_name || 'Shared image'}"
+                        class="max-w-full h-auto rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                        onclick="openImageModal('${message.image_filename}', '${message.image_original_name || 'Shared image'}')"
+                        loading="lazy"
+                    >
+                </div>
+            `;
+        }
+        
+        let textHtml = '';
+        if (message.message_text && message.message_text.trim()) {
+            textHtml = `<p class="text-sm">${message.message_text.replace(/\n/g, '<br>')}</p>`;
+        }
+        
         messageDiv.innerHTML = `
             <div class="flex ${message.sender_type === 'user' ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-xs lg:max-w-md">
                 <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${message.sender_type === 'user' ? 'bg-gray-500 dark:bg-gray-600 ml-2' : 'bg-gradient-to-br from-ayuni-aqua to-ayuni-blue mr-2'}">
@@ -415,7 +551,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     </span>
                 </div>
                 <div class="${message.sender_type === 'user' ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'} rounded-2xl px-4 py-2 shadow-sm">
-                    <p class="text-sm">${message.message_text.replace(/\n/g, '<br>')}</p>
+                    ${imageHtml}
+                    ${textHtml}
                     <p class="text-xs opacity-70 mt-1">${time}</p>
                 </div>
             </div>
@@ -436,19 +573,36 @@ document.addEventListener('DOMContentLoaded', function() {
         typingIndicator.classList.add('hidden');
     }
     
-    // Send AI message (user message already shown)
-    async function sendAIMessage(message) {
+    // Send AI message with optional image
+    async function sendAIMessage(message, imageFile = null) {
         try {
-            const response = await fetch('/api/chat.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+            let requestData;
+            let headers = {};
+            
+            if (imageFile) {
+                // Use FormData for file upload
+                const formData = new FormData();
+                formData.append('message', message);
+                formData.append('aei_id', aeiId);
+                formData.append('csrf_token', csrfToken);
+                formData.append('image', imageFile);
+                
+                requestData = formData;
+                // Don't set Content-Type header - let browser set it with boundary
+            } else {
+                // Use JSON for text-only messages
+                headers['Content-Type'] = 'application/json';
+                requestData = JSON.stringify({
                     message: message,
                     aei_id: aeiId,
                     csrf_token: csrfToken
-                })
+                });
+            }
+            
+            const response = await fetch('/api/chat.php', {
+                method: 'POST',
+                headers: headers,
+                body: requestData
             });
             
             const data = await response.json();
@@ -482,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         const message = messageInput.value.trim();
-        if (!message) return;
+        if (!message && !selectedImage) return;
         
         // Disable form
         sendButton.disabled = true;
@@ -491,19 +645,31 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Clear input
         const userMessage = message;
+        const imageFile = selectedImage;
         messageInput.value = '';
         
-        // Add user message immediately
-        addMessage({
+        // Add user message immediately with image preview
+        const userMessageData = {
             sender_type: 'user',
             message_text: userMessage
-        });
+        };
+        
+        if (selectedImage) {
+            userMessageData.has_image = true;
+            userMessageData.image_filename = URL.createObjectURL(selectedImage);
+            userMessageData.image_original_name = selectedImage.name;
+        }
+        
+        addMessage(userMessageData);
+        
+        // Clear image preview
+        removeImagePreview();
         
         // Show typing indicator
         showTyping();
         
-        // Send message (only AI response will be added)
-        await sendAIMessage(userMessage);
+        // Send message with image (only AI response will be added)
+        await sendAIMessage(userMessage, imageFile);
         
         // Re-enable form
         sendButton.disabled = false;
@@ -732,5 +898,43 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 <?php endif; ?>
+
+// Image preview and modal functions
+function removeImagePreview() {
+    const imagePreview = document.getElementById('image-preview');
+    const imageInput = document.getElementById('image-input');
+    imagePreview.classList.add('hidden');
+    imageInput.value = '';
+    selectedImage = null;
+}
+
+function openImageModal(filename, originalName) {
+    const modal = document.getElementById('image-modal');
+    const modalImage = document.getElementById('modal-image');
+    const modalImageName = document.getElementById('modal-image-name');
+    
+    modalImage.src = '/uploads/chat_images/' + filename;
+    modalImageName.textContent = originalName;
+    modal.classList.remove('hidden');
+    
+    // Close modal on click outside image
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeImageModal();
+        }
+    });
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeImageModal();
+        }
+    });
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('image-modal');
+    modal.classList.add('hidden');
+}
 
 </script>

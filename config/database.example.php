@@ -120,6 +120,13 @@ function createTablesIfNotExist($pdo) {
             message_text TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             
+            -- Image Upload Support
+            has_image BOOLEAN DEFAULT FALSE,
+            image_filename VARCHAR(255) NULL,
+            image_original_name VARCHAR(255) NULL,
+            image_mime_type VARCHAR(100) NULL,
+            image_size INT NULL,
+            
             -- AEI Emotional State (NULL for user messages)
             aei_joy DECIMAL(3,2) NULL,
             aei_sadness DECIMAL(3,2) NULL,
@@ -141,7 +148,8 @@ function createTablesIfNotExist($pdo) {
             aei_boredom DECIMAL(3,2) NULL,
             
             FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
-            INDEX idx_session_time (session_id, created_at)
+            INDEX idx_session_time (session_id, created_at),
+            INDEX idx_image_messages (session_id, has_image)
         )",
         'api_settings' => "CREATE TABLE IF NOT EXISTS api_settings (
             id INT PRIMARY KEY AUTO_INCREMENT,
@@ -929,6 +937,39 @@ Be conversational, helpful, and maintain your unique personality. Keep responses
             } catch (PDOException $e) {
                 error_log("Error modifying relationship_impact column: " . $e->getMessage());
             }
+        }
+        
+        // 4. Add image columns to chat_messages table for image upload support
+        try {
+            $stmt = $pdo->query("DESCRIBE chat_messages");
+            $messageColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            $imageColumns = [
+                'has_image' => "ALTER TABLE chat_messages ADD COLUMN has_image BOOLEAN DEFAULT FALSE AFTER created_at",
+                'image_filename' => "ALTER TABLE chat_messages ADD COLUMN image_filename VARCHAR(255) NULL AFTER has_image",
+                'image_original_name' => "ALTER TABLE chat_messages ADD COLUMN image_original_name VARCHAR(255) NULL AFTER image_filename",
+                'image_mime_type' => "ALTER TABLE chat_messages ADD COLUMN image_mime_type VARCHAR(100) NULL AFTER image_original_name",
+                'image_size' => "ALTER TABLE chat_messages ADD COLUMN image_size INT NULL AFTER image_mime_type"
+            ];
+            
+            foreach ($imageColumns as $columnName => $alterSQL) {
+                if (!in_array($columnName, $messageColumns)) {
+                    try {
+                        $pdo->exec($alterSQL);
+                    } catch (PDOException $e) {
+                        error_log("Error adding image column $columnName: " . $e->getMessage());
+                    }
+                }
+            }
+            
+            // Add index for image messages if it doesn't exist
+            try {
+                $pdo->exec("CREATE INDEX IF NOT EXISTS idx_image_messages ON chat_messages (session_id, has_image)");
+            } catch (PDOException $e) {
+                error_log("Error adding image messages index: " . $e->getMessage());
+            }
+        } catch (PDOException $e) {
+            error_log("Error migrating chat_messages for image support: " . $e->getMessage());
         }
         
         // 3. Migrate aei_social_context with all new advanced metrics
