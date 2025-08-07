@@ -429,6 +429,32 @@ if ($isCurrentUserAdmin) {
     border-radius: 4px;
 }
 
+::-webkit-scrollbar-button {
+    width: 8px;
+    height: 16px;
+    background: rgba(209, 213, 219, 0.6); /* gray-300 with opacity */
+    border-radius: 2px;
+    transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-button:hover {
+    background: rgba(156, 163, 175, 0.8); /* gray-400 with opacity */
+}
+
+::-webkit-scrollbar-button:vertical:start:decrement {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23374151' viewBox='0 0 8 8'%3E%3Cpath d='M4 1L1 4h6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 8px 8px;
+}
+
+::-webkit-scrollbar-button:vertical:end:increment {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23374151' viewBox='0 0 8 8'%3E%3Cpath d='M1 1h6l-3 3z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 8px 8px;
+}
+
 ::-webkit-scrollbar-thumb {
     background: rgba(156, 163, 175, 0.5); /* gray-400 with opacity */
     border-radius: 4px;
@@ -442,6 +468,22 @@ if ($isCurrentUserAdmin) {
 /* Dark mode scrollbar */
 .dark ::-webkit-scrollbar-track {
     background: rgba(55, 65, 81, 0.3); /* gray-700 with low opacity */
+}
+
+.dark ::-webkit-scrollbar-button {
+    background: rgba(55, 65, 81, 0.6); /* gray-700 with opacity */
+}
+
+.dark ::-webkit-scrollbar-button:hover {
+    background: rgba(75, 85, 99, 0.8); /* gray-600 with opacity */
+}
+
+.dark ::-webkit-scrollbar-button:vertical:start:decrement {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23D1D5DB' viewBox='0 0 8 8'%3E%3Cpath d='M4 1L1 4h6z'/%3E%3C/svg%3E");
+}
+
+.dark ::-webkit-scrollbar-button:vertical:end:increment {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23D1D5DB' viewBox='0 0 8 8'%3E%3Cpath d='M1 1h6l-3 3z'/%3E%3C/svg%3E");
 }
 
 .dark ::-webkit-scrollbar-thumb {
