@@ -480,13 +480,56 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
     
-    // Scroll to bottom
+    // Scroll to bottom with retry for images
     function scrollToBottom() {
         container.scrollTop = container.scrollHeight;
     }
     
-    // Initial scroll
-    scrollToBottom();
+    // Enhanced scroll to bottom that waits for images
+    function scrollToBottomWithImages() {
+        // Immediate scroll
+        scrollToBottom();
+        
+        // Wait for any loading images and scroll again
+        const images = container.querySelectorAll('img[loading="lazy"]:not([data-scroll-handled])');
+        if (images.length === 0) {
+            return;
+        }
+        
+        let loadedCount = 0;
+        const totalImages = images.length;
+        
+        images.forEach(img => {
+            img.setAttribute('data-scroll-handled', 'true');
+            
+            if (img.complete) {
+                loadedCount++;
+                if (loadedCount === totalImages) {
+                    setTimeout(scrollToBottom, 50); // Small delay to ensure DOM update
+                }
+            } else {
+                img.addEventListener('load', function() {
+                    loadedCount++;
+                    if (loadedCount === totalImages) {
+                        setTimeout(scrollToBottom, 50);
+                    }
+                });
+                
+                img.addEventListener('error', function() {
+                    loadedCount++;
+                    if (loadedCount === totalImages) {
+                        setTimeout(scrollToBottom, 50);
+                    }
+                });
+            }
+        });
+        
+        // Fallback scroll after a short delay
+        setTimeout(scrollToBottom, 300);
+    }
+    
+    // Initial scroll with image loading handling
+    setTimeout(scrollToBottomWithImages, 100);
     
     // Show alert message
     function showAlert(message, type = 'error') {
@@ -568,7 +611,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         container.appendChild(messageDiv);
-        scrollToBottom();
+        scrollToBottomWithImages();
         
         // Return the message element so it can be updated later
         return messageDiv;
@@ -577,7 +620,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show typing indicator
     function showTyping() {
         typingIndicator.classList.remove('hidden');
-        scrollToBottom();
+        scrollToBottomWithImages();
     }
     
     // Hide typing indicator
@@ -696,6 +739,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         imageElement.onclick = function() {
                             openImageModal(serverUserMessage.image_filename, serverUserMessage.image_original_name);
                         };
+                        // Add cursor pointer and hover effect
+                        imageElement.classList.add('cursor-pointer', 'hover:opacity-90');
+                        
+                        // Scroll after image URL update
+                        imageElement.addEventListener('load', function() {
+                            scrollToBottom();
+                        });
                     }
                 }
                 
