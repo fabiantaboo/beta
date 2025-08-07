@@ -1051,20 +1051,19 @@ function copyDebugData() {
         return;
     }
     
-    navigator.clipboard.writeText(JSON.stringify(currentDebugData, null, 2)).then(() => {
-        // Show temporary confirmation
-        const button = event.target.closest('button');
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
-        button.classList.add('bg-green-700');
-        
-        setTimeout(() => {
-            button.innerHTML = originalText;
-            button.classList.remove('bg-green-700');
-        }, 2000);
-    }).catch(() => {
-        alert('Failed to copy debug data to clipboard');
-    });
+    const textToCopy = JSON.stringify(currentDebugData, null, 2);
+    
+    // Try modern clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showCopySuccess(event.target.closest('button'));
+        }).catch(() => {
+            fallbackCopyTextToClipboard(textToCopy, event.target.closest('button'));
+        });
+    } else {
+        // Fallback for older browsers or non-HTTPS
+        fallbackCopyTextToClipboard(textToCopy, event.target.closest('button'));
+    }
 }
 
 function copyApiRequest() {
@@ -1073,20 +1072,89 @@ function copyApiRequest() {
         return;
     }
     
-    navigator.clipboard.writeText(JSON.stringify(currentDebugData.api_request_payload, null, 2)).then(() => {
-        // Show temporary confirmation
-        const button = event.target.closest('button');
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
-        button.classList.add('bg-green-700');
+    const textToCopy = JSON.stringify(currentDebugData.api_request_payload, null, 2);
+    
+    // Try modern clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showCopySuccess(event.target.closest('button'));
+        }).catch(() => {
+            fallbackCopyTextToClipboard(textToCopy, event.target.closest('button'));
+        });
+    } else {
+        // Fallback for older browsers or non-HTTPS
+        fallbackCopyTextToClipboard(textToCopy, event.target.closest('button'));
+    }
+}
+
+// Fallback copy function for older browsers or HTTP
+function fallbackCopyTextToClipboard(text, button) {
+    try {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
         
-        setTimeout(() => {
-            button.innerHTML = originalText;
-            button.classList.remove('bg-green-700');
-        }, 2000);
-    }).catch(() => {
-        alert('Failed to copy API request to clipboard');
-    });
+        // Make the textarea invisible
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+        textArea.style.padding = '0';
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+        textArea.style.background = 'transparent';
+        textArea.style.opacity = '0';
+        
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+            showCopySuccess(button);
+        } else {
+            showCopyError(button);
+        }
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        showCopyError(button);
+    }
+}
+
+function showCopySuccess(button) {
+    if (!button) return;
+    
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+    button.classList.add('bg-green-700');
+    button.disabled = true;
+    
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.classList.remove('bg-green-700');
+        button.disabled = false;
+    }, 2000);
+}
+
+function showCopyError(button) {
+    if (!button) return;
+    
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-times mr-1"></i>Failed';
+    button.classList.add('bg-red-700');
+    button.disabled = true;
+    
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.classList.remove('bg-red-700');
+        button.disabled = false;
+    }, 2000);
+    
+    // Also show alert as additional feedback
+    alert('Failed to copy to clipboard. Please copy manually from the debug panel.');
 }
 
 function escapeHtml(text) {
