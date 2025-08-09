@@ -230,7 +230,7 @@ $emotionAnalysis = $anthropicAPI->analyzeEmotionalState(
 ### Test-Scripts
 
 1. **`test_emotions.php`** - Testet Emotionsanalyse-Funktionalität
-2. **`debug_emotions_display.php`** - Überprüft Datenbankstruktur und gespeicherte Emotionen
+2. **`debug_emotions_display.php`** - Überprüft Datenbankstruktur und gespeicherte Emotionen!
 3. **`backfill_emotions.php`** - Füllt fehlende Emotionsdaten nach
 
 ### Debugging-Tools
