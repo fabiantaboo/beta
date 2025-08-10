@@ -2,6 +2,7 @@
 requireAdmin();
 
 include_once __DIR__ . '/../includes/proactive_messaging.php';
+include_once __DIR__ . '/../includes/background_jobs.php';
 
 // Handle form submissions
 if ($_POST) {
@@ -151,84 +152,198 @@ $stmt = $pdo->query("
     LIMIT 20
 ");
 $messageStats = $stmt->fetchAll();
+
+// Get system statistics
+$stmt = $pdo->query("
+    SELECT 
+        COUNT(*) as total_proactive_messages,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_messages,
+        COUNT(CASE WHEN status = 'sent' THEN 1 END) as sent_messages,
+        COUNT(CASE WHEN generated_at > DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 END) as messages_24h,
+        AVG(CASE WHEN effectiveness_score IS NOT NULL THEN effectiveness_score END) as overall_effectiveness
+    FROM aei_proactive_messages
+");
+$systemStats = $stmt->fetch();
+
+// Get background job statistics
+$jobWorker = new BackgroundJobWorker($pdo);
+$jobStats = $jobWorker->getJobStats();
 ?>
 
-<div class="space-y-6">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Proactive Messaging Administration</h1>
-        <p class="text-gray-600 dark:text-gray-400">Configure and monitor the proactive messaging system for all AEIs.</p>
-    </div>
+<div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark">
+    <?php renderAdminNavigation('admin-proactive'); ?>
 
-    <?php if (isset($error)): ?>
-        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg">
-            <div class="flex items-center">
-                <i class="fas fa-exclamation-circle mr-2"></i>
-                <?= htmlspecialchars($error) ?>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <?php renderAdminPageHeader('Proactive Messaging', 'Configure and monitor AI-driven proactive messaging for all AEIs'); ?>
+
+        <?php renderAdminAlerts($error ?? null, $success ?? null); ?>
+
+        <!-- System Overview Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-bell text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Messages</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white"><?= number_format($systemStats['total_proactive_messages'] ?? 0) ?></p>
+                    </div>
+                </div>
             </div>
-        </div>
-    <?php endif; ?>
-
-    <?php if (isset($success)): ?>
-        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg">
-            <div class="flex items-center">
-                <i class="fas fa-check-circle mr-2"></i>
-                <?= htmlspecialchars($success) ?>
-            </div>
-        </div>
-    <?php endif; ?>
-
-    <!-- Quick Actions -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <form method="POST" class="inline">
-                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                <input type="hidden" name="action" value="cleanup_expired">
-                <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-broom mr-2"></i>
-                    Cleanup Expired Messages
-                </button>
-            </form>
             
-            <form method="POST" class="inline">
-                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-                <input type="hidden" name="action" value="test_triggers">
-                <select name="test_aei_id" class="mb-2 w-full px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
-                    <option value="">Select AEI to test</option>
-                    <?php foreach ($aeis as $aei): ?>
-                        <option value="<?= htmlspecialchars($aei['id']) ?>">
-                            <?= htmlspecialchars($aei['user_name'] . ' - ' . $aei['name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                    <i class="fas fa-vial mr-2"></i>
-                    Test Triggers
-                </button>
-            </form>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-clock text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white"><?= $systemStats['pending_messages'] ?? 0 ?></p>
+                    </div>
+                </div>
+            </div>
             
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
-                <div class="text-2xl font-bold text-ayuni-blue"><?= count($messageStats) ?></div>
-                <div class="text-sm text-gray-600 dark:text-gray-400">Active AEIs with Proactive Messages</div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-paper-plane text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Sent (24h)</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white"><?= $systemStats['messages_24h'] ?? 0 ?></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Effectiveness</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white">
+                            <?= $systemStats['overall_effectiveness'] ? number_format($systemStats['overall_effectiveness'], 1) : '--' ?>
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Settings Configuration -->
-    <?php if ($selectedAei && $settings): ?>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Proactive Settings Configuration</h2>
-            <select onchange="window.location.href='/admin-proactive?aei=' + this.value" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                <option value="">Select AEI</option>
-                <?php foreach ($aeis as $aei): ?>
-                    <option value="<?= htmlspecialchars($aei['id']) ?>" <?= $aei['id'] === $selectedAei ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($aei['user_name'] . ' - ' . $aei['name']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+        <!-- Quick Actions -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Quick Actions</h3>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-cogs mr-1"></i>
+                    System Management
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Cleanup Action -->
+                <div class="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-700">
+                    <div class="flex items-center mb-3">
+                        <div class="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-broom text-white text-sm"></i>
+                        </div>
+                        <h4 class="ml-3 font-medium text-gray-900 dark:text-white">System Cleanup</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Remove expired messages and old job records</p>
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                        <input type="hidden" name="action" value="cleanup_expired">
+                        <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg transition-colors font-medium">
+                            Run Cleanup
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Test Triggers -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                    <div class="flex items-center mb-3">
+                        <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-vial text-white text-sm"></i>
+                        </div>
+                        <h4 class="ml-3 font-medium text-gray-900 dark:text-white">Test Triggers</h4>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Generate test proactive messages for an AEI</p>
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                        <input type="hidden" name="action" value="test_triggers">
+                        <select name="test_aei_id" class="mb-3 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                            <option value="">Select AEI to test</option>
+                            <?php foreach ($aeis as $aei): ?>
+                                <option value="<?= htmlspecialchars($aei['id']) ?>">
+                                    <?= htmlspecialchars($aei['user_name'] . ' - ' . $aei['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors font-medium">
+                            Run Test
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Background Jobs Status -->
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                    <div class="flex items-center mb-3">
+                        <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-tasks text-white text-sm"></i>
+                        </div>
+                        <h4 class="ml-3 font-medium text-gray-900 dark:text-white">Background Jobs</h4>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <?php if (!empty($jobStats)): ?>
+                            <?php 
+                            $pendingJobs = 0;
+                            $runningJobs = 0;
+                            foreach ($jobStats as $stat) {
+                                if ($stat['status'] === 'pending') $pendingJobs += $stat['count'];
+                                if ($stat['status'] === 'running') $runningJobs += $stat['count'];
+                            }
+                            ?>
+                            <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                                <span>Pending:</span>
+                                <span class="font-medium"><?= $pendingJobs ?></span>
+                            </div>
+                            <div class="flex justify-between text-gray-600 dark:text-gray-400">
+                                <span>Running:</span>
+                                <span class="font-medium"><?= $runningJobs ?></span>
+                            </div>
+                        <?php else: ?>
+                            <p class="text-gray-500 dark:text-gray-400">No job data available</p>
+                        <?php endif; ?>
+                    </div>
+                    <div class="mt-4">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                            Active AEIs: <span class="font-medium text-purple-600 dark:text-purple-400"><?= count($messageStats) ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- Settings Configuration -->
+        <?php if ($selectedAei && $settings): ?>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">AEI Configuration</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Fine-tune proactive messaging settings for individual AEIs</p>
+                </div>
+                <div class="min-w-0 flex-1 max-w-xs ml-4">
+                    <select onchange="window.location.href='/admin/proactive?aei=' + this.value" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm">
+                        <option value="">Select AEI</option>
+                        <?php foreach ($aeis as $aei): ?>
+                            <option value="<?= htmlspecialchars($aei['id']) ?>" <?= $aei['id'] === $selectedAei ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($aei['user_name'] . ' - ' . $aei['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
 
         <form method="POST" class="space-y-6">
             <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
@@ -370,25 +485,36 @@ $messageStats = $stmt->fetchAll();
     </div>
     <?php endif; ?>
 
-    <!-- Message Statistics -->
-    <?php if (!empty($messageStats)): ?>
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Proactive Message Statistics</h2>
-        
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">AEI</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Messages</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sent</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Dismissed</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Effectiveness</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">24h Activity</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        <!-- Message Statistics -->
+        <?php if (!empty($messageStats)): ?>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">AEI Performance Analytics</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Proactive messaging statistics by AEI</p>
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-chart-bar mr-1"></i>
+                        Top <?= count($messageStats) ?> Active AEIs
+                    </div>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">AEI</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Messages</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Sent</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Dismissed</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Effectiveness</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">24h Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     <?php foreach ($messageStats as $stat): ?>
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
@@ -425,9 +551,11 @@ $messageStats = $stmt->fetchAll();
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
+        <?php endif; ?>
+        
     </div>
-    <?php endif; ?>
 </div>
