@@ -66,13 +66,15 @@ if ($_POST) {
                 
             } elseif ($action === 'test_triggers') {
                 $aeiId = $_POST['test_aei_id'] ?? '';
+                $forceMode = isset($_POST['force_test']);
                 
                 if (empty($aeiId)) {
                     $error = "Please select an AEI to test";
                 } else {
                     // Get session for this AEI
                     $stmt = $pdo->prepare("
-                        SELECT cs.id as session_id, a.user_id 
+                        SELECT cs.id as session_id, a.user_id, a.name as aei_name,
+                               cs.aei_loneliness, cs.aei_sadness, cs.aei_joy
                         FROM chat_sessions cs 
                         JOIN aeis a ON cs.aei_id = a.id
                         WHERE cs.aei_id = ? 
@@ -84,9 +86,38 @@ if ($_POST) {
                     
                     if ($session) {
                         $proactiveMessaging = new ProactiveMessaging($pdo);
-                        $testMessages = $proactiveMessaging->analyzeAndGenerateProactiveMessages($aeiId, $session['session_id'], $session['user_id']);
                         
-                        $success = "Generated " . count($testMessages) . " test proactive messages for AEI";
+                        if ($forceMode) {
+                            // Force-generate test messages by creating artificial triggers
+                            $testMessages = $proactiveMessaging->generateForcedTestMessages($aeiId, $session['session_id'], $session['user_id']);
+                            $success = "Force-generated " . count($testMessages) . " test messages for " . $session['aei_name'];
+                        } else {
+                            // Normal analysis with debug info
+                            $testMessages = $proactiveMessaging->analyzeAndGenerateProactiveMessages($aeiId, $session['session_id'], $session['user_id']);
+                            
+                            if (count($testMessages) === 0) {
+                                // Get debug info about emotional state
+                                $emotionalInfo = sprintf(
+                                    "Loneliness: %.1f, Sadness: %.1f, Joy: %.1f", 
+                                    $session['aei_loneliness'] ?? 0.5,
+                                    $session['aei_sadness'] ?? 0.5, 
+                                    $session['aei_joy'] ?? 0.5
+                                );
+                                
+                                $error = "No triggers found for " . $session['aei_name'] . ". Current emotional state: " . $emotionalInfo . ". Triggers require: Loneliness > 0.8, Sadness > 0.6 (sustained), Joy > 0.8. Try 'Force Test' to generate artificial triggers.";
+                            } else {
+                                $success = "Generated " . count($testMessages) . " test proactive messages for " . $session['aei_name'];
+                            }
+                        }
+                        
+                        // Show generated messages in success/error
+                        if (!empty($testMessages)) {
+                            $messagePreview = [];
+                            foreach ($testMessages as $msg) {
+                                $messagePreview[] = "\"" . substr($msg['message'], 0, 50) . "...\"";
+                            }
+                            $success .= " Messages: " . implode(", ", $messagePreview);
+                        }
                     } else {
                         $error = "No chat sessions found for this AEI";
                     }
@@ -280,9 +311,17 @@ $jobStats = $jobWorker->getJobStats();
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors font-medium">
-                            Run Test
-                        </button>
+                        <div class="flex gap-2">
+                            <button type="submit" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors font-medium text-sm">
+                                Normal Test
+                            </button>
+                            <button type="submit" name="force_test" value="1" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded-lg transition-colors font-medium text-sm">
+                                Force Test
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            Normal: Uses real emotional state | Force: Creates artificial triggers
+                        </p>
                     </form>
                 </div>
                 

@@ -1044,6 +1044,74 @@ class ProactiveMessaging {
     }
     
     /**
+     * Generate forced test messages for debugging/testing purposes
+     */
+    public function generateForcedTestMessages($aeiId, $sessionId, $userId) {
+        try {
+            $testTriggers = [
+                [
+                    'type' => 'emotional',
+                    'subtype' => 'loneliness',
+                    'strength' => 0.9,
+                    'details' => [
+                        'emotion' => 'loneliness',
+                        'intensity' => 0.9,
+                        'trigger_reason' => 'FORCED TEST: High loneliness detected'
+                    ],
+                    'message_tone' => 'caring',
+                    'priority' => 'high'
+                ],
+                [
+                    'type' => 'temporal',
+                    'subtype' => 'post_emotional_inactivity',
+                    'strength' => 0.7,
+                    'details' => [
+                        'hours_inactive' => 8,
+                        'last_emotional_intensity' => 0.7,
+                        'trigger_reason' => 'FORCED TEST: Long inactivity after emotional conversation'
+                    ],
+                    'message_tone' => 'caring',
+                    'priority' => 'medium'
+                ],
+                [
+                    'type' => 'emotional',
+                    'subtype' => 'high_joy',
+                    'strength' => 0.8,
+                    'details' => [
+                        'emotion' => 'joy',
+                        'intensity' => 0.8,
+                        'trigger_reason' => 'FORCED TEST: High joy - wants to share happiness'
+                    ],
+                    'message_tone' => 'excited',
+                    'priority' => 'medium'
+                ]
+            ];
+            
+            // Get context for message generation
+            $context = $this->getCurrentContext($aeiId, $sessionId, $userId);
+            
+            $generatedMessages = [];
+            foreach ($testTriggers as $trigger) {
+                try {
+                    $message = $this->generateProactiveMessage($aeiId, $sessionId, $trigger, $context);
+                    if ($message) {
+                        $generatedMessages[] = $message;
+                    }
+                } catch (Exception $e) {
+                    error_log("Error generating forced test message: " . $e->getMessage());
+                    continue;
+                }
+            }
+            
+            return $generatedMessages;
+            
+        } catch (Exception $e) {
+            error_log("Error in generateForcedTestMessages: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Clean up expired proactive messages
      */
     public function cleanupExpiredMessages() {
