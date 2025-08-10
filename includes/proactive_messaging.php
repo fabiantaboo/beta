@@ -822,8 +822,11 @@ class ProactiveMessaging {
             $stmt->execute([$aei['user_id']]);
             $user = $stmt->fetch();
             
-            // Get last 20 messages for conversation history
-            $conversationHistory = $this->getConversationHistory($context['session_id'] ?? null);
+            // Get last 20 messages for conversation history  
+            $sessionId = $context['session_id'] ?? null;
+            $this->addDebugLog("Looking for conversation history for session: " . ($sessionId ?? 'NULL'));
+            $conversationHistory = $this->getConversationHistory($sessionId);
+            $this->addDebugLog("Found " . count($conversationHistory) . " messages in conversation history");
             
             // Use the SAME system prompt generation as normal chat
             require_once __DIR__ . '/anthropic_api.php';
@@ -846,7 +849,7 @@ class ProactiveMessaging {
             
             $apiResponse = callAnthropicAPI($messages, $systemPrompt, 200); // Short messages for proactive
             
-            $this->addDebugLog("API Response received: " . ($apiResponse ? substr($apiResponse, 0, 200) . "..." : "NULL/EMPTY"));
+            $this->addDebugLog("API Response received: " . ($apiResponse ? $apiResponse : "NULL/EMPTY"));
             
             if (!$apiResponse) {
                 $this->addDebugLog("API response was empty, using fallback");
@@ -934,7 +937,14 @@ class ProactiveMessaging {
             $contextMsg .= "--- End of history ---\n\n";
         }
         
-        $contextMsg .= "Write a short, authentic message to initiate contact. Use the same language/style as the conversation history:";
+        $contextMsg .= "Write a short, authentic message to initiate contact. ";
+        
+        // Language instruction based on conversation history
+        if (!empty($conversationHistory)) {
+            $contextMsg .= "IMPORTANT: Use the EXACT same language (German/English) and conversational style as shown in the conversation history above. ";
+        }
+        
+        $contextMsg .= "Be natural and spontaneous:";
         
         return $contextMsg;
     }
@@ -1104,6 +1114,10 @@ class ProactiveMessaging {
             
             // Generate and immediately send the proactive message
             try {
+                // Ensure session_id is in context
+                $context['session_id'] = $sessionId;
+                $this->addDebugLog("Context prepared with session_id: " . $sessionId);
+                
                 $message = $this->generateAndSendProactiveMessage($aeiId, $sessionId, $testTrigger, $context);
                 return $message ? [$message] : [];
             } catch (Exception $e) {
