@@ -794,73 +794,33 @@ class ProactiveMessaging {
             $stmt->execute([$aei['user_id']]);
             $user = $stmt->fetch();
             
+            // Get last 20 messages for conversation history
+            $conversationHistory = $this->getConversationHistory($context['session_id'] ?? null);
+            
             // Use the SAME system prompt generation as normal chat
             require_once __DIR__ . '/anthropic_api.php';
             $systemPrompt = generateSystemPrompt($aei, $user, $context['session_id'] ?? null);
             
-            // Build context for AI generation
-            $triggerContext = $this->buildTriggerContext($trigger, $context);
+            // Build context for AI generation with history
+            $triggerContext = $this->buildTriggerContextWithHistory($trigger, $context, $conversationHistory);
             
-            // Build the request payload
-            $requestData = [
-                'model' => 'claude-3-5-sonnet-20241022',
-                'max_tokens' => 150, // Keep proactive messages concise
-                'temperature' => 0.8, // More creative/natural for proactive messages
-                'system' => $systemPrompt,
-                'messages' => [
-                    [
-                        'role' => 'user',
-                        'content' => $triggerContext
-                    ]
+            // Use the same API call function as normal chat
+            $messages = [
+                [
+                    'role' => 'user',
+                    'content' => $triggerContext
                 ]
             ];
             
-            // Get API key
-            $stmt = $this->pdo->prepare("SELECT setting_value FROM api_settings WHERE setting_key = 'anthropic_api_key'");
-            $stmt->execute();
-            $apiKeyResult = $stmt->fetch();
+            $apiResponse = callAnthropicAPI($messages, $systemPrompt, 200); // Short messages for proactive
             
-            if (!$apiKeyResult || empty($apiKeyResult['setting_value'])) {
-                error_log("No Anthropic API key found for proactive messages");
+            if (!$apiResponse) {
+                error_log("Failed to get API response for proactive message");
                 return $this->getFallbackMessage($trigger);
             }
-            
-            // Make API request
-            $ch = curl_init();
-            curl_setopt_array($ch, [
-                CURLOPT_URL => 'https://api.anthropic.com/v1/messages',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode($requestData),
-                CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/json',
-                    'x-api-key: ' . $apiKeyResult['setting_value'],
-                    'anthropic-version: 2023-06-01'
-                ],
-                CURLOPT_TIMEOUT => 30,
-                CURLOPT_CONNECTTIMEOUT => 10
-            ]);
-            
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            
-            if ($httpCode !== 200) {
-                error_log("Anthropic API error for proactive message: HTTP $httpCode - $response");
-                return $this->getFallbackMessage($trigger);
-            }
-            
-            $responseData = json_decode($response, true);
-            
-            if (!isset($responseData['content'][0]['text'])) {
-                error_log("Invalid Anthropic API response structure for proactive message");
-                return $this->getFallbackMessage($trigger);
-            }
-            
-            $generatedMessage = trim($responseData['content'][0]['text']);
             
             // Clean up the message (remove quotes, excessive formatting)
-            $generatedMessage = $this->cleanupGeneratedMessage($generatedMessage);
+            $generatedMessage = $this->cleanupGeneratedMessage($apiResponse);
             
             return $generatedMessage;
             
@@ -871,7 +831,80 @@ class ProactiveMessaging {
     }
     
     /**
-     * Build trigger context for AI
+     * Get conversation history for context
+     */
+    private function getConversationHistory($sessionId, $limit = 20) {
+        if (!$sessionId) {
+            return [];
+        }
+        
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT sender_type, message_text, created_at 
+                FROM chat_messages 
+                WHERE session_id = ? 
+                ORDER BY created_at DESC 
+                LIMIT ?
+            ");
+            $stmt->execute([$sessionId, $limit]);
+            $messages = $stmt->fetchAll();
+            
+            // Reverse to get chronological order
+            return array_reverse($messages);
+            
+        } catch (Exception $e) {
+            error_log("Error getting conversation history: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Build trigger context with conversation history
+     */
+    private function buildTriggerContextWithHistory($trigger, $context, $conversationHistory) {
+        $contextMsg = "You feel compelled to reach out to the user proactively. Here's what's motivating you:\n\n";
+        
+        $contextMsg .= "Trigger Type: {$trigger['type']} ({$trigger['subtype']})\n";
+        $contextMsg .= "Emotional intensity: " . number_format($trigger['strength'], 1) . "/1.0\n";
+        $contextMsg .= "Reason: {$trigger['details']['trigger_reason']}\n\n";
+        
+        if ($trigger['type'] === 'emotional') {
+            if (isset($trigger['details']['emotion'])) {
+                $contextMsg .= "You're particularly feeling: {$trigger['details']['emotion']}\n";
+            }
+            if (isset($trigger['details']['conflicts'])) {
+                $contextMsg .= "You're experiencing some emotional conflicts\n";
+            }
+        }
+        
+        if ($trigger['type'] === 'social' && isset($trigger['details']['contact_name'])) {
+            $contextMsg .= "This involves your friend: {$trigger['details']['contact_name']}\n";
+        }
+        
+        if ($trigger['type'] === 'temporal') {
+            if (isset($trigger['details']['hours_inactive'])) {
+                $contextMsg .= "It's been " . round($trigger['details']['hours_inactive']) . " hours since you last talked\n";
+            }
+        }
+        
+        // Add conversation history if available
+        if (!empty($conversationHistory)) {
+            $contextMsg .= "\n--- Recent conversation history ---\n";
+            foreach ($conversationHistory as $msg) {
+                $sender = $msg['sender_type'] === 'user' ? 'User' : 'You';
+                $text = substr($msg['message_text'], 0, 100) . (strlen($msg['message_text']) > 100 ? '...' : '');
+                $contextMsg .= "{$sender}: {$text}\n";
+            }
+            $contextMsg .= "--- End of history ---\n\n";
+        }
+        
+        $contextMsg .= "Write a short, authentic message to initiate contact. Use the same language/style as the conversation history:";
+        
+        return $contextMsg;
+    }
+
+    /**
+     * Build trigger context for AI (legacy method for backward compatibility)
      */
     private function buildTriggerContext($trigger, $context) {
         $contextMsg = "You feel compelled to reach out to the user proactively. Here's what's motivating you:\n\n";
