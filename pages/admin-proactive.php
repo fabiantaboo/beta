@@ -23,10 +23,8 @@ if ($_POST) {
                         INSERT INTO aei_proactive_settings (
                             aei_id, proactive_messaging_enabled, max_messages_per_day,
                             emotional_sensitivity, social_sensitivity, 
-                            temporal_sensitivity, contextual_sensitivity,
-                            learns_from_user_responses, adapts_timing, adapts_content,
-                            personality_adaptation_rate, context_memory_depth
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            temporal_sensitivity, contextual_sensitivity
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
                         ON DUPLICATE KEY UPDATE
                             proactive_messaging_enabled = VALUES(proactive_messaging_enabled),
                             max_messages_per_day = VALUES(max_messages_per_day),
@@ -34,11 +32,6 @@ if ($_POST) {
                             social_sensitivity = VALUES(social_sensitivity),
                             temporal_sensitivity = VALUES(temporal_sensitivity),
                             contextual_sensitivity = VALUES(contextual_sensitivity),
-                            learns_from_user_responses = VALUES(learns_from_user_responses),
-                            adapts_timing = VALUES(adapts_timing),
-                            adapts_content = VALUES(adapts_content),
-                            personality_adaptation_rate = VALUES(personality_adaptation_rate),
-                            context_memory_depth = VALUES(context_memory_depth),
                             last_updated = CURRENT_TIMESTAMP
                     ");
                     
@@ -49,12 +42,7 @@ if ($_POST) {
                         (float)($_POST['emotional_sensitivity'] ?? 0.6),
                         (float)($_POST['social_sensitivity'] ?? 0.5),
                         (float)($_POST['temporal_sensitivity'] ?? 0.4),
-                        (float)($_POST['contextual_sensitivity'] ?? 0.5),
-                        isset($_POST['learns_from_user_responses']) ? 1 : 0,
-                        isset($_POST['adapts_timing']) ? 1 : 0,
-                        isset($_POST['adapts_content']) ? 1 : 0,
-                        (float)($_POST['personality_adaptation_rate'] ?? 0.1),
-                        (int)($_POST['context_memory_depth'] ?? 10)
+                        (float)($_POST['contextual_sensitivity'] ?? 0.5)
                     ]);
                     
                     $success = "Proactive messaging settings updated successfully";
@@ -67,6 +55,28 @@ if ($_POST) {
             } elseif ($action === 'clear_logs') {
                 ProactiveMessaging::clearDebugLogs();
                 $success = "Debug logs cleared";
+                
+            } elseif ($action === 'update_global_settings') {
+                // Update global default settings
+                $globalSettings = [
+                    'default_max_messages_per_day' => (int)($_POST['global_max_messages_per_day'] ?? 5),
+                    'default_emotional_sensitivity' => (float)($_POST['global_emotional_sensitivity'] ?? 0.6),
+                    'default_social_sensitivity' => (float)($_POST['global_social_sensitivity'] ?? 0.5), 
+                    'default_temporal_sensitivity' => (float)($_POST['global_temporal_sensitivity'] ?? 0.4),
+                    'default_contextual_sensitivity' => (float)($_POST['global_contextual_sensitivity'] ?? 0.5),
+                    'global_proactive_enabled' => isset($_POST['global_proactive_enabled']) ? 1 : 0
+                ];
+                
+                foreach ($globalSettings as $key => $value) {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO global_proactive_settings (setting_key, setting_value) 
+                        VALUES (?, ?) 
+                        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
+                    ");
+                    $stmt->execute([$key, $value]);
+                }
+                
+                $success = "Global proactive messaging settings updated successfully";
                 
             } elseif ($action === 'test_triggers') {
                 $aeiId = $_POST['test_aei_id'] ?? '';
@@ -206,6 +216,30 @@ $systemStats = $stmt->fetch();
 // Get background job statistics
 $jobWorker = new BackgroundJobWorker($pdo);
 $jobStats = $jobWorker->getJobStats();
+
+// Get global settings
+$stmt = $pdo->query("SELECT setting_key, setting_value FROM global_proactive_settings");
+$globalSettingsRaw = $stmt->fetchAll();
+$globalSettings = [];
+foreach ($globalSettingsRaw as $setting) {
+    $globalSettings[$setting['setting_key']] = $setting['setting_value'];
+}
+
+// Set defaults if not exist
+$globalDefaults = [
+    'default_max_messages_per_day' => 5,
+    'default_emotional_sensitivity' => 0.6,
+    'default_social_sensitivity' => 0.5,
+    'default_temporal_sensitivity' => 0.4,
+    'default_contextual_sensitivity' => 0.5,
+    'global_proactive_enabled' => 1
+];
+
+foreach ($globalDefaults as $key => $default) {
+    if (!isset($globalSettings[$key])) {
+        $globalSettings[$key] = $default;
+    }
+}
 ?>
 
 <div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark">
@@ -267,6 +301,101 @@ $jobStats = $jobWorker->getJobStats();
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Global Default Settings -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Global Default Settings</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Default values applied to all new AEIs. Individual AEI settings override these.</p>
+                </div>
+            </div>
+            
+            <form method="POST" class="space-y-6">
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                <input type="hidden" name="action" value="update_global_settings">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Global Controls -->
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">System Controls</h4>
+                        
+                        <div class="space-y-4">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" name="global_proactive_enabled" 
+                                       <?= $globalSettings['global_proactive_enabled'] ? 'checked' : '' ?>
+                                       class="rounded border-gray-300 dark:border-gray-600 text-ayuni-blue focus:ring-ayuni-blue">
+                                <span class="text-gray-700 dark:text-gray-300">Enable Proactive Messaging System-wide</span>
+                            </label>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Default Max Messages Per Day
+                                </label>
+                                <input type="number" name="global_max_messages_per_day" min="1" max="20" 
+                                       value="<?= htmlspecialchars($globalSettings['default_max_messages_per_day']) ?>"
+                                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Safety limit for all AEIs</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Default Sensitivities -->
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Default Trigger Sensitivities</h4>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Emotional: <span class="font-bold" id="global-emotional-display"><?= number_format($globalSettings['default_emotional_sensitivity'], 1) ?></span>
+                                </label>
+                                <input type="range" name="global_emotional_sensitivity" min="0.1" max="1.0" step="0.1" 
+                                       value="<?= htmlspecialchars($globalSettings['default_emotional_sensitivity']) ?>"
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                       oninput="document.getElementById('global-emotional-display').textContent = parseFloat(this.value).toFixed(1)">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Social: <span class="font-bold" id="global-social-display"><?= number_format($globalSettings['default_social_sensitivity'], 1) ?></span>
+                                </label>
+                                <input type="range" name="global_social_sensitivity" min="0.1" max="1.0" step="0.1" 
+                                       value="<?= htmlspecialchars($globalSettings['default_social_sensitivity']) ?>"
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                       oninput="document.getElementById('global-social-display').textContent = parseFloat(this.value).toFixed(1)">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Temporal: <span class="font-bold" id="global-temporal-display"><?= number_format($globalSettings['default_temporal_sensitivity'], 1) ?></span>
+                                </label>
+                                <input type="range" name="global_temporal_sensitivity" min="0.1" max="1.0" step="0.1" 
+                                       value="<?= htmlspecialchars($globalSettings['default_temporal_sensitivity']) ?>"
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                       oninput="document.getElementById('global-temporal-display').textContent = parseFloat(this.value).toFixed(1)">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Contextual: <span class="font-bold" id="global-contextual-display"><?= number_format($globalSettings['default_contextual_sensitivity'], 1) ?></span>
+                                </label>
+                                <input type="range" name="global_contextual_sensitivity" min="0.1" max="1.0" step="0.1" 
+                                       value="<?= htmlspecialchars($globalSettings['default_contextual_sensitivity']) ?>"
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                       oninput="document.getElementById('global-contextual-display').textContent = parseFloat(this.value).toFixed(1)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors font-medium">
+                        <i class="fas fa-globe mr-2"></i>
+                        Save Global Settings
+                    </button>
+                </div>
+            </form>
         </div>
 
         <!-- Quick Actions -->
@@ -470,56 +599,6 @@ $jobStats = $jobWorker->getJobStats();
                 </div>
             </div>
 
-            <!-- Behavioral Adaptation -->
-            <div>
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Behavioral Adaptation</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" name="learns_from_user_responses" 
-                                   <?= $settings['learns_from_user_responses'] ? 'checked' : '' ?>
-                                   class="rounded border-gray-300 dark:border-gray-600 text-ayuni-blue focus:ring-ayuni-blue">
-                            <span class="text-gray-700 dark:text-gray-300">Learn from User Responses</span>
-                        </label>
-
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" name="adapts_timing" 
-                                   <?= $settings['adapts_timing'] ? 'checked' : '' ?>
-                                   class="rounded border-gray-300 dark:border-gray-600 text-ayuni-blue focus:ring-ayuni-blue">
-                            <span class="text-gray-700 dark:text-gray-300">Adapt Message Timing</span>
-                        </label>
-
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" name="adapts_content" 
-                                   <?= $settings['adapts_content'] ? 'checked' : '' ?>
-                                   class="rounded border-gray-300 dark:border-gray-600 text-ayuni-blue focus:ring-ayuni-blue">
-                            <span class="text-gray-700 dark:text-gray-300">Adapt Message Content</span>
-                        </label>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Personality Adaptation Rate: <span class="font-bold"><?= number_format($settings['personality_adaptation_rate'], 1) ?></span>
-                            </label>
-                            <input type="range" name="personality_adaptation_rate" min="0.01" max="0.5" step="0.01" 
-                                   value="<?= htmlspecialchars($settings['personality_adaptation_rate']) ?>"
-                                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                                   oninput="this.previousElementSibling.querySelector('span').textContent = parseFloat(this.value).toFixed(2)">
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Context Memory Depth
-                            </label>
-                            <input type="number" name="context_memory_depth" min="1" max="50" 
-                                   value="<?= htmlspecialchars($settings['context_memory_depth']) ?>"
-                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <div class="flex justify-end">
                 <button type="submit" class="bg-ayuni-blue hover:bg-ayuni-blue/90 text-white px-6 py-3 rounded-lg transition-colors font-medium">

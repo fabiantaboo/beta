@@ -497,23 +497,41 @@ class ProactiveMessaging {
     }
     
     private function hasReachedDailyLimit($aeiId) {
+        // Get AEI-specific or global daily limit
         $stmt = $this->pdo->prepare("
-            SELECT aps.max_messages_per_day,
-                   COUNT(apm.id) as sent_today
-            FROM aei_proactive_settings aps
-            LEFT JOIN aei_proactive_messages apm ON aps.aei_id = apm.aei_id
-                AND apm.sent_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+            SELECT aps.max_messages_per_day 
+            FROM aei_proactive_settings aps 
             WHERE aps.aei_id = ?
-            GROUP BY aps.aei_id, aps.max_messages_per_day
+        ");
+        $stmt->execute([$aeiId]);
+        $aeiSettings = $stmt->fetch();
+        
+        $dailyLimit = null;
+        if ($aeiSettings && $aeiSettings['max_messages_per_day'] !== null) {
+            $dailyLimit = $aeiSettings['max_messages_per_day'];
+        } else {
+            // Use global default
+            $stmt = $this->pdo->prepare("
+                SELECT setting_value 
+                FROM global_proactive_settings 
+                WHERE setting_key = 'default_max_messages_per_day'
+            ");
+            $stmt->execute();
+            $globalSettings = $stmt->fetch();
+            $dailyLimit = $globalSettings ? (int)$globalSettings['setting_value'] : 5;
+        }
+        
+        // Count messages sent today
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*) as sent_today 
+            FROM aei_proactive_messages 
+            WHERE aei_id = ? 
+            AND sent_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
         ");
         $stmt->execute([$aeiId]);
         $result = $stmt->fetch();
         
-        if (!$result) {
-            return false; // No settings found, allow messages
-        }
-        
-        return $result['sent_today'] >= $result['max_messages_per_day'];
+        return ($result['sent_today'] ?? 0) >= $dailyLimit;
     }
     
     /**
@@ -584,6 +602,7 @@ class ProactiveMessaging {
     }
     
     private function getTriggerSensitivity($aeiId, $triggerType) {
+        // Try to get AEI-specific setting first
         $stmt = $this->pdo->prepare("
             SELECT {$triggerType}_sensitivity 
             FROM aei_proactive_settings 
@@ -592,12 +611,33 @@ class ProactiveMessaging {
         $stmt->execute([$aeiId]);
         $result = $stmt->fetch();
         
-        if (!$result) {
-            return 0.5; // Default sensitivity
+        $column = $triggerType . '_sensitivity';
+        if ($result && $result[$column] !== null) {
+            return $result[$column];
         }
         
-        $column = $triggerType . '_sensitivity';
-        return $result[$column] ?? 0.5;
+        // Fallback to global default
+        $stmt = $this->pdo->prepare("
+            SELECT setting_value 
+            FROM global_proactive_settings 
+            WHERE setting_key = ?
+        ");
+        $stmt->execute(["default_{$triggerType}_sensitivity"]);
+        $globalResult = $stmt->fetch();
+        
+        if ($globalResult) {
+            return (float)$globalResult['setting_value'];
+        }
+        
+        // Ultimate fallback
+        $defaults = [
+            'emotional' => 0.6,
+            'social' => 0.5, 
+            'temporal' => 0.4,
+            'contextual' => 0.5
+        ];
+        
+        return $defaults[$triggerType] ?? 0.5;
     }
     
     private function getEmotionHistory($aeiId, $emotion, $hours) {

@@ -496,6 +496,12 @@ function createTablesIfNotExist($pdo) {
             FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
             INDEX idx_predictions_timeline (aei_id, last_analysis)
         )",
+        'global_proactive_settings' => "CREATE TABLE IF NOT EXISTS global_proactive_settings (
+            setting_key VARCHAR(50) PRIMARY KEY,
+            setting_value TEXT NOT NULL,
+            description TEXT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )",
         'aei_proactive_messages' => "CREATE TABLE IF NOT EXISTS aei_proactive_messages (
             id VARCHAR(32) PRIMARY KEY,
             aei_id VARCHAR(32) NOT NULL,
