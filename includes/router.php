@@ -27,6 +27,7 @@ class Router {
             'admin/social' => ['page' => 'admin-social'],
             'admin/proactive' => ['page' => 'admin-proactive'],
             'admin/logs' => ['page' => 'admin-logs'],
+            'admin/decay' => ['page' => 'admin-decay'],
             'dashboard' => ['page' => 'dashboard'],
             'create-aei' => ['page' => 'create-aei'],
             'chat' => ['page' => 'chat'],

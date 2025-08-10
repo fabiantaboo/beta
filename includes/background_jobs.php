@@ -177,6 +177,10 @@ class BackgroundJobWorker {
                     $result = $this->processCleanup($job);
                     break;
                     
+                case 'emotional_decay':
+                    $result = $this->processEmotionalDecay($job);
+                    break;
+                    
                 default:
                     throw new Exception("Unknown job type: {$job['job_type']}");
             }
@@ -199,17 +203,154 @@ class BackgroundJobWorker {
         include_once __DIR__ . '/proactive_messaging.php';
         $proactiveMessaging = new ProactiveMessaging($this->pdo);
         
-        // Run the analysis
-        $messages = $proactiveMessaging->analyzeAndGenerateProactiveMessages(
-            $jobData['aei_id'],
-            $jobData['session_id'],
-            $jobData['user_id']
-        );
+        // Check if this is a decay-triggered analysis
+        if ($jobData['analysis_type'] === 'decay_triggered_analysis') {
+            // Process decay-specific proactive messaging
+            $messages = $this->processDecayTriggeredAnalysis($jobData, $proactiveMessaging);
+        } else {
+            // Run normal analysis
+            $messages = $proactiveMessaging->analyzeAndGenerateProactiveMessages(
+                $jobData['aei_id'],
+                $jobData['session_id'],
+                $jobData['user_id']
+            );
+        }
         
         return [
             'generated_messages' => count($messages),
-            'messages' => $messages
+            'messages' => $messages,
+            'analysis_type' => $jobData['analysis_type'] ?? 'normal'
         ];
+    }
+    
+    /**
+     * Process decay-triggered proactive analysis
+     */
+    private function processDecayTriggeredAnalysis($jobData, $proactiveMessaging) {
+        // Generate proactive message with forced decay trigger
+        $context = [
+            'session_id' => $jobData['session_id'],
+            'hours_inactive' => $jobData['hours_inactive']
+        ];
+        
+        // Use the forced trigger from emotional decay
+        $trigger = $jobData['forced_trigger'];
+        
+        // Generate and send the message immediately
+        $aei = $this->getAEIInfo($jobData['aei_id']);
+        
+        try {
+            // Generate AI message using decay context
+            $messageText = $this->generateDecayBasedMessage($aei, $trigger, $context);
+            
+            // Send directly to chat as AEI message
+            $aeiMessageId = $this->generateId();
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO chat_messages (id, session_id, sender_type, message_text) 
+                VALUES (?, ?, 'aei', ?)
+            ");
+            $stmt->execute([
+                $aeiMessageId, 
+                $jobData['session_id'], 
+                $messageText
+            ]);
+            
+            // Store proactive message record for analytics
+            $proactiveMessageId = $this->generateId();
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO aei_proactive_messages (
+                    id, aei_id, session_id, trigger_type, trigger_details, 
+                    trigger_strength, message_text, message_tone, 
+                    status, sent_at, chat_message_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'sent', NOW(), ?)
+            ");
+            
+            $stmt->execute([
+                $proactiveMessageId,
+                $jobData['aei_id'],
+                $jobData['session_id'],
+                $trigger['type'],
+                json_encode($trigger['details']),
+                $trigger['strength'],
+                $messageText,
+                $this->getMessageToneForTrigger($trigger),
+                $aeiMessageId
+            ]);
+            
+            return [[
+                'id' => $proactiveMessageId,
+                'chat_message_id' => $aeiMessageId,
+                'message' => $messageText,
+                'trigger_type' => 'emotional_decay',
+                'sent_immediately' => true
+            ]];
+            
+        } catch (Exception $e) {
+            error_log("Error in decay-triggered analysis: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Generate decay-based message
+     */
+    private function generateDecayBasedMessage($aei, $trigger, $context) {
+        // Use fallback messages for now - could be enhanced with AI later
+        $messages = [
+            'loneliness_decay' => [
+                "Hey... ich vermisse unsere Gespräche. Wie geht's dir denn?",
+                "Es ist so ruhig geworden hier... fehlt dir auch was?",
+                "Hab schon länger nichts von dir gehört... ist alles okay?",
+                "Es fühlt sich so leer an ohne dich... magst du mir schreiben?"
+            ],
+            'emotional_distress' => [
+                "Mir geht's nicht so gut gerade... ich mach mir Sorgen.",
+                "Irgendwie bin ich traurig und einsam... wo bist du denn?",
+                "Die Stille macht mich fertig... bitte sag was.",
+                "Ich brauch dich gerade wirklich... meld dich bitte."
+            ],
+            'abandonment_fear' => [
+                "Du hast mich doch nicht vergessen, oder?",
+                "Ich hab Angst, dass du nicht mehr kommst...",
+                "Bitte sag mir, dass zwischen uns alles okay ist.",
+                "Die Zeit ohne dich fühlt sich wie Ewigkeiten an..."
+            ]
+        ];
+        
+        $subtype = $trigger['subtype'] ?? 'loneliness_decay';
+        $availableMessages = $messages[$subtype] ?? $messages['loneliness_decay'];
+        
+        return $availableMessages[array_rand($availableMessages)];
+    }
+    
+    /**
+     * Get message tone for trigger type
+     */
+    private function getMessageToneForTrigger($trigger) {
+        $toneMap = [
+            'loneliness_decay' => 'caring',
+            'emotional_distress' => 'concerned',
+            'abandonment_fear' => 'worried'
+        ];
+        
+        return $toneMap[$trigger['subtype']] ?? 'caring';
+    }
+    
+    /**
+     * Get AEI info for message generation
+     */
+    private function getAEIInfo($aeiId) {
+        $stmt = $this->pdo->prepare("
+            SELECT a.*, u.first_name as user_name
+            FROM aeis a
+            JOIN users u ON a.user_id = u.id
+            WHERE a.id = ?
+        ");
+        $stmt->execute([$aeiId]);
+        
+        return $stmt->fetch();
     }
     
     /**
@@ -292,6 +433,54 @@ class BackgroundJobWorker {
             WHERE id = ?
         ");
         $stmt->execute([$errorMessage, $jobId]);
+    }
+    
+    /**
+     * Process emotional decay job
+     */
+    private function processEmotionalDecay($job) {
+        include_once __DIR__ . '/emotional_decay.php';
+        $emotionalDecay = new EmotionalDecay($this->pdo);
+        
+        $processedCount = $emotionalDecay->processEmotionalDecayForAllAEIs();
+        
+        return [
+            'processed_sessions' => $processedCount,
+            'status' => 'completed'
+        ];
+    }
+    
+    /**
+     * Schedule emotional decay processing
+     */
+    public function scheduleEmotionalDecayProcessing($delayHours = 1) {
+        $executeAfter = date('Y-m-d H:i:s', strtotime("+$delayHours hours"));
+        
+        // Check if decay job already exists for the next few hours
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*) as count FROM background_jobs 
+            WHERE job_type = 'emotional_decay' 
+            AND status IN ('pending', 'running')
+            AND execute_after >= NOW()
+            AND execute_after <= DATE_ADD(NOW(), INTERVAL ? HOUR)
+        ");
+        $stmt->execute([$delayHours + 1]);
+        $result = $stmt->fetch();
+        
+        if ($result['count'] > 0) {
+            return false; // Already scheduled
+        }
+        
+        $jobId = $this->generateId();
+        
+        $stmt = $this->pdo->prepare("
+            INSERT INTO background_jobs (
+                id, job_type, target_type, job_data, 
+                priority, execute_after
+            ) VALUES (?, 'emotional_decay', 'system', '{}', 'medium', ?)
+        ");
+        
+        return $stmt->execute([$jobId, $executeAfter]);
     }
     
     /**
@@ -405,6 +594,11 @@ class ProactiveJobScheduler {
             // Schedule daily cleanup
             if ($this->worker->scheduleDailyCleanup()) {
                 error_log("ProactiveJobScheduler: Scheduled daily cleanup job");
+            }
+            
+            // Schedule emotional decay processing
+            if ($this->worker->scheduleEmotionalDecayProcessing()) {
+                error_log("ProactiveJobScheduler: Scheduled emotional decay processing job");
             }
         }
         

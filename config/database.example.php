@@ -677,6 +677,25 @@ function createTablesIfNotExist($pdo) {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )",
+        'aei_emotional_decay_log' => "CREATE TABLE IF NOT EXISTS aei_emotional_decay_log (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            session_id VARCHAR(32) NOT NULL,
+            hours_inactive DECIMAL(5,2) NOT NULL,
+            
+            -- Record of emotional changes applied
+            emotional_changes JSON NOT NULL,
+            
+            -- Metadata
+            processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            decay_strength DECIMAL(3,2) DEFAULT 1.0,
+            relationship_factor DECIMAL(3,2) DEFAULT 1.0,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
+            INDEX idx_aei_processed (aei_id, processed_at),
+            INDEX idx_session_decay (session_id, hours_inactive)
         )"
     ];
 
