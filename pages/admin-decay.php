@@ -1,9 +1,7 @@
 <?php
-requireAuth();
 requireAdmin();
 
 include_once __DIR__ . '/../includes/emotional_decay.php';
-include_once __DIR__ . '/../includes/admin_layout.php';
 
 $emotionalDecay = new EmotionalDecay($pdo);
 
@@ -59,11 +57,17 @@ $stmt = $pdo->query("
     WHERE a.is_active = TRUE
 ");
 $sessionStats = $stmt->fetch();
-
-startAdminPage("Emotional Decay Management", "Monitor and manage AEI emotional decay system");
 ?>
 
-<div class="space-y-6">
+<div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark">
+    <?php renderAdminNavigation('admin-decay'); ?>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <?php renderAdminPageHeader('Emotional Decay Management', 'Monitor and manage AEI emotional decay system'); ?>
+        
+        <?php renderAdminAlerts($error, $success); ?>
+
+        <div class="space-y-6">
     <!-- Action Buttons -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Decay Actions</h3>
@@ -244,7 +248,6 @@ startAdminPage("Emotional Decay Management", "Monitor and manage AEI emotional d
                 </p>
             </div>
         </div>
+        </div>
     </div>
 </div>
-
-<?php endAdminPage(); ?>
