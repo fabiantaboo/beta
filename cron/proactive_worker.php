@@ -8,7 +8,7 @@
  * - Process pending background jobs
  * 
  * Example cron entry (runs every 10 minutes):
- * */10 * * * * /usr/bin/php /path/to/ayuni-beta/cron/proactive_worker.php >> /var/log/ayuni_proactive.log 2>&1
+ * 10 * * * * /usr/bin/php /path/to/ayuni-beta/cron/proactive_worker.php >> /var/log/ayuni_proactive.log 2>&1
  */
 
 // Prevent web access
