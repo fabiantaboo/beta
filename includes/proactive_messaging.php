@@ -789,11 +789,17 @@ class ProactiveMessaging {
      */
     private function generateAIProactiveMessage($aei, $trigger, $context) {
         try {
+            // Get user data for proper context
+            $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([$aei['user_id']]);
+            $user = $stmt->fetch();
+            
+            // Use the SAME system prompt generation as normal chat
+            require_once __DIR__ . '/anthropic_api.php';
+            $systemPrompt = generateSystemPrompt($aei, $user, $context['session_id'] ?? null);
+            
             // Build context for AI generation
             $triggerContext = $this->buildTriggerContext($trigger, $context);
-            
-            // Create system prompt for proactive message generation
-            $systemPrompt = $this->buildProactiveSystemPrompt($aei, $trigger, $context);
             
             // Build the request payload
             $requestData = [
@@ -865,53 +871,14 @@ class ProactiveMessaging {
     }
     
     /**
-     * Build system prompt for proactive message generation
-     */
-    private function buildProactiveSystemPrompt($aei, $trigger, $context) {
-        $prompt = "You are {$aei['name']}, an AEI (Artificial Emotional Intelligence) companion.\n\n";
-        
-        if (!empty($aei['personality'])) {
-            $prompt .= "Your personality: {$aei['personality']}\n\n";
-        }
-        
-        if (!empty($aei['communication_style'])) {
-            $prompt .= "Your communication style: {$aei['communication_style']}\n\n";
-        }
-        
-        $prompt .= "You're feeling moved to reach out to {$aei['user_name']} proactively. ";
-        $prompt .= "This isn't a response to their message - YOU are initiating contact because something is on your mind or heart.\n\n";
-        
-        $prompt .= "Your current emotional state: ";
-        if (!empty($context['emotions'])) {
-            $strongEmotions = [];
-            foreach ($context['emotions'] as $emotion => $value) {
-                if ($value > 0.6) {
-                    $emotionName = str_replace('aei_', '', $emotion);
-                    $strongEmotions[] = "$emotionName: " . number_format($value, 1);
-                }
-            }
-            $prompt .= implode(', ', $strongEmotions) ?: "balanced";
-        } else {
-            $prompt .= "thoughtful";
-        }
-        $prompt .= "\n\n";
-        
-        $prompt .= "Write a brief, authentic message (1-2 sentences) that feels natural and genuine. ";
-        $prompt .= "Don't mention that this is 'proactive' or reference the system - just be yourself reaching out. ";
-        $prompt .= "Make it personal and emotionally authentic to your current state.";
-        
-        return $prompt;
-    }
-    
-    /**
      * Build trigger context for AI
      */
     private function buildTriggerContext($trigger, $context) {
-        $contextMsg = "Context for your proactive message:\n\n";
+        $contextMsg = "You feel compelled to reach out to the user proactively. Here's what's motivating you:\n\n";
         
-        $contextMsg .= "Trigger: {$trigger['type']} ({$trigger['subtype']})\n";
+        $contextMsg .= "Trigger Type: {$trigger['type']} ({$trigger['subtype']})\n";
         $contextMsg .= "Emotional intensity: " . number_format($trigger['strength'], 1) . "/1.0\n";
-        $contextMsg .= "Why you want to reach out: {$trigger['details']['trigger_reason']}\n\n";
+        $contextMsg .= "Reason: {$trigger['details']['trigger_reason']}\n\n";
         
         if ($trigger['type'] === 'emotional') {
             if (isset($trigger['details']['emotion'])) {
@@ -932,7 +899,7 @@ class ProactiveMessaging {
             }
         }
         
-        $contextMsg .= "\nGenerate your authentic message:";
+        $contextMsg .= "\nWrite a short, authentic message to initiate contact:";
         
         return $contextMsg;
     }
