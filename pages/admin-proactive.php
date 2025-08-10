@@ -64,6 +64,10 @@ if ($_POST) {
                 $cleanedCount = $proactiveMessaging->cleanupExpiredMessages();
                 $success = "Cleaned up $cleanedCount expired proactive messages";
                 
+            } elseif ($action === 'clear_logs') {
+                ProactiveMessaging::clearDebugLogs();
+                $success = "Debug logs cleared";
+                
             } elseif ($action === 'test_triggers') {
                 $aeiId = $_POST['test_aei_id'] ?? '';
                 $forceMode = isset($_POST['force_test']);
@@ -118,6 +122,9 @@ if ($_POST) {
                             }
                             $success .= " Messages: " . implode(", ", $messagePreview);
                         }
+                        
+                        // Get recent debug logs  
+                        $debugLogs = ProactiveMessaging::getDebugLogs();
                     } else {
                         $error = "No chat sessions found for this AEI";
                     }
@@ -592,6 +599,37 @@ $jobStats = $jobWorker->getJobStats();
                     <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Debug Logs (if available) -->
+        <?php if (isset($debugLogs) && !empty($debugLogs)): ?>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Debug Logs</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Real-time debugging information from the last proactive message generation</p>
+            </div>
+            
+            <div class="p-6">
+                <div class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+                    <?php foreach ($debugLogs as $log): ?>
+                        <div class="mb-1">
+                            <span class="text-gray-500">[<?= htmlspecialchars($log['timestamp']) ?>]</span>
+                            <span class="text-green-400"><?= htmlspecialchars($log['message']) ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                
+                <div class="mt-4 flex justify-end">
+                    <form method="POST" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                        <input type="hidden" name="action" value="clear_logs">
+                        <button type="submit" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm">
+                            Clear Logs
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
         <?php endif; ?>
