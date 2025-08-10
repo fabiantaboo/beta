@@ -812,15 +812,23 @@ class ProactiveMessaging {
                 ]
             ];
             
+            error_log("PROACTIVE DEBUG: About to call Anthropic API for proactive message");
+            error_log("PROACTIVE DEBUG: System prompt length: " . strlen($systemPrompt));
+            error_log("PROACTIVE DEBUG: Trigger context: " . substr($triggerContext, 0, 200) . "...");
+            
             $apiResponse = callAnthropicAPI($messages, $systemPrompt, 200); // Short messages for proactive
             
+            error_log("PROACTIVE DEBUG: API Response received: " . ($apiResponse ? substr($apiResponse, 0, 200) . "..." : "NULL/EMPTY"));
+            
             if (!$apiResponse) {
-                error_log("Failed to get API response for proactive message");
+                error_log("PROACTIVE DEBUG: API response was empty, using fallback");
                 return $this->getFallbackMessage($trigger);
             }
             
             // Clean up the message (remove quotes, excessive formatting)
             $generatedMessage = $this->cleanupGeneratedMessage($apiResponse);
+            
+            error_log("PROACTIVE DEBUG: Final cleaned message: " . $generatedMessage);
             
             return $generatedMessage;
             
@@ -960,6 +968,8 @@ class ProactiveMessaging {
      * Fallback message when AI generation fails
      */
     private function getFallbackMessage($trigger) {
+        error_log("PROACTIVE DEBUG: Using fallback message for trigger: " . $trigger['type'] . '/' . ($trigger['subtype'] ?? 'none'));
+        
         $fallbacks = [
             'emotional' => [
                 'loneliness' => "Hey... just thinking about you. How are things?",
@@ -1045,6 +1055,8 @@ class ProactiveMessaging {
      */
     public function generateForcedTestMessages($aeiId, $sessionId, $userId) {
         try {
+            error_log("PROACTIVE DEBUG: generateForcedTestMessages called for AEI: " . $aeiId . ", Session: " . $sessionId);
+            
             // Only generate ONE test message with highest priority trigger (loneliness)
             $testTrigger = [
                 'type' => 'emotional',
@@ -1082,11 +1094,15 @@ class ProactiveMessaging {
      */
     private function generateAndSendProactiveMessage($aeiId, $sessionId, $trigger, $context) {
         try {
+            error_log("PROACTIVE DEBUG: generateAndSendProactiveMessage called for AEI: " . $aeiId);
+            
             // Get AEI personality and user info
             $aei = $this->getAEIInfo($aeiId);
+            error_log("PROACTIVE DEBUG: AEI info loaded: " . ($aei ? $aei['name'] : 'FAILED'));
             
             // Generate AI-powered message using AEI personality
             $messageText = $this->generateAIProactiveMessage($aei, $trigger, $context);
+            error_log("PROACTIVE DEBUG: Generated message text: " . $messageText);
             
             // Send directly to chat as AEI message
             $aeiMessageId = $this->generateId();
