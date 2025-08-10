@@ -12,6 +12,7 @@ include_once '../includes/functions.php';
 include_once '../includes/anthropic_api.php';
 include_once '../includes/emotions.php';
 include_once '../includes/image_upload.php';
+include_once '../includes/proactive_messaging.php';
 
 // Clear any unwanted output
 ob_clean();
@@ -178,6 +179,10 @@ try {
     // Update session timestamp
     $stmt = $pdo->prepare("UPDATE chat_sessions SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?");
     $stmt->execute([$sessionId]);
+    
+    // Analyze for proactive messaging triggers (after the conversation)
+    $proactiveMessaging = new ProactiveMessaging($pdo);
+    $proactiveMessages = $proactiveMessaging->analyzeAndGenerateProactiveMessages($aeiId, $sessionId, getUserSession());
     
     // Commit transaction
     $pdo->commit();

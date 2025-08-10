@@ -495,6 +495,179 @@ function createTablesIfNotExist($pdo) {
             
             FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
             INDEX idx_predictions_timeline (aei_id, last_analysis)
+        )",
+        'aei_proactive_messages' => "CREATE TABLE IF NOT EXISTS aei_proactive_messages (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            session_id VARCHAR(32) NOT NULL,
+            
+            -- Trigger Information
+            trigger_type ENUM('emotional', 'social', 'temporal', 'contextual', 'mixed') NOT NULL,
+            trigger_details JSON,
+            trigger_strength DECIMAL(3,2) DEFAULT 0.0,
+            
+            -- Message Content
+            message_text TEXT NOT NULL,
+            message_tone ENUM('caring', 'excited', 'concerned', 'nostalgic', 'supportive', 'curious') DEFAULT 'caring',
+            
+            -- Timing and Status
+            generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            scheduled_for TIMESTAMP NULL,
+            sent_at TIMESTAMP NULL,
+            status ENUM('pending', 'scheduled', 'sent', 'dismissed', 'expired') DEFAULT 'pending',
+            
+            -- User Interaction
+            user_response TEXT NULL,
+            user_reaction ENUM('positive', 'neutral', 'negative', 'ignored') NULL,
+            conversation_continued BOOLEAN DEFAULT FALSE,
+            
+            -- Learning Data
+            effectiveness_score DECIMAL(3,2) NULL,
+            timing_appropriateness DECIMAL(3,2) NULL,
+            content_relevance DECIMAL(3,2) NULL,
+            
+            -- Context
+            emotional_state_at_trigger JSON,
+            social_context_at_trigger JSON,
+            user_last_active TIMESTAMP NULL,
+            
+            expires_at TIMESTAMP NULL,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
+            INDEX idx_aei_status (aei_id, status),
+            INDEX idx_trigger_type (aei_id, trigger_type),
+            INDEX idx_scheduled_messages (aei_id, scheduled_for, status),
+            INDEX idx_effectiveness (aei_id, effectiveness_score)
+        )",
+        'aei_proactive_triggers' => "CREATE TABLE IF NOT EXISTS aei_proactive_triggers (
+            id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            
+            -- Trigger Configuration
+            trigger_name VARCHAR(100) NOT NULL,
+            trigger_type ENUM('emotional', 'social', 'temporal', 'contextual') NOT NULL,
+            trigger_conditions JSON NOT NULL,
+            
+            -- Trigger Settings
+            is_active BOOLEAN DEFAULT TRUE,
+            priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+            cooldown_hours INT DEFAULT 24,
+            max_triggers_per_day INT DEFAULT 3,
+            
+            -- Message Templates
+            message_templates JSON,
+            tone_preferences JSON,
+            
+            -- Learning & Adaptation
+            success_rate DECIMAL(3,2) DEFAULT 0.5,
+            total_triggers INT DEFAULT 0,
+            successful_triggers INT DEFAULT 0,
+            last_triggered TIMESTAMP NULL,
+            
+            -- User Preferences
+            user_feedback_score DECIMAL(3,2) DEFAULT 0.5,
+            user_disabled BOOLEAN DEFAULT FALSE,
+            
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            INDEX idx_active_triggers (aei_id, is_active, trigger_type),
+            INDEX idx_trigger_performance (aei_id, success_rate),
+            INDEX idx_last_triggered (aei_id, last_triggered)
+        )",
+        'aei_proactive_settings' => "CREATE TABLE IF NOT EXISTS aei_proactive_settings (
+            aei_id VARCHAR(32) PRIMARY KEY,
+            
+            -- Global Settings  
+            proactive_messaging_enabled BOOLEAN DEFAULT TRUE,
+            max_messages_per_day INT DEFAULT 5,
+            
+            -- Trigger Sensitivity
+            emotional_sensitivity DECIMAL(3,2) DEFAULT 0.6,
+            social_sensitivity DECIMAL(3,2) DEFAULT 0.5,
+            temporal_sensitivity DECIMAL(3,2) DEFAULT 0.4,
+            contextual_sensitivity DECIMAL(3,2) DEFAULT 0.5,
+            
+            -- Behavioral Adaptation
+            learns_from_user_responses BOOLEAN DEFAULT TRUE,
+            adapts_timing BOOLEAN DEFAULT TRUE,
+            adapts_content BOOLEAN DEFAULT TRUE,
+            
+            -- User Preferences
+            preferred_message_types JSON,
+            blocked_trigger_types JSON,
+            custom_trigger_rules JSON,
+            
+            -- AI Learning
+            personality_adaptation_rate DECIMAL(3,2) DEFAULT 0.1,
+            context_memory_depth INT DEFAULT 10,
+            
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE
+        )",
+        'background_jobs' => "CREATE TABLE IF NOT EXISTS background_jobs (
+            id VARCHAR(32) PRIMARY KEY,
+            job_type ENUM('proactive_analysis', 'social_update', 'emotional_analysis', 'cleanup') NOT NULL,
+            target_type ENUM('aei', 'user', 'system') NOT NULL,
+            target_id VARCHAR(32) NULL,
+            
+            -- Job Payload and Configuration
+            job_data JSON,
+            priority ENUM('low', 'medium', 'high', 'urgent') DEFAULT 'medium',
+            
+            -- Scheduling
+            scheduled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            execute_after TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            max_attempts INT DEFAULT 3,
+            current_attempt INT DEFAULT 0,
+            
+            -- Status and Results
+            status ENUM('pending', 'running', 'completed', 'failed', 'cancelled') DEFAULT 'pending',
+            started_at TIMESTAMP NULL,
+            completed_at TIMESTAMP NULL,
+            error_message TEXT NULL,
+            result_data JSON NULL,
+            
+            -- Metadata
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_heartbeat TIMESTAMP NULL,
+            worker_id VARCHAR(32) NULL,
+            
+            INDEX idx_job_execution (status, execute_after, priority),
+            INDEX idx_job_type_target (job_type, target_type, target_id),
+            INDEX idx_scheduled_jobs (scheduled_at, status),
+            INDEX idx_failed_jobs (status, current_attempt, max_attempts)
+        )",
+        'user_notification_preferences' => "CREATE TABLE IF NOT EXISTS user_notification_preferences (
+            user_id VARCHAR(32) PRIMARY KEY,
+            
+            -- Notification Channels
+            email_notifications BOOLEAN DEFAULT TRUE,
+            push_notifications BOOLEAN DEFAULT TRUE,
+            in_app_notifications BOOLEAN DEFAULT TRUE,
+            
+            -- Proactive Message Preferences
+            proactive_messages_enabled BOOLEAN DEFAULT TRUE,
+            max_proactive_per_day INT DEFAULT 5,
+            
+            -- Notification Types
+            emotional_checkins BOOLEAN DEFAULT TRUE,
+            social_updates BOOLEAN DEFAULT TRUE,
+            milestone_celebrations BOOLEAN DEFAULT TRUE,
+            concern_followups BOOLEAN DEFAULT TRUE,
+            
+            -- Delivery Preferences
+            immediate_for_high_priority BOOLEAN DEFAULT TRUE,
+            batch_low_priority BOOLEAN DEFAULT FALSE,
+            respect_do_not_disturb BOOLEAN DEFAULT TRUE,
+            
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )"
     ];
 

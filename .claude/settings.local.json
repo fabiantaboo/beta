@@ -15,7 +15,8 @@
       "Bash(grep:*)",
       "Bash(php:*)",
       "Bash(git commit:*)",
-      "Bash(dir)"
+      "Bash(dir)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }

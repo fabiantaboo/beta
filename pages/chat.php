@@ -528,6 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatAlerts = document.getElementById('chat-alerts');
     const csrfToken = document.getElementById('csrf-token').value;
     const aeiId = '<?= htmlspecialchars($aeiId) ?>';
+    const sessionId = '<?= htmlspecialchars($sessionId) ?>';
     const aeiName = '<?= htmlspecialchars($aei['name']) ?>';
     const imageInput = document.getElementById('image-input');
     const imagePreview = document.getElementById('image-preview');
@@ -629,13 +630,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial scroll with image loading handling
     setTimeout(scrollToBottomWithImages, 100);
     
+    // Check for proactive messages periodically
+    checkForProactiveMessages();
+    setInterval(checkForProactiveMessages, 30000); // Check every 30 seconds
+    
     // Show alert message
     function showAlert(message, type = 'error') {
-        const alertClass = type === 'error' 
-            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400' 
-            : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400';
+        let alertClass, icon;
         
-        const icon = type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+        if (type === 'error') {
+            alertClass = 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400';
+            icon = 'fas fa-exclamation-circle';
+        } else if (type === 'info') {
+            alertClass = 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400';
+            icon = 'fas fa-info-circle';
+        } else {
+            alertClass = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400';
+            icon = 'fas fa-check-circle';
+        }
         
         chatAlerts.innerHTML = `
             <div class="${alertClass} border px-4 py-2 rounded-lg text-sm">
@@ -1163,6 +1175,174 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 <?php endif; ?>
+
+// Proactive messaging functions
+async function checkForProactiveMessages() {
+    try {
+        const response = await fetch(`/api/proactive_messages.php?aei_id=${aeiId}&session_id=${sessionId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success && data.messages.length > 0) {
+            // Show the first proactive message (highest priority)
+            const proactiveMsg = data.messages[0];
+            showProactiveMessageNotification(proactiveMsg);
+        }
+        
+    } catch (error) {
+        console.error('Error checking proactive messages:', error);
+    }
+}
+
+function showProactiveMessageNotification(proactiveMessage) {
+    // Create or update proactive message notification
+    let notification = document.getElementById('proactive-notification');
+    
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'proactive-notification';
+        notification.className = 'fixed top-20 right-4 z-50 max-w-sm bg-gradient-to-br from-ayuni-aqua to-ayuni-blue text-white rounded-lg shadow-lg p-4 transform transition-all duration-300 translate-x-full opacity-0';
+        document.body.appendChild(notification);
+    }
+    
+    const toneIcons = {
+        'caring': 'fa-heart',
+        'excited': 'fa-star',
+        'concerned': 'fa-exclamation-circle',
+        'nostalgic': 'fa-history',
+        'supportive': 'fa-hands-helping',
+        'curious': 'fa-question-circle'
+    };
+    
+    const icon = toneIcons[proactiveMessage.message_tone] || 'fa-comment';
+    
+    notification.innerHTML = `
+        <div class="flex items-start space-x-3">
+            <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0">
+                <i class="fas ${icon} text-white"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-sm font-semibold text-white">${aeiName} wants to say something</p>
+                    <button onclick="dismissProactiveMessage('${proactiveMessage.id}')" class="text-white hover:text-gray-200 transition-colors">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-white text-opacity-90 mb-3">${truncateText(proactiveMessage.message_text, 80)}</p>
+                <div class="flex space-x-2">
+                    <button 
+                        onclick="sendProactiveMessage('${proactiveMessage.id}')"
+                        class="bg-white text-ayuni-blue px-3 py-1 rounded text-xs font-medium hover:bg-gray-100 transition-colors"
+                    >
+                        Let them speak
+                    </button>
+                    <button 
+                        onclick="dismissProactiveMessage('${proactiveMessage.id}')"
+                        class="bg-white bg-opacity-20 text-white px-3 py-1 rounded text-xs font-medium hover:bg-opacity-30 transition-colors"
+                    >
+                        Not now
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Slide in animation
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full', 'opacity-0');
+        notification.classList.add('translate-x-0', 'opacity-100');
+    }, 100);
+    
+    // Auto-hide after 15 seconds if no interaction
+    setTimeout(() => {
+        if (notification && notification.parentNode) {
+            hideProactiveNotification();
+        }
+    }, 15000);
+}
+
+function truncateText(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
+async function sendProactiveMessage(messageId) {
+    try {
+        hideProactiveNotification();
+        
+        const response = await fetch('/api/proactive_messages.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'send',
+                message_id: messageId,
+                csrf_token: csrfToken
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Add the proactive message to chat
+            const proactiveMessage = data.message;
+            proactiveMessage.is_proactive = true;
+            addMessage(proactiveMessage);
+            
+            // Show a subtle indication that this was proactive
+            showAlert(aeiName + ' had something on their mind!', 'info');
+        } else {
+            showAlert(data.error || 'Failed to send proactive message', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error sending proactive message:', error);
+        showAlert('Failed to send proactive message', 'error');
+    }
+}
+
+async function dismissProactiveMessage(messageId) {
+    try {
+        hideProactiveNotification();
+        
+        const response = await fetch('/api/proactive_messages.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: 'dismiss',
+                message_id: messageId,
+                csrf_token: csrfToken
+            })
+        });
+        
+        // Don't show error for dismissal - it's not critical
+        
+    } catch (error) {
+        console.error('Error dismissing proactive message:', error);
+    }
+}
+
+function hideProactiveNotification() {
+    const notification = document.getElementById('proactive-notification');
+    if (notification) {
+        notification.classList.add('translate-x-full', 'opacity-0');
+        notification.classList.remove('translate-x-0', 'opacity-100');
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }
+}
 
 // Image preview and modal functions
 function removeImagePreview() {
