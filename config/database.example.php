@@ -516,6 +516,9 @@ function createTablesIfNotExist($pdo) {
             sent_at TIMESTAMP NULL,
             status ENUM('pending', 'scheduled', 'sent', 'dismissed', 'expired') DEFAULT 'pending',
             
+            -- Chat Integration
+            chat_message_id VARCHAR(32) NULL,
+            
             -- User Interaction
             user_response TEXT NULL,
             user_reaction ENUM('positive', 'neutral', 'negative', 'ignored') NULL,
@@ -1186,6 +1189,28 @@ Be conversational, helpful, and maintain your unique personality. Keep responses
         
     } catch (PDOException $e) {
         error_log("Advanced social features migration error: " . $e->getMessage());
+    }
+    
+    // 14. Migrate aei_proactive_messages table for direct chat integration
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM aei_proactive_messages");
+        $proactiveColumns = array_column($stmt->fetchAll(), 'Field');
+        
+        $proactiveMessageColumns = [
+            'chat_message_id' => "ALTER TABLE aei_proactive_messages ADD COLUMN chat_message_id VARCHAR(32) NULL AFTER status"
+        ];
+        
+        foreach ($proactiveMessageColumns as $columnName => $alterSQL) {
+            if (!in_array($columnName, $proactiveColumns)) {
+                try {
+                    $pdo->exec($alterSQL);
+                } catch (PDOException $e) {
+                    error_log("Could not add proactive messages column $columnName: " . $e->getMessage());
+                }
+            }
+        }
+    } catch (PDOException $e) {
+        // Table might not exist yet, ignore
     }
     
     // Create admin account if it doesn't exist

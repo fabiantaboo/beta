@@ -39,19 +39,16 @@ class ProactiveMessaging {
                 return $b['strength'] <=> $a['strength'];
             });
             
-            $generatedMessages = [];
-            
-            // Process the strongest triggers
-            foreach (array_slice($triggers, 0, 3) as $trigger) {
-                if ($trigger['strength'] >= $this->getTriggerSensitivity($aeiId, $trigger['type'])) {
-                    $message = $this->generateProactiveMessage($aeiId, $sessionId, $trigger, $context);
-                    if ($message) {
-                        $generatedMessages[] = $message;
-                    }
+            // Process only the strongest trigger and send immediately
+            if (!empty($triggers)) {
+                $strongestTrigger = $triggers[0];
+                if ($strongestTrigger['strength'] >= $this->getTriggerSensitivity($aeiId, $strongestTrigger['type'])) {
+                    $message = $this->generateAndSendProactiveMessage($aeiId, $sessionId, $strongestTrigger, $context);
+                    return $message ? [$message] : [];
                 }
             }
             
-            return $generatedMessages;
+            return [];
             
         } catch (Exception $e) {
             error_log("ProactiveMessaging Error: " . $e->getMessage());
@@ -1048,62 +1045,31 @@ class ProactiveMessaging {
      */
     public function generateForcedTestMessages($aeiId, $sessionId, $userId) {
         try {
-            $testTriggers = [
-                [
-                    'type' => 'emotional',
-                    'subtype' => 'loneliness',
-                    'strength' => 0.9,
-                    'details' => [
-                        'emotion' => 'loneliness',
-                        'intensity' => 0.9,
-                        'trigger_reason' => 'FORCED TEST: High loneliness detected'
-                    ],
-                    'message_tone' => 'caring',
-                    'priority' => 'high'
+            // Only generate ONE test message with highest priority trigger (loneliness)
+            $testTrigger = [
+                'type' => 'emotional',
+                'subtype' => 'loneliness',
+                'strength' => 0.9,
+                'details' => [
+                    'emotion' => 'loneliness',
+                    'intensity' => 0.9,
+                    'trigger_reason' => 'FORCED TEST: High loneliness detected'
                 ],
-                [
-                    'type' => 'temporal',
-                    'subtype' => 'post_emotional_inactivity',
-                    'strength' => 0.7,
-                    'details' => [
-                        'hours_inactive' => 8,
-                        'last_emotional_intensity' => 0.7,
-                        'trigger_reason' => 'FORCED TEST: Long inactivity after emotional conversation'
-                    ],
-                    'message_tone' => 'caring',
-                    'priority' => 'medium'
-                ],
-                [
-                    'type' => 'emotional',
-                    'subtype' => 'high_joy',
-                    'strength' => 0.8,
-                    'details' => [
-                        'emotion' => 'joy',
-                        'intensity' => 0.8,
-                        'trigger_reason' => 'FORCED TEST: High joy - wants to share happiness'
-                    ],
-                    'message_tone' => 'excited',
-                    'priority' => 'medium'
-                ]
+                'message_tone' => 'caring',
+                'priority' => 'high'
             ];
             
             // Get context for message generation
             $context = $this->getCurrentContext($aeiId, $sessionId, $userId);
             
-            $generatedMessages = [];
-            foreach ($testTriggers as $trigger) {
-                try {
-                    $message = $this->generateProactiveMessage($aeiId, $sessionId, $trigger, $context);
-                    if ($message) {
-                        $generatedMessages[] = $message;
-                    }
-                } catch (Exception $e) {
-                    error_log("Error generating forced test message: " . $e->getMessage());
-                    continue;
-                }
+            // Generate and immediately send the proactive message
+            try {
+                $message = $this->generateAndSendProactiveMessage($aeiId, $sessionId, $testTrigger, $context);
+                return $message ? [$message] : [];
+            } catch (Exception $e) {
+                error_log("Error generating forced test message: " . $e->getMessage());
+                return [];
             }
-            
-            return $generatedMessages;
             
         } catch (Exception $e) {
             error_log("Error in generateForcedTestMessages: " . $e->getMessage());
@@ -1111,6 +1077,73 @@ class ProactiveMessaging {
         }
     }
     
+    /**
+     * Generate and immediately send proactive message to chat (no user consent needed)
+     */
+    private function generateAndSendProactiveMessage($aeiId, $sessionId, $trigger, $context) {
+        try {
+            // Get AEI personality and user info
+            $aei = $this->getAEIInfo($aeiId);
+            
+            // Generate AI-powered message using AEI personality
+            $messageText = $this->generateAIProactiveMessage($aei, $trigger, $context);
+            
+            // Send directly to chat as AEI message
+            $aeiMessageId = $this->generateId();
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO chat_messages (id, session_id, sender_type, message_text) 
+                VALUES (?, ?, 'aei', ?)
+            ");
+            $stmt->execute([
+                $aeiMessageId, 
+                $sessionId, 
+                $messageText
+            ]);
+            
+            // Store proactive message record for analytics
+            $proactiveMessageId = $this->generateId();
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO aei_proactive_messages (
+                    id, aei_id, session_id, trigger_type, trigger_details, 
+                    trigger_strength, message_text, message_tone, 
+                    scheduled_for, emotional_state_at_trigger, 
+                    social_context_at_trigger, status, sent_at,
+                    chat_message_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sent', NOW(), ?)
+            ");
+            
+            $stmt->execute([
+                $proactiveMessageId,
+                $aeiId,
+                $sessionId,
+                $trigger['type'],
+                json_encode($trigger['details']),
+                $trigger['strength'],
+                $messageText,
+                $trigger['message_tone'],
+                null, // No scheduling - sent immediately
+                json_encode($context['emotions'] ?? []),
+                json_encode($context['social'] ?? []),
+                $aeiMessageId
+            ]);
+            
+            return [
+                'id' => $proactiveMessageId,
+                'chat_message_id' => $aeiMessageId,
+                'message' => $messageText,
+                'tone' => $trigger['message_tone'],
+                'sent_immediately' => true,
+                'trigger_type' => $trigger['type']
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Error generating and sending proactive message: " . $e->getMessage());
+            return null;
+        }
+    }
+
     /**
      * Clean up expired proactive messages
      */
