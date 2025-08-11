@@ -61,10 +61,20 @@ try {
         exit;
     }
     
-    // Return the interaction data
+    // Parse dialog history if it exists
+    $dialogHistory = null;
+    if (!empty($interaction['dialog_history'])) {
+        $dialogHistory = json_decode($interaction['dialog_history'], true);
+    }
+    
+    // Return the interaction data with parsed dialog
     echo json_encode([
         'success' => true,
-        'interaction' => $interaction
+        'interaction' => $interaction,
+        'dialog_history' => $dialogHistory,
+        'has_multi_turn_dialog' => !empty($dialogHistory),
+        'turn_count' => is_array($dialogHistory) ? count($dialogHistory) : 0,
+        'initiated_by' => $interaction['initiated_by'] ?? 'contact'
     ]);
     
 } catch (PDOException $e) {

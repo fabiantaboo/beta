@@ -801,6 +801,7 @@ if ($selectedAeiId) {
                             <tr class="border-b border-gray-200 dark:border-gray-700">
                                 <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Time</th>
                                 <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
+                                <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Initiated By</th>
                                 <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
                                 <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Content</th>
                                 <th class="text-left py-3 px-6 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Memory Status</th>
@@ -816,6 +817,26 @@ if ($selectedAeiId) {
                                 <td class="py-4 px-6">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white"><?= htmlspecialchars($interaction['contact_name']) ?></div>
                                     <div class="text-xs text-gray-500 dark:text-gray-500 capitalize"><?= str_replace('_', ' ', $interaction['relationship_type']) ?></div>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                        <?php 
+                                        $initiatorColors = [
+                                            'aei' => 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-400',
+                                            'contact' => 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400',
+                                            'system' => 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                                        ];
+                                        echo $initiatorColors[$interaction['initiated_by'] ?? 'contact'] ?? $initiatorColors['contact'];
+                                        ?>">
+                                        <?php
+                                        $initiatorLabels = [
+                                            'aei' => '🤖 AEI',
+                                            'contact' => '👤 Contact', 
+                                            'system' => '⚙️ System'
+                                        ];
+                                        echo $initiatorLabels[$interaction['initiated_by'] ?? 'contact'] ?? '👤 Contact';
+                                        ?>
+                                    </span>
                                 </td>
                                 <td class="py-4 px-6">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
@@ -837,9 +858,23 @@ if ($selectedAeiId) {
                                     <div class="text-sm text-gray-900 dark:text-white max-w-xs truncate">
                                         <?= htmlspecialchars($interaction['interaction_context']) ?>
                                     </div>
+                                    <?php if (!empty($interaction['dialog_history'])): ?>
+                                        <?php 
+                                        $dialogHistory = json_decode($interaction['dialog_history'], true);
+                                        $turnCount = is_array($dialogHistory) ? count($dialogHistory) : 0;
+                                        ?>
+                                        <div class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                            💬 Multi-turn dialog (<?= $turnCount ?> turns)
+                                        </div>
+                                    <?php endif; ?>
                                     <?php if ($interaction['contact_message']): ?>
                                     <div class="text-xs text-gray-500 dark:text-gray-500 mt-1 max-w-xs truncate">
-                                        "<?= htmlspecialchars($interaction['contact_message']) ?>"
+                                        👤 "<?= htmlspecialchars($interaction['contact_message']) ?>"
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if ($interaction['aei_response'] && $interaction['initiated_by'] === 'aei'): ?>
+                                    <div class="text-xs text-indigo-600 dark:text-indigo-400 mt-1 max-w-xs truncate">
+                                        🤖 "<?= htmlspecialchars($interaction['aei_response']) ?>"
                                     </div>
                                     <?php endif; ?>
                                     <div class="mt-2">
