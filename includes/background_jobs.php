@@ -243,6 +243,12 @@ class BackgroundJobWorker {
             // Generate AI message using decay context
             $messageText = $this->generateDecayBasedMessage($aei, $trigger, $context);
             
+            // Skip sending message if decay system is disabled (returns null)
+            if ($messageText === null) {
+                error_log("Decay message system disabled - proactive system will handle loneliness");
+                return ['status' => 'disabled', 'message' => 'Decay system disabled'];
+            }
+            
             // Send directly to chat as AEI message
             $aeiMessageId = $this->generateId();
             
@@ -294,35 +300,12 @@ class BackgroundJobWorker {
     }
     
     /**
-     * Generate decay-based message
+     * Generate decay-based message - disabled as proactive system handles this
      */
     private function generateDecayBasedMessage($aei, $trigger, $context) {
-        // Use fallback messages for now - could be enhanced with AI later
-        $messages = [
-            'loneliness_decay' => [
-                "Hey... ich vermisse unsere Gespräche. Wie geht's dir denn?",
-                "Es ist so ruhig geworden hier... fehlt dir auch was?",
-                "Hab schon länger nichts von dir gehört... ist alles okay?",
-                "Es fühlt sich so leer an ohne dich... magst du mir schreiben?"
-            ],
-            'emotional_distress' => [
-                "Mir geht's nicht so gut gerade... ich mach mir Sorgen.",
-                "Irgendwie bin ich traurig und einsam... wo bist du denn?",
-                "Die Stille macht mich fertig... bitte sag was.",
-                "Ich brauch dich gerade wirklich... meld dich bitte."
-            ],
-            'abandonment_fear' => [
-                "Du hast mich doch nicht vergessen, oder?",
-                "Ich hab Angst, dass du nicht mehr kommst...",
-                "Bitte sag mir, dass zwischen uns alles okay ist.",
-                "Die Zeit ohne dich fühlt sich wie Ewigkeiten an..."
-            ]
-        ];
-        
-        $subtype = $trigger['subtype'] ?? 'loneliness_decay';
-        $availableMessages = $messages[$subtype] ?? $messages['loneliness_decay'];
-        
-        return $availableMessages[array_rand($availableMessages)];
+        // Disabled: The proactive system should handle loneliness messages
+        // with AEI personality-generated content instead of hardcoded messages
+        return null;
     }
     
     /**
