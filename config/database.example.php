@@ -249,6 +249,9 @@ function createTablesIfNotExist($pdo) {
             aei_thoughts TEXT,
             aei_internal_conflict TEXT,
             
+            -- Dialog History for multi-turn conversations
+            dialog_history JSON,
+            
             -- NEW: Advanced Response Analysis
             aei_response_strategy ENUM('supportive', 'advisory', 'celebratory', 'concerned', 'boundary_setting', 'conflict_avoidant', 'direct_confrontation') NULL,
             conversation_satisfaction_score DECIMAL(3,2) DEFAULT 0.5,
@@ -1027,7 +1030,8 @@ Be conversational, helpful, and maintain your unique personality. Keep responses
             
             $dialogColumns = [
                 'aei_response' => "ALTER TABLE aei_contact_interactions ADD COLUMN aei_response TEXT NULL AFTER contact_message",
-                'aei_thoughts' => "ALTER TABLE aei_contact_interactions ADD COLUMN aei_thoughts TEXT NULL AFTER aei_response"
+                'aei_thoughts' => "ALTER TABLE aei_contact_interactions ADD COLUMN aei_thoughts TEXT NULL AFTER aei_response",
+                'dialog_history' => "ALTER TABLE aei_contact_interactions ADD COLUMN dialog_history JSON NULL AFTER aei_thoughts"
             ];
             
             foreach ($dialogColumns as $columnName => $alterSQL) {

@@ -91,7 +91,7 @@ class SocialContactManager {
             $systemPrompt = "You are a character generator. Create realistic, diverse social contacts. Respond only with valid JSON.";
             $messages = [['role' => 'user', 'content' => $prompt]];
             
-            $response = callAnthropicAPI($messages, $systemPrompt, 1000);
+            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
             
             // Enhanced JSON parsing with error details
             $contactData = json_decode($response, true);
@@ -261,7 +261,7 @@ class SocialContactManager {
             
             $systemPrompt = "You are a life simulation assistant. Generate realistic, gradual life developments. Keep changes believable and not too dramatic.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $systemPrompt, 1000);
+            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
             
             $development = json_decode($response, true);
             if (!$development) {
@@ -301,6 +301,124 @@ class SocialContactManager {
     }
     
     /**
+     * Generates AEI reaching out to contact using personality from system prompt
+     */
+    public function generateAEIToContactInteraction($aeiId, $contactId, $interactionType = null) {
+        try {
+            $contact = $this->getContact($contactId);
+            $aei = $this->getAEI($aeiId);
+            
+            if (!$contact || !$aei) {
+                throw new Exception("Contact or AEI not found (Contact: $contactId, AEI: $aeiId)");
+            }
+            
+            // Get AEI's system prompt to understand their personality
+            $systemPrompt = $this->getAEISystemPrompt($aeiId);
+            
+            $personalityTraits = json_decode($contact['personality_traits'], true) ?: [];
+            $recentEvents = json_decode($contact['recent_life_events'], true) ?: [];
+            
+            $prompt = "
+            {$aei['name']} wants to reach out to their {$contact['relationship_type']} {$contact['name']}.
+            
+            {$contact['name']}'s info:
+            - Personality: " . implode(', ', $personalityTraits) . "
+            - Current situation: {$contact['current_life_situation']}
+            - Recent events: " . implode(', ', $recentEvents) . "
+            - Concerns: {$contact['current_concerns']}
+            
+            Relationship strength: {$contact['relationship_strength']}/100
+            " . ($interactionType === 'spontaneous' ? "This is a spontaneous, unplanned interaction where {$aei['name']} feels like reaching out." : "") . "
+            
+            What would {$aei['name']} say to {$contact['name']}? Write as {$aei['name']} would, staying true to your personality and communication style.
+            
+            Respond with JSON:
+            {
+                \"interaction_type\": \"shares_news|asks_for_advice|invites_to_activity|shares_problem|celebrates_together|casual_chat|checks_in\",
+                \"interaction_context\": \"Brief description of what prompted this outreach\",
+                \"aei_message\": \"What {$aei['name']} says/writes to {$contact['name']}\",
+                \"emotional_tone\": \"happy|excited|worried|sad|neutral|frustrated|caring\",
+                \"expects_response\": true/false
+            }
+            ";
+            
+            // Use the full system prompt from real chat for authentic personality
+            $conversationSystemPrompt = $systemPrompt ?: "You are {$aei['name']}, a thoughtful person who cares about your relationships.";
+            $messages = [['role' => 'user', 'content' => $prompt]];
+            $response = callAnthropicAPI($messages, $conversationSystemPrompt, 8000);
+            
+            // Enhanced JSON parsing with error recovery
+            $interaction = json_decode($response, true);
+            $jsonError = json_last_error();
+            
+            if ($jsonError !== JSON_ERROR_NONE || !$interaction) {
+                $errorDetails = [
+                    'json_error' => json_last_error_msg(),
+                    'raw_response' => substr($response, 0, 500),
+                    'contact_id' => $contactId,
+                    'aei_id' => $aeiId,
+                    'contact_name' => $contact['name'],
+                    'aei_name' => $aei['name']
+                ];
+                
+                error_log("LLM JSON Parsing Error in generateAEIToContactInteraction: " . json_encode($errorDetails));
+                
+                // Try to recover JSON
+                $cleanedResponse = $this->extractJSONFromResponse($response);
+                if ($cleanedResponse) {
+                    $interaction = json_decode($cleanedResponse, true);
+                    if ($interaction) {
+                        error_log("Successfully recovered interaction JSON for AEI {$aei['name']} -> Contact {$contact['name']}");
+                    }
+                }
+                
+                if (!$interaction) {
+                    throw new Exception("LLM Response JSON Parsing Failed for AEI-initiated interaction: " . json_last_error_msg() . " | Response: " . substr($response, 0, 200));
+                }
+            }
+            
+            // Validate interaction structure
+            $requiredFields = ['interaction_type', 'interaction_context', 'aei_message', 'emotional_tone'];
+            foreach ($requiredFields as $field) {
+                if (!isset($interaction[$field]) || empty($interaction[$field])) {
+                    throw new Exception("Missing required field '$field' in AEI-initiated interaction response for {$aei['name']} -> {$contact['name']}");
+                }
+            }
+            
+            // Validate interaction type
+            $validTypes = ['shares_news', 'asks_for_advice', 'invites_to_activity', 'shares_problem', 'celebrates_together', 'casual_chat', 'checks_in'];
+            if (!in_array($interaction['interaction_type'], $validTypes)) {
+                error_log("Invalid interaction_type '{$interaction['interaction_type']}', defaulting to 'casual_chat'");
+                $interaction['interaction_type'] = 'casual_chat';
+            }
+            
+            $interactionId = $this->storeAEIInitiatedInteraction($aeiId, $contactId, $interaction);
+            
+            if (!$interactionId) {
+                throw new Exception("Failed to store AEI-initiated interaction in database for {$aei['name']} -> {$contact['name']}");
+            }
+            
+            // Generate contact's response and start a 6-turn conversation
+            try {
+                $this->generateMultiTurnDialog($interactionId, $aeiId, $contactId, $interaction);
+            } catch (Exception $e) {
+                error_log("Warning: Failed to generate multi-turn dialog for interaction $interactionId: " . $e->getMessage());
+            }
+            
+            return [
+                'id' => $interactionId,
+                'interaction' => $interaction,
+                'contact_name' => $contact['name'],
+                'initiated_by' => 'aei'
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Error generating AEI-to-contact interaction: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Generates contact reaching out to AEI using existing Anthropic API
      */
     public function generateContactToAEIInteraction($contactId, $aeiId, $interactionType = null) {
@@ -339,7 +457,7 @@ class SocialContactManager {
             
             $systemPrompt = "You are a social interaction generator. Create realistic, contextual communications between friends/family. Keep the tone natural and appropriate to the relationship.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $systemPrompt, 800);
+            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
             
             // Enhanced JSON parsing with error recovery
             $interaction = json_decode($response, true);
@@ -392,11 +510,11 @@ class SocialContactManager {
                 throw new Exception("Failed to store interaction in database for {$contact['name']} -> {$aei['name']}");
             }
             
-            // Generate AEI's internal response to this interaction
+            // Generate AEI's internal response and start a 6-turn conversation
             try {
-                $this->generateAEIResponse($interactionId, $aeiId, $contactId, $interaction);
+                $this->generateMultiTurnDialog($interactionId, $aeiId, $contactId, $interaction);
             } catch (Exception $e) {
-                error_log("Warning: Failed to generate AEI response for interaction $interactionId: " . $e->getMessage());
+                error_log("Warning: Failed to generate multi-turn dialog for interaction $interactionId: " . $e->getMessage());
                 // Don't fail the whole interaction if AEI response generation fails
             }
             
@@ -418,8 +536,9 @@ class SocialContactManager {
     
     /**
      * Generate AEI's internal response to contact interaction
+     * DEPRECATED: Replaced by generateMultiTurnDialog()
      */
-    private function generateAEIResponse($interactionId, $aeiId, $contactId, $interaction) {
+    private function generateAEIResponse_DEPRECATED($interactionId, $aeiId, $contactId, $interaction) {
         try {
             $aei = $this->getAEI($aeiId);
             $contact = $this->getContact($contactId);
@@ -451,7 +570,7 @@ class SocialContactManager {
             
             $systemPrompt = "You are an empathetic AEI generating authentic responses to social interactions. Be genuine and emotionally appropriate.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $systemPrompt, 800);
+            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
             
             $aeiDialog = json_decode($response, true);
             if (!$aeiDialog) {
@@ -488,8 +607,8 @@ class SocialContactManager {
             $stmt = $this->pdo->prepare("
                 INSERT INTO aei_contact_interactions (
                     id, aei_id, contact_id, interaction_type, 
-                    interaction_context, contact_message
-                ) VALUES (?, ?, ?, ?, ?, ?)
+                    interaction_context, contact_message, processed_for_emotions
+                ) VALUES (?, ?, ?, ?, ?, ?, FALSE)
             ");
             
             $stmt->execute([
@@ -549,12 +668,247 @@ class SocialContactManager {
      */
     private function getAEI($aeiId) {
         try {
-            $stmt = $this->pdo->prepare("SELECT name, age, gender FROM aeis WHERE id = ?");
+            $stmt = $this->pdo->prepare("SELECT name, age, gender, personality FROM aeis WHERE id = ?");
             $stmt->execute([$aeiId]);
             return $stmt->fetch();
         } catch (PDOException $e) {
             error_log("Error getting AEI: " . $e->getMessage());
             return false;
+        }
+    }
+    
+    /**
+     * Get AEI full system prompt for personality context (same as in real chat)
+     */
+    public function getAEISystemPrompt($aeiId) {
+        try {
+            // Get full AEI and user data like in real chat
+            $stmt = $this->pdo->prepare("SELECT * FROM aeis WHERE id = ?");
+            $stmt->execute([$aeiId]);
+            $aei = $stmt->fetch();
+            
+            if (!$aei) {
+                return null;
+            }
+            
+            // Get user data for the AEI's owner
+            $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([$aei['user_id']]);
+            $user = $stmt->fetch();
+            
+            if (!$user) {
+                return $aei['system_prompt'] ?: $aei['personality'];
+            }
+            
+            // Use the SAME system prompt generation as real chat
+            require_once __DIR__ . '/anthropic_api.php';
+            $fullSystemPrompt = generateSystemPrompt($aei, $user, null);
+            
+            return $fullSystemPrompt;
+            
+        } catch (Exception $e) {
+            error_log("Error getting AEI full system prompt: " . $e->getMessage());
+            
+            // Fallback to basic personality
+            try {
+                $stmt = $this->pdo->prepare("SELECT system_prompt, personality FROM aeis WHERE id = ?");
+                $stmt->execute([$aeiId]);
+                $aei = $stmt->fetch();
+                return $aei ? ($aei['system_prompt'] ?: $aei['personality']) : null;
+            } catch (PDOException $e) {
+                return null;
+            }
+        }
+    }
+    
+    /**
+     * Store AEI-initiated interaction in database
+     */
+    private function storeAEIInitiatedInteraction($aeiId, $contactId, $interaction) {
+        try {
+            $interactionId = generateId();
+            
+            $stmt = $this->pdo->prepare("
+                INSERT INTO aei_contact_interactions (
+                    id, aei_id, contact_id, interaction_type, 
+                    interaction_context, aei_response, initiated_by, processed_for_emotions
+                ) VALUES (?, ?, ?, ?, ?, ?, 'aei', FALSE)
+            ");
+            
+            $stmt->execute([
+                $interactionId,
+                $aeiId,
+                $contactId,
+                $interaction['interaction_type'],
+                $interaction['interaction_context'],
+                $interaction['aei_message']
+            ]);
+            
+            return $interactionId;
+        } catch (PDOException $e) {
+            error_log("Error storing AEI-initiated interaction: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Generate multi-turn dialog (6 turns) between AEI and contact
+     */
+    private function generateMultiTurnDialog($interactionId, $aeiId, $contactId, $initialInteraction) {
+        try {
+            $contact = $this->getContact($contactId);
+            $aei = $this->getAEI($aeiId);
+            $systemPrompt = $this->getAEISystemPrompt($aeiId);
+            
+            if (!$contact || !$aei) {
+                throw new Exception("Contact or AEI not found for dialog generation");
+            }
+            
+            $conversationHistory = [];
+            $isAEIInitiated = isset($initialInteraction['aei_message']);
+            
+            // Add initial message to conversation history
+            if ($isAEIInitiated) {
+                $conversationHistory[] = [
+                    'sender' => 'aei',
+                    'message' => $initialInteraction['aei_message']
+                ];
+            } else {
+                $conversationHistory[] = [
+                    'sender' => 'contact',
+                    'message' => $initialInteraction['contact_message']
+                ];
+            }
+            
+            // Generate 6 turns (3 from each person)
+            for ($turn = 1; $turn <= 5; $turn++) {
+                $isAEITurn = $isAEIInitiated ? ($turn % 2 === 0) : ($turn % 2 === 1);
+                
+                if ($isAEITurn) {
+                    // AEI's turn
+                    $response = $this->generateAEIDialogResponse($aei, $contact, $conversationHistory, $systemPrompt);
+                    if ($response) {
+                        $conversationHistory[] = [
+                            'sender' => 'aei',
+                            'message' => $response
+                        ];
+                    }
+                } else {
+                    // Contact's turn
+                    $response = $this->generateContactDialogResponse($contact, $aei, $conversationHistory);
+                    if ($response) {
+                        $conversationHistory[] = [
+                            'sender' => 'contact',
+                            'message' => $response
+                        ];
+                    }
+                }
+            }
+            
+            // Store the complete dialog in the database
+            $this->storeDialogHistory($interactionId, $conversationHistory);
+            
+            return $conversationHistory;
+            
+        } catch (Exception $e) {
+            error_log("Error generating multi-turn dialog: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Generate AEI's response in dialog using their personality
+     */
+    private function generateAEIDialogResponse($aei, $contact, $conversationHistory, $systemPrompt) {
+        try {
+            $historyText = "";
+            foreach ($conversationHistory as $entry) {
+                $sender = $entry['sender'] === 'aei' ? $aei['name'] : $contact['name'];
+                $historyText .= "$sender: {$entry['message']}\n";
+            }
+            
+            $prompt = "
+            Continue this conversation between {$aei['name']} and {$contact['name']}.
+            
+            Conversation so far:
+            $historyText
+            
+            {$contact['name']}'s personality: " . implode(', ', json_decode($contact['personality_traits'], true) ?: ['friendly']) . "
+            
+            What does {$aei['name']} respond? Keep it natural and conversational, staying true to your personality and communication style.
+            
+            Respond with only the message text, no JSON.
+            ";
+            
+            // Use the full system prompt from real chat for authentic personality  
+            $conversationSystemPrompt = $systemPrompt ?: "You are {$aei['name']}, a thoughtful person who cares about relationships. Continue the conversation naturally.";
+            $messages = [['role' => 'user', 'content' => $prompt]];
+            $response = callAnthropicAPI($messages, $conversationSystemPrompt, 8000);
+            
+            return trim($response);
+            
+        } catch (Exception $e) {
+            error_log("Error generating AEI dialog response: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Generate contact's response in dialog
+     */
+    private function generateContactDialogResponse($contact, $aei, $conversationHistory) {
+        try {
+            $historyText = "";
+            foreach ($conversationHistory as $entry) {
+                $sender = $entry['sender'] === 'aei' ? $aei['name'] : $contact['name'];
+                $historyText .= "$sender: {$entry['message']}\n";
+            }
+            
+            $personalityTraits = json_decode($contact['personality_traits'], true) ?: ['friendly'];
+            
+            $prompt = "
+            Continue this conversation between {$contact['name']} and {$aei['name']}.
+            
+            Conversation so far:
+            $historyText
+            
+            {$contact['name']}'s personality: " . implode(', ', $personalityTraits) . "
+            {$contact['name']}'s current situation: {$contact['current_life_situation']}
+            
+            What does {$contact['name']} respond? Keep it natural and conversational.
+            
+            Respond with only the message text, no JSON.
+            ";
+            
+            $conversationSystemPrompt = "You are {$contact['name']}, a " . implode(', ', $personalityTraits) . " person. Continue the conversation naturally.";
+            $messages = [['role' => 'user', 'content' => $prompt]];
+            $response = callAnthropicAPI($messages, $conversationSystemPrompt, 8000);
+            
+            return trim($response);
+            
+        } catch (Exception $e) {
+            error_log("Error generating contact dialog response: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Store complete dialog history in database
+     */
+    private function storeDialogHistory($interactionId, $conversationHistory) {
+        try {
+            $dialogJson = json_encode($conversationHistory);
+            
+            $stmt = $this->pdo->prepare("
+                UPDATE aei_contact_interactions 
+                SET dialog_history = ?
+                WHERE id = ?
+            ");
+            
+            $stmt->execute([$dialogJson, $interactionId]);
+            
+        } catch (PDOException $e) {
+            error_log("Error storing dialog history: " . $e->getMessage());
         }
     }
     
@@ -678,7 +1032,7 @@ class SocialContactManager {
             
             $systemPrompt = "Generate realistic social media posts that reflect the person's current life situation and personality.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $systemPrompt, 600);
+            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
             
             $postData = json_decode($response, true);
             if (!$postData) {

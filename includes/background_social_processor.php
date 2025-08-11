@@ -178,28 +178,41 @@ class BackgroundSocialProcessor {
                     $this->socialContactManager->evolveContactLife($contact['id']);
                 }
                 
-                // 2. Check if contact wants to reach out to AEI
+                // 2. Determine who initiates contact (only ONE interaction per contact per session)
                 $contactProbability = $this->calculateAdvancedContactProbability($contact);
-                
-                if (mt_rand(1, 100) <= ($contactProbability * 100)) {
-                    $interaction = $this->socialContactManager->generateContactToAEIInteraction(
-                        $contact['id'], 
-                        $aeiId
-                    );
-                    
-                    if ($interaction) {
-                        $interactions[] = $interaction;
-                    }
-                }
-                
-                // 3. Additional chance for spontaneous interactions based on attachment style
+                $aeiInitiatedProbability = $this->calculateAEIInitiatedProbability($contact, $aeiId);
                 $spontaneousChance = $this->calculateSpontaneousInteractionChance($contact);
-                if (mt_rand(1, 100) <= ($spontaneousChance * 100)) {
-                    $interaction = $this->socialContactManager->generateContactToAEIInteraction(
-                        $contact['id'], 
-                        $aeiId,
-                        'spontaneous'
-                    );
+                
+                // Calculate total probability and choose ONE type of interaction
+                $totalProbability = $contactProbability + $aeiInitiatedProbability + $spontaneousChance;
+                $randomValue = mt_rand(1, 10000) / 100; // 0.01 to 100.00
+                
+                if ($randomValue <= ($totalProbability * 100)) {
+                    // Determine which type of interaction to create
+                    $rand = mt_rand(1, 10000);
+                    $contactThreshold = ($contactProbability / $totalProbability) * 10000;
+                    $aeiThreshold = $contactThreshold + (($aeiInitiatedProbability / $totalProbability) * 10000);
+                    
+                    if ($rand <= $contactThreshold) {
+                        // Contact initiates
+                        $interaction = $this->socialContactManager->generateContactToAEIInteraction(
+                            $contact['id'], 
+                            $aeiId
+                        );
+                    } elseif ($rand <= $aeiThreshold) {
+                        // AEI initiates  
+                        $interaction = $this->socialContactManager->generateAEIToContactInteraction(
+                            $aeiId,
+                            $contact['id']
+                        );
+                    } else {
+                        // Spontaneous contact interaction
+                        $interaction = $this->socialContactManager->generateContactToAEIInteraction(
+                            $contact['id'], 
+                            $aeiId,
+                            'spontaneous'
+                        );
+                    }
                     
                     if ($interaction) {
                         $interactions[] = $interaction;
@@ -280,6 +293,68 @@ class BackgroundSocialProcessor {
                                      $seasonalMultiplier);
         
         return max(0.01, $finalProbability); // Minimum 1% chance
+    }
+    
+    /**
+     * Calculate probability of AEI initiating contact with this person
+     */
+    private function calculateAEIInitiatedProbability($contact, $aeiId) {
+        // Base probability is lower than contact-initiated (AEIs are generally more reactive)
+        $baseFrequency = [
+            'daily' => 0.15,        // 15% chance per 6-hour interval
+            'weekly' => 0.08,       // 8% chance
+            'monthly' => 0.04,      // 4% chance
+            'rarely' => 0.01        // 1% chance
+        ];
+        
+        $baseProbability = $baseFrequency[$contact['contact_frequency']] ?? 0.05;
+        
+        // Relationship strength matters more for AEI-initiated contact
+        $relationshipMultiplier = 0.3 + ($contact['relationship_strength'] / 100) * 2.0;
+        
+        // AEIs are more likely to reach out to close relationships
+        $relationshipBonus = [
+            'family' => 1.5,
+            'close_friend' => 1.3,
+            'friend' => 1.0,
+            'work_colleague' => 0.7,
+            'acquaintance' => 0.4
+        ];
+        
+        $typeMultiplier = $relationshipBonus[$contact['relationship_type']] ?? 1.0;
+        
+        // Time since last contact - AEIs more likely to reach out if it's been a while
+        $daysSinceLastContact = $this->getDaysSinceLastContact($contact['id']);
+        $timeMultiplier = 1.0;
+        
+        if ($daysSinceLastContact == 0) {
+            $timeMultiplier = 0.1; // Very low chance same day
+        } elseif ($daysSinceLastContact >= 3) {
+            $timeMultiplier = min(2.5, 1.0 + ($daysSinceLastContact - 2) * 0.4); // Increases significantly
+        }
+        
+        // Check for unresolved issues or celebrations that might prompt outreach
+        $contextualBonus = 1.0;
+        
+        // If contact shared problems recently, AEI might follow up
+        $recentProblems = $this->hasRecentProblems($contact['id']);
+        if ($recentProblems) {
+            $contextualBonus += 0.5;
+        }
+        
+        // If contact had good news, AEI might want to celebrate
+        $recentGoodNews = $this->hasRecentGoodNews($contact['id']);
+        if ($recentGoodNews) {
+            $contextualBonus += 0.3;
+        }
+        
+        $finalProbability = min(0.80, $baseProbability * 
+                                     $relationshipMultiplier * 
+                                     $typeMultiplier * 
+                                     $timeMultiplier * 
+                                     $contextualBonus);
+        
+        return max(0.005, $finalProbability); // Minimum 0.5% chance
     }
     
     /**
@@ -373,6 +448,50 @@ class BackgroundSocialProcessor {
         } catch (PDOException $e) {
             error_log("Error getting days since last contact: " . $e->getMessage());
             return 30;
+        }
+    }
+    
+    /**
+     * Check if contact has shared problems recently
+     */
+    private function hasRecentProblems($contactId) {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) as problem_count
+                FROM aei_contact_interactions 
+                WHERE contact_id = ? 
+                AND interaction_type = 'shares_problem'
+                AND occurred_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            ");
+            $stmt->execute([$contactId]);
+            $result = $stmt->fetch();
+            
+            return ($result['problem_count'] ?? 0) > 0;
+        } catch (PDOException $e) {
+            error_log("Error checking recent problems: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if contact has shared good news recently
+     */
+    private function hasRecentGoodNews($contactId) {
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) as good_news_count
+                FROM aei_contact_interactions 
+                WHERE contact_id = ? 
+                AND interaction_type IN ('shares_news', 'celebrates_together')
+                AND occurred_at >= DATE_SUB(NOW(), INTERVAL 5 DAY)
+            ");
+            $stmt->execute([$contactId]);
+            $result = $stmt->fetch();
+            
+            return ($result['good_news_count'] ?? 0) > 0;
+        } catch (PDOException $e) {
+            error_log("Error checking recent good news: " . $e->getMessage());
+            return false;
         }
     }
     
