@@ -180,6 +180,29 @@ try {
     $stmt = $pdo->prepare("UPDATE chat_sessions SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?");
     $stmt->execute([$sessionId]);
     
+    // Process social context integration after chat
+    if (isset($aei['social_initialized']) && $aei['social_initialized']) {
+        require_once '../includes/aei_social_context.php';
+        $socialContext = new AEISocialContext($pdo);
+        
+        // Mark social interactions that were used in this chat as mentioned
+        $markedCount = $socialContext->markRecentInteractionsAsMentioned($aeiId);
+        
+        // Process any unprocessed social emotional impacts
+        $emotionalImpact = $socialContext->processUnprocessedSocialUpdates($aeiId);
+        
+        if (!empty($emotionalImpact)) {
+            // Apply social emotional impact to current session
+            $emotions = new Emotions($pdo);
+            $emotions->updateEmotions($sessionId, $emotionalImpact, 'social_interaction');
+            error_log("Applied social emotional impact to session {$sessionId}: " . json_encode($emotionalImpact));
+        }
+        
+        if ($markedCount > 0) {
+            error_log("Social integration complete for AEI {$aeiId}: {$markedCount} interactions marked as mentioned");
+        }
+    }
+    
     // Analyze for proactive messaging triggers (after the conversation)
     $proactiveMessaging = new ProactiveMessaging($pdo);
     $proactiveMessages = $proactiveMessaging->analyzeAndGenerateProactiveMessages($aeiId, $sessionId, getUserSession());

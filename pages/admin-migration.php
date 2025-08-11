@@ -126,15 +126,45 @@ function testDialogCreation() {
     require_once __DIR__ . '/../includes/social_contact_manager.php';
     $socialManager = new SocialContactManager($pdo);
     
+    // Test AEI-initiated interaction (should generate thoughts + multi-turn dialog)
     $result = $socialManager->generateAEIToContactInteraction(
         $data['aei_id'], 
         $data['contact_id']
     );
     
+    if ($result && isset($result['id'])) {
+        // Check if the interaction has dialog_history and aei_thoughts
+        $stmt = $pdo->prepare("
+            SELECT 
+                dialog_history, 
+                aei_thoughts, 
+                mentioned_in_chat,
+                processed_for_emotions
+            FROM aei_contact_interactions 
+            WHERE id = ?
+        ");
+        $stmt->execute([$result['id']]);
+        $interactionDetails = $stmt->fetch();
+        
+        $dialogHistory = json_decode($interactionDetails['dialog_history'], true);
+        
+        return [
+            'success' => true,
+            'test_data' => $data,
+            'interaction_created' => true,
+            'interaction_id' => $result['id'],
+            'has_dialog_history' => !empty($interactionDetails['dialog_history']),
+            'dialog_turns' => is_array($dialogHistory) ? count($dialogHistory) : 0,
+            'has_aei_thoughts' => !empty($interactionDetails['aei_thoughts']),
+            'mentioned_in_chat' => (bool)$interactionDetails['mentioned_in_chat'],
+            'processed_for_emotions' => (bool)$interactionDetails['processed_for_emotions'],
+            'aei_thoughts_preview' => $interactionDetails['aei_thoughts'] ? substr($interactionDetails['aei_thoughts'], 0, 100) . '...' : null
+        ];
+    }
+    
     return [
-        'success' => true,
-        'test_data' => $data,
-        'interaction_created' => !empty($result),
+        'success' => false,
+        'error' => 'Failed to create interaction',
         'result' => $result
     ];
 }
@@ -265,17 +295,40 @@ async function testDialog() {
     const data = await response.json();
     
     if (data.success) {
+        const statusBadges = [
+            { key: 'has_dialog_history', label: 'Multi-turn Dialog', icon: '💬' },
+            { key: 'has_aei_thoughts', label: 'AEI Thoughts', icon: '🧠' },
+            { key: 'mentioned_in_chat', label: 'Mentioned in Chat', icon: '💬' },
+            { key: 'processed_for_emotions', label: 'Emotionally Processed', icon: '❤️' }
+        ];
+        
+        const badges = statusBadges.map(badge => {
+            const isActive = data[badge.key];
+            const colorClass = isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+            const icon = isActive ? '✅' : '❌';
+            return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs ${colorClass}">${icon} ${badge.icon} ${badge.label}</span>`;
+        }).join(' ');
+        
         container.innerHTML = `
             <div class="p-4 border border-green-200 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <h3 class="font-semibold text-green-800 dark:text-green-400">✅ Test Dialog Created!</h3>
-                <p class="text-sm mt-2">
-                    AEI "${data.test_data.aei_name}" → Contact "${data.test_data.contact_name}"
-                </p>
-                <p class="text-sm">
-                    Interaction ID: ${data.result?.id || 'N/A'}
-                </p>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    Check the admin/social page to see the new multi-turn dialog.
+                <h3 class="font-semibold text-green-800 dark:text-green-400">✅ Test Dialog Created Successfully!</h3>
+                <div class="mt-3 space-y-2">
+                    <p class="text-sm">
+                        <strong>AEI:</strong> "${data.test_data.aei_name}" → <strong>Contact:</strong> "${data.test_data.contact_name}"
+                    </p>
+                    <p class="text-sm">
+                        <strong>Interaction ID:</strong> ${data.interaction_id}
+                    </p>
+                    <p class="text-sm">
+                        <strong>Dialog Turns:</strong> ${data.dialog_turns || 0}
+                    </p>
+                    ${data.aei_thoughts_preview ? `<p class="text-sm"><strong>AEI Thoughts Preview:</strong> "${data.aei_thoughts_preview}"</p>` : ''}
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        ${badges}
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-3">
+                    ✨ Check the admin/social page to see the complete multi-turn dialog with AEI thoughts.
                 </p>
             </div>
         `;

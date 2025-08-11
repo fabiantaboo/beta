@@ -765,6 +765,7 @@ class SocialContactManager {
             }
             
             $conversationHistory = [];
+            $allAEIThoughts = []; // Collect AEI thoughts throughout the conversation
             $isAEIInitiated = isset($initialInteraction['aei_message']);
             
             // Add initial message to conversation history
@@ -786,15 +787,21 @@ class SocialContactManager {
                 
                 try {
                     if ($isAEITurn) {
-                        // AEI's turn
+                        // AEI's turn - now returns array with message and thoughts
                         $response = $this->generateAEIDialogResponse($aei, $contact, $conversationHistory, $systemPrompt);
-                        if ($response) {
+                        if ($response && isset($response['message'])) {
                             $conversationHistory[] = [
                                 'sender' => 'aei',
-                                'message' => $response,
+                                'message' => $response['message'],
                                 'turn' => count($conversationHistory) + 1
                             ];
-                            error_log("AEI dialog turn {$turn} generated successfully: " . substr($response, 0, 50));
+                            
+                            // Collect AEI thoughts for storage
+                            if (!empty($response['thoughts'])) {
+                                $allAEIThoughts[] = "Turn " . ($turn) . ": " . $response['thoughts'];
+                            }
+                            
+                            error_log("AEI dialog turn {$turn} generated successfully: " . substr($response['message'], 0, 50));
                         } else {
                             error_log("AEI dialog turn {$turn} failed - empty response");
                             // Continue anyway to avoid breaking the dialog
@@ -823,6 +830,11 @@ class SocialContactManager {
             // Store the complete dialog in the database
             $this->storeDialogHistory($interactionId, $conversationHistory);
             
+            // Store collected AEI thoughts separately
+            if (!empty($allAEIThoughts)) {
+                $this->storeAEIThoughts($interactionId, implode(" | ", $allAEIThoughts));
+            }
+            
             return $conversationHistory;
             
         } catch (Exception $e) {
@@ -850,9 +862,15 @@ class SocialContactManager {
             
             {$contact['name']}'s personality: " . implode(', ', json_decode($contact['personality_traits'], true) ?: ['friendly']) . "
             
-            What does {$aei['name']} respond? Keep it natural and conversational, staying true to your personality and communication style.
+            Generate both your response and your internal thoughts about this conversation.
             
-            Respond with only the message text, no JSON.
+            Respond with JSON:
+            {
+                \"message\": \"What you say to {$contact['name']}\",
+                \"thoughts\": \"Your private internal thoughts about this moment in the conversation\"
+            }
+            
+            Keep it natural and conversational, staying true to your personality and communication style.
             ";
             
             // Use the full system prompt from real chat for authentic personality  
@@ -860,7 +878,17 @@ class SocialContactManager {
             $messages = [['role' => 'user', 'content' => $prompt]];
             $response = callAnthropicAPI($messages, $conversationSystemPrompt, 8000);
             
-            return trim($response);
+            $parsed = json_decode($response, true);
+            if (!$parsed) {
+                error_log("Failed to parse AEI dialog JSON response: " . $response);
+                // Fallback: treat entire response as message
+                return ['message' => trim($response), 'thoughts' => null];
+            }
+            
+            return [
+                'message' => $parsed['message'] ?? trim($response),
+                'thoughts' => $parsed['thoughts'] ?? null
+            ];
             
         } catch (Exception $e) {
             error_log("Error generating AEI dialog response: " . $e->getMessage());
@@ -945,6 +973,32 @@ class SocialContactManager {
             } catch (PDOException $checkError) {
                 error_log("Error checking table structure: " . $checkError->getMessage());
             }
+        }
+    }
+    
+    /**
+     * Store AEI thoughts from multi-turn dialog
+     */
+    private function storeAEIThoughts($interactionId, $thoughts) {
+        try {
+            error_log("Storing AEI thoughts for interaction {$interactionId}");
+            
+            $stmt = $this->pdo->prepare("
+                UPDATE aei_contact_interactions 
+                SET aei_thoughts = ?
+                WHERE id = ?
+            ");
+            
+            $result = $stmt->execute([$thoughts, $interactionId]);
+            
+            if ($result) {
+                error_log("AEI thoughts stored successfully for interaction {$interactionId}");
+            } else {
+                error_log("Failed to store AEI thoughts for interaction {$interactionId}");
+            }
+            
+        } catch (PDOException $e) {
+            error_log("PDO Error storing AEI thoughts for {$interactionId}: " . $e->getMessage());
         }
     }
     

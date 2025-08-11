@@ -377,6 +377,54 @@ class AEISocialContext {
     }
     
     /**
+     * Mark recent interactions as mentioned in chat to avoid repetition
+     * This should be called after each chat session where social context was used
+     */
+    public function markRecentInteractionsAsMentioned($aeiId) {
+        try {
+            // Get interactions that are currently being shown in social context
+            // These are the ones that would be visible to the AEI in chat
+            $mentionableInteractions = $this->getRecentMentionableInteractions($aeiId, 7);
+            
+            if (empty($mentionableInteractions)) {
+                return 0;
+            }
+            
+            // Mark these specific interactions as mentioned
+            $interactionIds = array_column($mentionableInteractions, 'id');
+            $placeholders = implode(',', array_fill(0, count($interactionIds), '?'));
+            
+            $stmt = $this->pdo->prepare("
+                UPDATE aei_contact_interactions 
+                SET mentioned_in_chat = TRUE 
+                WHERE id IN ($placeholders)
+            ");
+            $affectedRows = $stmt->execute($interactionIds) ? $stmt->rowCount() : 0;
+            
+            if ($affectedRows > 0) {
+                error_log("Marked {$affectedRows} specific social interactions as mentioned for AEI {$aeiId}");
+            }
+            
+            return $affectedRows;
+        } catch (PDOException $e) {
+            error_log("Error marking social interactions as mentioned: " . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Get social interactions that are currently relevant for chat context
+     */
+    public function getCurrentChatContextInteractions($aeiId) {
+        try {
+            return $this->getRecentMentionableInteractions($aeiId, 7);
+        } catch (Exception $e) {
+            error_log("Error getting current chat context interactions: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
      * Initialize social context for a new AEI
      */
     public function initializeSocialContext($aeiId) {
