@@ -780,28 +780,43 @@ class SocialContactManager {
                 ];
             }
             
-            // Generate 6 turns (3 from each person)
+            // Generate 6 turns (3 from each person) - with error handling
             for ($turn = 1; $turn <= 5; $turn++) {
                 $isAEITurn = $isAEIInitiated ? ($turn % 2 === 0) : ($turn % 2 === 1);
                 
-                if ($isAEITurn) {
-                    // AEI's turn
-                    $response = $this->generateAEIDialogResponse($aei, $contact, $conversationHistory, $systemPrompt);
-                    if ($response) {
-                        $conversationHistory[] = [
-                            'sender' => 'aei',
-                            'message' => $response
-                        ];
+                try {
+                    if ($isAEITurn) {
+                        // AEI's turn
+                        $response = $this->generateAEIDialogResponse($aei, $contact, $conversationHistory, $systemPrompt);
+                        if ($response) {
+                            $conversationHistory[] = [
+                                'sender' => 'aei',
+                                'message' => $response,
+                                'turn' => count($conversationHistory) + 1
+                            ];
+                            error_log("AEI dialog turn {$turn} generated successfully: " . substr($response, 0, 50));
+                        } else {
+                            error_log("AEI dialog turn {$turn} failed - empty response");
+                            // Continue anyway to avoid breaking the dialog
+                        }
+                    } else {
+                        // Contact's turn
+                        $response = $this->generateContactDialogResponse($contact, $aei, $conversationHistory);
+                        if ($response) {
+                            $conversationHistory[] = [
+                                'sender' => 'contact',
+                                'message' => $response,
+                                'turn' => count($conversationHistory) + 1
+                            ];
+                            error_log("Contact dialog turn {$turn} generated successfully: " . substr($response, 0, 50));
+                        } else {
+                            error_log("Contact dialog turn {$turn} failed - empty response");
+                            // Continue anyway to avoid breaking the dialog
+                        }
                     }
-                } else {
-                    // Contact's turn
-                    $response = $this->generateContactDialogResponse($contact, $aei, $conversationHistory);
-                    if ($response) {
-                        $conversationHistory[] = [
-                            'sender' => 'contact',
-                            'message' => $response
-                        ];
-                    }
+                } catch (Exception $e) {
+                    error_log("Error in dialog turn {$turn}: " . $e->getMessage());
+                    // Continue to next turn
                 }
             }
             
@@ -898,6 +913,9 @@ class SocialContactManager {
     private function storeDialogHistory($interactionId, $conversationHistory) {
         try {
             $dialogJson = json_encode($conversationHistory);
+            $turnCount = count($conversationHistory);
+            
+            error_log("Storing dialog history for interaction {$interactionId}: {$turnCount} turns");
             
             $stmt = $this->pdo->prepare("
                 UPDATE aei_contact_interactions 
@@ -905,10 +923,28 @@ class SocialContactManager {
                 WHERE id = ?
             ");
             
-            $stmt->execute([$dialogJson, $interactionId]);
+            $result = $stmt->execute([$dialogJson, $interactionId]);
+            
+            if ($result) {
+                error_log("Dialog history stored successfully for interaction {$interactionId}");
+            } else {
+                error_log("Failed to store dialog history for interaction {$interactionId}");
+            }
             
         } catch (PDOException $e) {
-            error_log("Error storing dialog history: " . $e->getMessage());
+            error_log("PDO Error storing dialog history for {$interactionId}: " . $e->getMessage());
+            
+            // Try to check if column exists
+            try {
+                $stmt = $this->pdo->query("DESCRIBE aei_contact_interactions");
+                $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                if (!in_array('dialog_history', $columns)) {
+                    error_log("CRITICAL: dialog_history column does not exist in aei_contact_interactions table!");
+                    error_log("Please run database migration to add this column.");
+                }
+            } catch (PDOException $checkError) {
+                error_log("Error checking table structure: " . $checkError->getMessage());
+            }
         }
     }
     

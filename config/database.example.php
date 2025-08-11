@@ -1031,14 +1031,18 @@ Be conversational, helpful, and maintain your unique personality. Keep responses
             $dialogColumns = [
                 'aei_response' => "ALTER TABLE aei_contact_interactions ADD COLUMN aei_response TEXT NULL AFTER contact_message",
                 'aei_thoughts' => "ALTER TABLE aei_contact_interactions ADD COLUMN aei_thoughts TEXT NULL AFTER aei_response",
-                'dialog_history' => "ALTER TABLE aei_contact_interactions ADD COLUMN dialog_history JSON NULL AFTER aei_thoughts"
+                'dialog_history' => "ALTER TABLE aei_contact_interactions ADD COLUMN dialog_history JSON NULL AFTER aei_thoughts",
+                'initiated_by' => "ALTER TABLE aei_contact_interactions ADD COLUMN initiated_by ENUM('contact', 'aei', 'system') DEFAULT 'contact' AFTER group_interaction_id",
+                'processed_for_emotions' => "ALTER TABLE aei_contact_interactions ADD COLUMN processed_for_emotions BOOLEAN DEFAULT FALSE AFTER mentioned_in_chat"
             ];
             
             foreach ($dialogColumns as $columnName => $alterSQL) {
                 if (!in_array($columnName, $interactionColumns)) {
                     try {
                         $pdo->exec($alterSQL);
+                        error_log("MIGRATION: Added column '{$columnName}' to aei_contact_interactions table");
                     } catch (PDOException $e) {
+                        error_log("MIGRATION: Failed to add column '{$columnName}': " . $e->getMessage());
                         // Column might already exist, ignore error
                     }
                 }

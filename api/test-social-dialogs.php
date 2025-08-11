@@ -158,12 +158,18 @@ function testAllFeatures() {
             'aei_initiated_interactions' => 'AEIs can now initiate conversations with contacts',
             'multi_turn_dialogs' => 'Conversations now have 6 turns instead of single Q&A',
             'personality_integration' => 'AEI personality from system prompt used in social dialogs',
-            'contextual_probability' => 'AEIs more likely to reach out based on recent events'
+            'contextual_probability' => 'AEIs more likely to reach out based on recent events',
+            'automatic_migration' => 'Database columns automatically migrated on any page load',
+            'enhanced_admin_display' => 'Admin panel shows multi-turn dialogs and initiation tracking'
         ],
         'tests_available' => [
             '?action=test_aei_initiated',
             '?action=test_multi_turn', 
             '?action=test_personality_integration'
+        ],
+        'utility_apis' => [
+            '/api/trigger-migration.php - Check database migration status',
+            '/api/debug-social-dialogs.php - Debug tools for social system'
         ]
     ];
 }
