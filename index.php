@@ -21,7 +21,7 @@ if (isset($_GET['action'])) {
     }
 }
 
-$allowed_pages = ['home', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-logs', 'admin-decay'];
+$allowed_pages = ['home', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-logs', 'admin-decay', 'admin-migration'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
@@ -47,6 +47,7 @@ $page_title = match($page) {
     'admin-proactive' => 'Admin - Proactive Messaging',
     'admin-logs' => 'Admin - Error Logs',
     'admin-decay' => 'Admin - Emotional Decay',
+    'admin-migration' => 'Admin - Migration Tools',
     default => 'Ayuni Beta'
 };
 ?>
