@@ -61,20 +61,28 @@ try {
         exit;
     }
     
-    // Parse dialog history if it exists
-    $dialogHistory = null;
+    // Parse dialog history if it exists and add it to the interaction object
     if (!empty($interaction['dialog_history'])) {
         $dialogHistory = json_decode($interaction['dialog_history'], true);
+        if (is_array($dialogHistory)) {
+            $interaction['dialog_history'] = $dialogHistory;
+        } else {
+            $interaction['dialog_history'] = null;
+        }
+    } else {
+        $interaction['dialog_history'] = null;
     }
     
-    // Return the interaction data with parsed dialog
+    // Parse personality traits if they exist
+    if (!empty($interaction['personality_traits'])) {
+        $traits = json_decode($interaction['personality_traits'], true);
+        $interaction['personality_traits'] = is_array($traits) ? $traits : [];
+    }
+    
+    // Return the interaction data with parsed dialog_history embedded in the interaction
     echo json_encode([
         'success' => true,
-        'interaction' => $interaction,
-        'dialog_history' => $dialogHistory,
-        'has_multi_turn_dialog' => !empty($dialogHistory),
-        'turn_count' => is_array($dialogHistory) ? count($dialogHistory) : 0,
-        'initiated_by' => $interaction['initiated_by'] ?? 'contact'
+        'interaction' => $interaction
     ]);
     
 } catch (PDOException $e) {

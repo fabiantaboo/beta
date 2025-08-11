@@ -1651,38 +1651,80 @@ function displayDialog(interaction) {
         </div>
     `;
     
-    // Contact message
-    if (interaction.contact_message) {
-        html += `
-            <div class="flex items-start space-x-3 mb-4">
-                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                    ${interaction.contact_name.charAt(0).toUpperCase()}
-                </div>
-                <div class="flex-1">
-                    <div class="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-3">
-                        <p class="text-sm text-gray-900 dark:text-white">${escapeHtml(interaction.contact_message)}</p>
+    // Check if this is a multi-turn dialog from the updated API
+    if (interaction.dialog_history && Array.isArray(interaction.dialog_history) && interaction.dialog_history.length > 0) {
+        html += `<div class="mb-4">
+            <h5 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">💬 Multi-turn Dialog (${interaction.dialog_history.length} turns)</h5>
+        </div>`;
+        
+        // Display each turn in the dialog
+        interaction.dialog_history.forEach((turn, index) => {
+            const isAEI = turn.sender === 'aei';
+            const senderName = isAEI ? interaction.aei_name : interaction.contact_name;
+            
+            html += `
+                <div class="flex items-start space-x-3 mb-4">
+                    <div class="w-8 h-8 ${isAEI ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-blue-500'} rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        ${isAEI ? '<i class="fas fa-robot"></i>' : senderName.charAt(0).toUpperCase()}
                     </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${escapeHtml(interaction.contact_name)} • ${formatTime(interaction.occurred_at)}</div>
-                </div>
-            </div>
-        `;
-    }
-    
-    // AEI response
-    if (interaction.aei_response) {
-        html += `
-            <div class="flex items-start space-x-3 mb-4">
-                <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm">
-                    <i class="fas fa-robot"></i>
-                </div>
-                <div class="flex-1">
-                    <div class="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg p-3">
-                        <p class="text-sm text-gray-900 dark:text-white">${escapeHtml(interaction.aei_response)}</p>
+                    <div class="flex-1">
+                        <div class="${isAEI ? 'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30' : 'bg-blue-100 dark:bg-blue-900/30'} rounded-lg p-3">
+                            <p class="text-sm text-gray-900 dark:text-white">${escapeHtml(turn.message)}</p>
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            ${isAEI ? '🤖' : '👤'} ${escapeHtml(senderName)} • Turn ${turn.turn || (index + 1)}
+                        </div>
                     </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${escapeHtml(interaction.aei_name)} • ${formatTime(interaction.occurred_at)}</div>
                 </div>
-            </div>
-        `;
+            `;
+        });
+    } else {
+        // Fallback to old format if no dialog_history
+        
+        // Contact message
+        if (interaction.contact_message) {
+            html += `
+                <div class="flex items-start space-x-3 mb-4">
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        ${interaction.contact_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-3">
+                            <p class="text-sm text-gray-900 dark:text-white">${escapeHtml(interaction.contact_message)}</p>
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">👤 ${escapeHtml(interaction.contact_name)} • ${formatTime(interaction.occurred_at)}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // AEI response
+        if (interaction.aei_response) {
+            html += `
+                <div class="flex items-start space-x-3 mb-4">
+                    <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg p-3">
+                            <p class="text-sm text-gray-900 dark:text-white">${escapeHtml(interaction.aei_response)}</p>
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">🤖 ${escapeHtml(interaction.aei_name)} • ${formatTime(interaction.occurred_at)}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show notice if no dialog content
+        if (!interaction.contact_message && !interaction.aei_response) {
+            html += `
+                <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+                    <i class="fas fa-comment-slash text-2xl mb-2"></i>
+                    <p class="text-sm">No dialog content available</p>
+                    <p class="text-xs mt-1">This interaction may be from the old format</p>
+                </div>
+            `;
+        }
     }
     
     // AEI thoughts (internal)
