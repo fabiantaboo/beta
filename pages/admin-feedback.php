@@ -481,7 +481,6 @@ function showContextModal(feedbackId, context) {
                         <i class="fas ${senderIcon} ${senderColor}"></i>
                         <span class="font-medium ${senderColor} capitalize">${message.sender_type}</span>
                         ${isTarget ? '<span class="ml-2 px-2 py-0.5 bg-yellow-300 dark:bg-yellow-700 text-yellow-900 dark:text-yellow-100 text-xs font-bold rounded-full animate-pulse">⭐ FEEDBACK TARGET</span>' : ''}
-                        ${message.debug_ids ? '<span class="ml-2 text-xs text-gray-500">[Debug: ' + message.debug_ids.msg_id + ' vs ' + message.debug_ids.input_id + ' = ' + isTarget + ']</span>' : ''}
                     </div>
                     <span class="text-xs text-gray-500 dark:text-gray-400">${timestamp}</span>
                 </div>

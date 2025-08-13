@@ -150,7 +150,6 @@ try {
             'image_name' => $msg['image_original_name'],
             'timestamp' => $msg['created_at'],
             'is_target' => (string)$msg['id'] === (string)$input['message_id'], // Mark which message the feedback is for
-            'debug_ids' => ['msg_id' => (string)$msg['id'], 'input_id' => (string)$input['message_id']] // Temporary debug
         ];
     }, $contextMessages);
     
@@ -160,24 +159,14 @@ try {
     $existingFeedback = $stmt->fetch();
     
     if ($existingFeedback) {
-        // Update existing feedback
-        $stmt = $pdo->prepare("
-            UPDATE message_feedback 
-            SET rating = ?, feedback_text = ?, feedback_category = ?, message_context = ?, updated_at = NOW(), 
-                ip_address = ?, user_agent = ?
-            WHERE id = ?
-        ");
-        $stmt->execute([
-            $input['rating'],
-            $feedbackText,
-            $input['category'] ?? null,
-            json_encode($messageContext, JSON_UNESCAPED_UNICODE),
-            $_SERVER['REMOTE_ADDR'] ?? null,
-            $_SERVER['HTTP_USER_AGENT'] ?? null,
-            $existingFeedback['id']
+        // Prevent overwriting existing feedback
+        error_log("Feedback API: User $userId attempted to submit duplicate feedback for message " . $input['message_id']);
+        http_response_code(409); // Conflict
+        echo json_encode([
+            'error' => 'You have already provided feedback for this message. Each message can only be rated once.',
+            'existing_feedback_id' => $existingFeedback['id']
         ]);
-        
-        $feedbackId = $existingFeedback['id'];
+        exit;
     } else {
         // Create new feedback
         $feedbackId = generateId();

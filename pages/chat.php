@@ -33,8 +33,18 @@ if (!$session) {
 
 // No more POST handling here - everything moved to AJAX API
 
-$stmt = $pdo->prepare("SELECT * FROM chat_messages WHERE session_id = ? ORDER BY created_at ASC");
-$stmt->execute([$sessionId]);
+// Get messages and check which ones already have feedback
+$stmt = $pdo->prepare("
+    SELECT 
+        cm.*, 
+        mf.id as feedback_id,
+        mf.rating as feedback_rating
+    FROM chat_messages cm
+    LEFT JOIN message_feedback mf ON cm.id = mf.message_id AND mf.user_id = ?
+    WHERE cm.session_id = ? 
+    ORDER BY cm.created_at ASC
+");
+$stmt->execute([getUserSession(), $sessionId]);
 $messages = $stmt->fetchAll();
 
 // Get current emotional state for display (only for admins)
@@ -237,24 +247,60 @@ if ($isCurrentUserAdmin) {
                                     </p>
                                     <?php if ($message['sender_type'] === 'aei'): ?>
                                         <div class="flex items-center space-x-2 ml-2">
-                                            <button 
-                                                class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
-                                                data-message-id="<?= htmlspecialchars($message['id']) ?>"
-                                                data-rating="thumbs_up"
-                                                onclick="showFeedbackModal('<?= htmlspecialchars($message['id']) ?>', 'thumbs_up')"
-                                                title="This response was helpful"
-                                            >
-                                                <i class="fas fa-thumbs-up text-xs text-gray-400 hover:text-green-500 transition-colors"></i>
-                                            </button>
-                                            <button 
-                                                class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
-                                                data-message-id="<?= htmlspecialchars($message['id']) ?>"
-                                                data-rating="thumbs_down"
-                                                onclick="showFeedbackModal('<?= htmlspecialchars($message['id']) ?>', 'thumbs_down')"
-                                                title="This response needs improvement"
-                                            >
-                                                <i class="fas fa-thumbs-down text-xs text-gray-400 hover:text-red-500 transition-colors"></i>
-                                            </button>
+                                            <?php if ($message['feedback_id']): ?>
+                                                <!-- Already has feedback - show current rating -->
+                                                <?php if ($message['feedback_rating'] === 'thumbs_up'): ?>
+                                                    <button 
+                                                        class="feedback-btn p-1 rounded bg-green-100 dark:bg-green-900/20 cursor-default" 
+                                                        title="You already rated this response positively"
+                                                        disabled
+                                                    >
+                                                        <i class="fas fa-thumbs-up text-xs text-green-600 dark:text-green-400"></i>
+                                                    </button>
+                                                    <button 
+                                                        class="feedback-btn p-1 rounded opacity-30 cursor-not-allowed" 
+                                                        title="You already provided feedback for this message"
+                                                        disabled
+                                                    >
+                                                        <i class="fas fa-thumbs-down text-xs text-gray-400"></i>
+                                                    </button>
+                                                <?php else: ?>
+                                                    <button 
+                                                        class="feedback-btn p-1 rounded opacity-30 cursor-not-allowed" 
+                                                        title="You already provided feedback for this message"
+                                                        disabled
+                                                    >
+                                                        <i class="fas fa-thumbs-up text-xs text-gray-400"></i>
+                                                    </button>
+                                                    <button 
+                                                        class="feedback-btn p-1 rounded bg-red-100 dark:bg-red-900/20 cursor-default" 
+                                                        title="You already rated this response negatively"
+                                                        disabled
+                                                    >
+                                                        <i class="fas fa-thumbs-down text-xs text-red-600 dark:text-red-400"></i>
+                                                    </button>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <!-- No feedback yet - show interactive buttons -->
+                                                <button 
+                                                    class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+                                                    data-message-id="<?= htmlspecialchars($message['id']) ?>"
+                                                    data-rating="thumbs_up"
+                                                    onclick="showFeedbackModal('<?= htmlspecialchars($message['id']) ?>', 'thumbs_up')"
+                                                    title="This response was helpful"
+                                                >
+                                                    <i class="fas fa-thumbs-up text-xs text-gray-400 hover:text-green-500 transition-colors"></i>
+                                                </button>
+                                                <button 
+                                                    class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+                                                    data-message-id="<?= htmlspecialchars($message['id']) ?>"
+                                                    data-rating="thumbs_down"
+                                                    onclick="showFeedbackModal('<?= htmlspecialchars($message['id']) ?>', 'thumbs_down')"
+                                                    title="This response needs improvement"
+                                                >
+                                                    <i class="fas fa-thumbs-down text-xs text-gray-400 hover:text-red-500 transition-colors"></i>
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -738,6 +784,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show alert message
     function showAlert(message, type = 'error') {
+        console.log('showAlert called with:', { message, type });
+        
+        const alertsContainer = document.getElementById('chat-alerts');
+        if (!alertsContainer) {
+            console.error('Chat alerts container not found!');
+            // Fallback to browser alert
+            alert(message);
+            return;
+        }
+        
         let alertClass, icon;
         
         if (type === 'error') {
@@ -754,7 +810,7 @@ document.addEventListener('DOMContentLoaded', function() {
             icon = 'fas fa-check-circle';
         }
         
-        chatAlerts.innerHTML = `
+        alertsContainer.innerHTML = `
             <div class="${alertClass} border px-4 py-2 rounded-lg text-sm">
                 <div class="flex items-center">
                     <i class="${icon} mr-2"></i>
@@ -762,11 +818,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         `;
-        chatAlerts.classList.remove('hidden');
+        alertsContainer.classList.remove('hidden');
+        console.log('Alert shown successfully');
         
         // Auto-hide after 5 seconds
         setTimeout(() => {
-            chatAlerts.classList.add('hidden');
+            alertsContainer.classList.add('hidden');
+            console.log('Alert hidden after timeout');
         }, 5000);
     }
     
