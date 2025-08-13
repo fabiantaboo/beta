@@ -1638,7 +1638,7 @@ document.addEventListener('DOMContentLoaded', function() {
             feedbackForm.style.display = 'none';
             
             // Show success message in modal with countdown
-            showFeedbackModalAlert('✅ Thank you for your feedback! It helps us improve our AI responses.', 'success');
+            showFeedbackModalAlert('✅ Thank you for your feedback! It helps us improve your AEI.', 'success');
             
             // Add countdown to the alert
             let countdown = 10;
