@@ -438,6 +438,9 @@ if ($isCurrentUserAdmin) {
                 </button>
             </div>
             
+            <!-- Alert container inside modal -->
+            <div id="feedback-modal-alerts" class="hidden mb-4"></div>
+            
             <form id="feedback-form">
                 <input type="hidden" id="feedback-message-id" value="">
                 <input type="hidden" id="feedback-rating" value="">
@@ -1488,6 +1491,62 @@ function closeFeedbackModal() {
     const modal = document.getElementById('feedback-modal');
     modal.classList.add('hidden');
     currentFeedbackMessageId = null;
+    
+    // Clear any pending auto-close timeout
+    if (window.feedbackAutoCloseTimeout) {
+        clearTimeout(window.feedbackAutoCloseTimeout);
+        window.feedbackAutoCloseTimeout = null;
+    }
+    
+    // Hide modal alerts and show form again
+    const modalAlerts = document.getElementById('feedback-modal-alerts');
+    if (modalAlerts) {
+        modalAlerts.classList.add('hidden');
+    }
+    
+    // Show form again and reset it
+    const feedbackForm = document.getElementById('feedback-form');
+    if (feedbackForm) {
+        feedbackForm.style.display = 'block';
+        feedbackForm.reset();
+    }
+}
+
+// Function to show alerts inside the feedback modal
+function showFeedbackModalAlert(message, type = 'success') {
+    console.log('showFeedbackModalAlert called with:', { message, type });
+    
+    const alertsContainer = document.getElementById('feedback-modal-alerts');
+    if (!alertsContainer) {
+        console.error('Modal alerts container not found!');
+        // Fallback to regular alert
+        window.showAlert(message, type);
+        return;
+    }
+    
+    let alertClass, icon;
+    
+    if (type === 'error') {
+        alertClass = 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400';
+        icon = 'fas fa-exclamation-circle';
+    } else if (type === 'success') {
+        alertClass = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400';
+        icon = 'fas fa-check-circle';
+    } else {
+        alertClass = 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400';
+        icon = 'fas fa-info-circle';
+    }
+    
+    alertsContainer.innerHTML = `
+        <div class="${alertClass} border px-4 py-3 rounded-lg text-sm">
+            <div class="flex items-center">
+                <i class="${icon} mr-2"></i>
+                <span>${message}</span>
+            </div>
+        </div>
+    `;
+    alertsContainer.classList.remove('hidden');
+    console.log('Modal alert shown successfully');
 }
 
 // Setup feedback form handling
@@ -1574,11 +1633,43 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('Feedback submitted successfully:', data);
             
-            // Show success message
-            window.showAlert('Thank you for your feedback! It helps us improve.', 'success');
+            // Hide the form and show success message in modal
+            const feedbackForm = document.getElementById('feedback-form');
+            feedbackForm.style.display = 'none';
             
-            // Close modal
-            closeFeedbackModal();
+            // Show success message in modal with countdown
+            showFeedbackModalAlert('✅ Thank you for your feedback! It helps us improve our AI responses.', 'success');
+            
+            // Add countdown to the alert
+            let countdown = 10;
+            const alertsContainer = document.getElementById('feedback-modal-alerts');
+            
+            function updateCountdown() {
+                if (countdown > 0 && alertsContainer && !alertsContainer.classList.contains('hidden')) {
+                    const countdownElement = alertsContainer.querySelector('.countdown-text');
+                    if (countdownElement) {
+                        countdownElement.textContent = `Closing in ${countdown}s...`;
+                    } else {
+                        // Add countdown text if it doesn't exist
+                        const alertDiv = alertsContainer.querySelector('div');
+                        if (alertDiv) {
+                            alertDiv.innerHTML += '<div class="text-xs opacity-75 mt-2 countdown-text">Closing in ' + countdown + 's...</div>';
+                        }
+                    }
+                    countdown--;
+                    setTimeout(updateCountdown, 1000);
+                }
+            }
+            
+            // Start countdown after a short delay
+            setTimeout(updateCountdown, 500);
+            
+            // Auto-close modal after 10 seconds
+            window.feedbackAutoCloseTimeout = setTimeout(() => {
+                closeFeedbackModal();
+                // Show form again for next time
+                feedbackForm.style.display = 'block';
+            }, 10000);
             
             // Update the feedback buttons for this message to show they were clicked
             const messageButtons = document.querySelectorAll(`[data-message-id="${formData.message_id}"]`);
@@ -1609,7 +1700,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     url: response.url
                 } : 'No response'
             });
-            window.showAlert(error.message || 'Failed to submit feedback. Please try again.', 'error');
+            showFeedbackModalAlert(error.message || 'Failed to submit feedback. Please try again.', 'error');
         } finally {
             // Re-enable submit button
             try {
