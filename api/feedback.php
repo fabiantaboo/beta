@@ -15,18 +15,28 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Start session for CSRF token verification
-session_start();
+// Start session if not already started for CSRF token verification
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 
 // Get JSON data
-$input = json_decode(file_get_contents('php://input'), true);
+$rawInput = file_get_contents('php://input');
+$input = json_decode($rawInput, true);
 
 if (!$input) {
+    error_log("Feedback API: Invalid JSON received - Raw input: " . substr($rawInput, 0, 500));
     http_response_code(400);
-    echo json_encode(['error' => 'Invalid JSON data']);
+    echo json_encode([
+        'error' => 'Invalid JSON data', 
+        'debug' => [
+            'received_length' => strlen($rawInput),
+            'json_error' => json_last_error_msg()
+        ]
+    ]);
     exit;
 }
 
@@ -34,8 +44,15 @@ if (!$input) {
 $required_fields = ['message_id', 'rating', 'csrf_token'];
 foreach ($required_fields as $field) {
     if (!isset($input[$field]) || empty($input[$field])) {
+        error_log("Feedback API: Missing field '$field' in request from user: " . (getUserSession() ?? 'not logged in'));
         http_response_code(400);
-        echo json_encode(['error' => "Missing required field: $field"]);
+        echo json_encode([
+            'error' => "Missing required field: $field",
+            'debug' => [
+                'received_fields' => array_keys($input),
+                'field_values' => array_map(function($v) { return is_string($v) ? (strlen($v) > 50 ? substr($v, 0, 50) . '...' : $v) : gettype($v); }, $input)
+            ]
+        ]);
         exit;
     }
 }

@@ -746,6 +746,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (type === 'info') {
             alertClass = 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400';
             icon = 'fas fa-info-circle';
+        } else if (type === 'success') {
+            alertClass = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400';
+            icon = 'fas fa-check-circle';
         } else {
             alertClass = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400';
             icon = 'fas fa-check-circle';
@@ -1344,6 +1347,8 @@ function closeImageModal() {
 
 // Feedback modal functions
 function showFeedbackModal(messageId, rating) {
+    console.log('showFeedbackModal called with:', { messageId, rating });
+    
     currentFeedbackMessageId = messageId;
     
     const modal = document.getElementById('feedback-modal');
@@ -1353,6 +1358,24 @@ function showFeedbackModal(messageId, rating) {
     const feedbackRatingInput = document.getElementById('feedback-rating');
     const feedbackCategory = document.getElementById('feedback-category');
     const feedbackText = document.getElementById('feedback-text');
+    
+    // Check if all elements exist
+    const elementsCheck = {
+        modal: !!modal,
+        modalIcon: !!modalIcon,
+        modalTitle: !!modalTitle,
+        feedbackMessageIdInput: !!feedbackMessageIdInput,
+        feedbackRatingInput: !!feedbackRatingInput,
+        feedbackCategory: !!feedbackCategory,
+        feedbackText: !!feedbackText
+    };
+    console.log('Modal elements check:', elementsCheck);
+    
+    if (!modal) {
+        console.error('Feedback modal not found!');
+        alert('Error: Feedback modal not found. Please refresh the page.');
+        return;
+    }
     
     // Set values
     feedbackMessageIdInput.value = messageId;
@@ -1411,18 +1434,35 @@ function closeFeedbackModal() {
 
 // Setup feedback form handling
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - setting up feedback form');
+    
     // Character count for feedback text
     const feedbackText = document.getElementById('feedback-text');
     const charCount = document.getElementById('feedback-char-count');
     
-    feedbackText.addEventListener('input', function() {
-        charCount.textContent = this.value.length;
-    });
+    if (feedbackText && charCount) {
+        feedbackText.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+        });
+        console.log('Feedback text character counter set up successfully');
+    } else {
+        console.error('Feedback form elements not found:', {
+            feedbackText: !!feedbackText,
+            charCount: !!charCount
+        });
+    }
     
     // Feedback form submission
     const feedbackForm = document.getElementById('feedback-form');
+    if (!feedbackForm) {
+        console.error('Feedback form not found!');
+        return;
+    }
+    
+    console.log('Setting up feedback form submit handler');
     feedbackForm.addEventListener('submit', async function(e) {
         e.preventDefault();
+        console.log('Feedback form submitted');
         
         const submitBtn = document.getElementById('submit-feedback-btn');
         const originalText = submitBtn.textContent;
@@ -1432,13 +1472,32 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.textContent = 'Submitting...';
         
         try {
+            // Get CSRF token
+            const csrfTokenElement = document.getElementById('csrf-token');
+            if (!csrfTokenElement) {
+                throw new Error('CSRF token not found - page may not be loaded correctly');
+            }
+            
             const formData = {
                 message_id: document.getElementById('feedback-message-id').value,
                 rating: document.getElementById('feedback-rating').value,
                 category: document.getElementById('feedback-category').value,
                 feedback_text: document.getElementById('feedback-text').value,
-                csrf_token: document.getElementById('csrf-token').value // Use the main chat CSRF token
+                csrf_token: csrfTokenElement.value
             };
+            
+            // Validate required fields
+            if (!formData.message_id) {
+                throw new Error('Message ID is missing - feedback cannot be submitted');
+            }
+            if (!formData.rating) {
+                throw new Error('Rating is missing - please select thumbs up or down');
+            }
+            if (!formData.csrf_token) {
+                throw new Error('Security token is missing - please refresh the page');
+            }
+            
+            console.log('Submitting feedback with data:', formData);
             
             const response = await fetch('/api/feedback.php', {
                 method: 'POST',
@@ -1481,11 +1540,25 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Feedback error:', error);
-            showAlert(error.message || 'Failed to submit feedback. Please try again.');
+            console.error('Feedback error details:', {
+                message: error.message,
+                stack: error.stack,
+                formData: formData,
+                response: response ? {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: response.url
+                } : 'No response'
+            });
+            showAlert(error.message || 'Failed to submit feedback. Please try again.', 'error');
         } finally {
             // Re-enable submit button
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            try {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            } catch (finalError) {
+                console.error('Error in finally block:', finalError);
+            }
         }
     });
 });
