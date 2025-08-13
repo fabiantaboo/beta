@@ -4,6 +4,28 @@ require_once __DIR__ . '/template_engine.php';
 require_once __DIR__ . '/emotions.php';
 require_once __DIR__ . '/aei_social_context.php';
 
+function getRelativeTimeDescription($timestamp) {
+    $now = time();
+    $messageTime = strtotime($timestamp);
+    $diff = $now - $messageTime;
+    
+    if ($diff < 60) {
+        return "just now";
+    } elseif ($diff < 3600) {
+        $minutes = floor($diff / 60);
+        return $minutes == 1 ? "1 minute ago" : "$minutes minutes ago";
+    } elseif ($diff < 86400) {
+        $hours = floor($diff / 3600);
+        return $hours == 1 ? "1 hour ago" : "$hours hours ago";
+    } elseif ($diff < 604800) {
+        $days = floor($diff / 86400);
+        return $days == 1 ? "1 day ago" : "$days days ago";
+    } else {
+        $weeks = floor($diff / 604800);
+        return $weeks == 1 ? "1 week ago" : "$weeks weeks ago";
+    }
+}
+
 function getAnthropicApiKey() {
     global $pdo;
     try {
@@ -75,6 +97,11 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         throw new Exception("Anthropic API key not configured");
     }
     
+    // Add timestamp awareness instruction to system prompt
+    if (!empty($messages) && isset($messages[0]['timestamp'])) {
+        $systemPrompt .= "\n\nIMPORTANT: Each message in the conversation includes a timestamp prefix showing when it was sent. Pay attention to these timestamps and respond naturally to the time context (e.g., if there was a long pause between messages, or if messages were sent in quick succession).";
+    }
+    
     // If image data is provided, modify the last user message to include the image
     if ($imageData && !empty($messages)) {
         $lastMessageIndex = count($messages) - 1;
@@ -108,11 +135,29 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         }
     }
 
+    // Format messages with timestamps in content
+    $cleanMessages = [];
+    foreach ($messages as $message) {
+        $content = $message['content'];
+        
+        // Add timestamp prefix to content if available
+        if (isset($message['timestamp']) && isset($message['sent_at'])) {
+            $timestamp = $message['timestamp'];
+            $relativeTime = $message['sent_at'];
+            $content = "[$timestamp - $relativeTime] $content";
+        }
+        
+        $cleanMessages[] = [
+            'role' => $message['role'],
+            'content' => $content
+        ];
+    }
+    
     $payload = [
         'model' => 'claude-3-5-sonnet-20241022',
         'max_tokens' => $maxTokens,
         'system' => $systemPrompt,
-        'messages' => $messages
+        'messages' => $cleanMessages
     ];
     
     $ch = curl_init('https://api.anthropic.com/v1/messages');
@@ -171,9 +216,16 @@ function getChatHistory($sessionId, $limit = 40) {
         $formattedMessages = [];
         foreach ($messages as $message) {
             $role = $message['sender_type'] === 'user' ? 'user' : 'assistant';
+            
+            // Format timestamp for AEI understanding
+            $timestamp = date('Y-m-d H:i:s', strtotime($message['created_at']));
+            $relativeTime = getRelativeTimeDescription($message['created_at']);
+            
             $formattedMessages[] = [
                 'role' => $role,
-                'content' => $message['message_text']
+                'content' => $message['message_text'],
+                'timestamp' => $timestamp,
+                'sent_at' => $relativeTime
             ];
         }
         
@@ -191,11 +243,18 @@ function analyzeEmotionalState($conversationHistory, $aeiName, $topic = null) {
         throw new Exception("Anthropic API key not configured");
     }
     
-    // Build conversation context
+    // Build conversation context with timestamps
     $conversationContext = "";
     foreach ($conversationHistory as $message) {
         $sender = $message['sender_type'] === 'user' ? 'Human' : $aeiName;
-        $conversationContext .= "$sender: " . $message['message_text'] . "\n";
+        $timestamp = isset($message['created_at']) ? date('Y-m-d H:i:s', strtotime($message['created_at'])) : '';
+        $relativeTime = isset($message['created_at']) ? getRelativeTimeDescription($message['created_at']) : '';
+        
+        if ($timestamp) {
+            $conversationContext .= "[$timestamp - $relativeTime] $sender: " . $message['message_text'] . "\n";
+        } else {
+            $conversationContext .= "$sender: " . $message['message_text'] . "\n";
+        }
     }
     
     $systemPrompt = "You are an emotion analysis expert. Analyze the emotional state of the AEI character '$aeiName' based on the conversation history.
