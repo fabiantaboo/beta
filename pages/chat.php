@@ -782,8 +782,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Proactive messages are now sent directly to chat - no polling needed
     
-    // Show alert message
-    function showAlert(message, type = 'error') {
+    // Show alert message - make it globally available
+    window.showAlert = function(message, type = 'error') {
         console.log('showAlert called with:', { message, type });
         
         const alertsContainer = document.getElementById('chat-alerts');
@@ -1524,6 +1524,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const submitBtn = document.getElementById('submit-feedback-btn');
         const originalText = submitBtn.textContent;
+        let formData; // Define outside try block for access in success handler
         
         // Disable submit button
         submitBtn.disabled = true;
@@ -1536,7 +1537,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('CSRF token not found - page may not be loaded correctly');
             }
             
-            const formData = {
+            formData = {
                 message_id: document.getElementById('feedback-message-id').value,
                 rating: document.getElementById('feedback-rating').value,
                 category: document.getElementById('feedback-category').value,
@@ -1574,7 +1575,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Feedback submitted successfully:', data);
             
             // Show success message
-            showAlert('Thank you for your feedback! It helps us improve.', 'success');
+            window.showAlert('Thank you for your feedback! It helps us improve.', 'success');
             
             // Close modal
             closeFeedbackModal();
@@ -1601,14 +1602,14 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Feedback error details:', {
                 message: error.message,
                 stack: error.stack,
-                formData: formData,
-                response: response ? {
+                formData: formData || 'formData not yet defined',
+                response: typeof response !== 'undefined' && response ? {
                     status: response.status,
                     statusText: response.statusText,
                     url: response.url
                 } : 'No response'
             });
-            showAlert(error.message || 'Failed to submit feedback. Please try again.', 'error');
+            window.showAlert(error.message || 'Failed to submit feedback. Please try again.', 'error');
         } finally {
             // Re-enable submit button
             try {
