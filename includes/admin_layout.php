@@ -9,6 +9,7 @@ function renderAdminNavigation($currentPage = '') {
         'admin-emotions' => ['name' => 'Emotions', 'icon' => 'fas fa-brain', 'url' => '/admin/emotions'],
         'admin-social' => ['name' => 'Social System', 'icon' => 'fas fa-users-cog', 'url' => '/admin/social'],
         'admin-proactive' => ['name' => 'Proactive Messaging', 'icon' => 'fas fa-bell', 'url' => '/admin/proactive'],
+        'admin-feedback' => ['name' => 'User Feedback', 'icon' => 'fas fa-comment-dots', 'url' => '/admin/feedback'],
         'admin-decay' => ['name' => 'Emotional Decay', 'icon' => 'fas fa-heart-broken', 'url' => '/admin/decay'],
         'admin-logs' => ['name' => 'Error Logs', 'icon' => 'fas fa-file-alt', 'url' => '/admin/logs'],
     ];

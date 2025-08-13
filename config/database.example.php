@@ -699,6 +699,41 @@ function createTablesIfNotExist($pdo) {
             FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
             INDEX idx_aei_processed (aei_id, processed_at),
             INDEX idx_session_decay (session_id, hours_inactive)
+        )",
+        'message_feedback' => "CREATE TABLE IF NOT EXISTS message_feedback (
+            id VARCHAR(32) PRIMARY KEY,
+            message_id VARCHAR(32) NOT NULL,
+            user_id VARCHAR(32) NOT NULL,
+            session_id VARCHAR(32) NOT NULL,
+            aei_id VARCHAR(32) NOT NULL,
+            
+            -- Feedback Data
+            rating ENUM('thumbs_up', 'thumbs_down') NOT NULL,
+            feedback_text TEXT NULL,
+            feedback_category ENUM('helpful', 'accurate', 'engaging', 'inappropriate', 'inaccurate', 'boring', 'other') NULL,
+            
+            -- Context Data (last 20 messages for better understanding)
+            message_context JSON NULL,
+            
+            -- Metadata
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            ip_address VARCHAR(45) NULL,
+            user_agent TEXT NULL,
+            
+            FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            
+            -- Indexes
+            INDEX idx_message_feedback (message_id),
+            INDEX idx_user_feedback (user_id, created_at),
+            INDEX idx_aei_feedback (aei_id, rating, created_at),
+            INDEX idx_session_feedback (session_id, created_at),
+            
+            -- Unique constraint to prevent duplicate feedback
+            UNIQUE KEY unique_user_message_feedback (user_id, message_id)
         )"
     ];
 
@@ -1148,7 +1183,26 @@ Be conversational, helpful, and maintain your unique personality. Keep responses
             }
         }
         
-        // 4. Add image columns to chat_messages table for image upload support
+        // 4. Add message_context column to message_feedback table if it doesn't exist
+        try {
+            $stmt = $pdo->query("DESCRIBE message_feedback");
+            if ($stmt) {
+                $feedbackColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                
+                if (!in_array('message_context', $feedbackColumns)) {
+                    try {
+                        $pdo->exec("ALTER TABLE message_feedback ADD COLUMN message_context JSON NULL AFTER feedback_category");
+                        error_log("MIGRATION: Added column 'message_context' to message_feedback table");
+                    } catch (PDOException $e) {
+                        error_log("MIGRATION: Failed to add column 'message_context': " . $e->getMessage());
+                    }
+                }
+            }
+        } catch (PDOException $e) {
+            // Table might not exist yet, ignore
+        }
+        
+        // 5. Add image columns to chat_messages table for image upload support
         try {
             $stmt = $pdo->query("DESCRIBE chat_messages");
             $messageColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);

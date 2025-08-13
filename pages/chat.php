@@ -231,9 +231,33 @@ if ($isCurrentUserAdmin) {
                                 <?php if (!empty($message['message_text'])): ?>
                                     <p class="text-sm"><?= nl2br(htmlspecialchars($message['message_text'])) ?></p>
                                 <?php endif; ?>
-                                <p class="text-xs opacity-70 mt-1">
-                                    <?= date('H:i', strtotime($message['created_at'])) ?>
-                                </p>
+                                <div class="flex items-center justify-between mt-2">
+                                    <p class="text-xs opacity-70">
+                                        <?= date('H:i', strtotime($message['created_at'])) ?>
+                                    </p>
+                                    <?php if ($message['sender_type'] === 'aei'): ?>
+                                        <div class="flex items-center space-x-2 ml-2">
+                                            <button 
+                                                class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+                                                data-message-id="<?= htmlspecialchars($message['id']) ?>"
+                                                data-rating="thumbs_up"
+                                                onclick="showFeedbackModal('<?= htmlspecialchars($message['id']) ?>', 'thumbs_up')"
+                                                title="This response was helpful"
+                                            >
+                                                <i class="fas fa-thumbs-up text-xs text-gray-400 hover:text-green-500 transition-colors"></i>
+                                            </button>
+                                            <button 
+                                                class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+                                                data-message-id="<?= htmlspecialchars($message['id']) ?>"
+                                                data-rating="thumbs_down"
+                                                onclick="showFeedbackModal('<?= htmlspecialchars($message['id']) ?>', 'thumbs_down')"
+                                                title="This response needs improvement"
+                                            >
+                                                <i class="fas fa-thumbs-down text-xs text-gray-400 hover:text-red-500 transition-colors"></i>
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -347,6 +371,86 @@ if ($isCurrentUserAdmin) {
         </div>
         <div class="text-center mt-4">
             <p id="modal-image-name" class="text-white text-sm"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div id="feedback-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <i id="feedback-modal-icon" class="fas fa-thumbs-up text-green-500 mr-2"></i>
+                    <span id="feedback-modal-title">Feedback</span>
+                </h3>
+                <button 
+                    onclick="closeFeedbackModal()"
+                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="feedback-form">
+                <input type="hidden" id="feedback-message-id" value="">
+                <input type="hidden" id="feedback-rating" value="">
+                <input type="hidden" id="feedback-csrf-token" value="<?= generateCSRFToken() ?>">
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        What category best describes your feedback? (Optional)
+                    </label>
+                    <select 
+                        id="feedback-category" 
+                        name="category"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
+                    >
+                        <option value="">Select category...</option>
+                        <option value="helpful">Helpful & accurate</option>
+                        <option value="accurate">Factually correct</option>
+                        <option value="engaging">Engaging conversation</option>
+                        <option value="inappropriate">Inappropriate content</option>
+                        <option value="inaccurate">Factually incorrect</option>
+                        <option value="boring">Boring or repetitive</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Additional details (Optional)
+                    </label>
+                    <textarea 
+                        id="feedback-text" 
+                        name="feedback_text"
+                        rows="3"
+                        maxlength="500"
+                        placeholder="Tell us more about your experience with this response..."
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue resize-none"
+                    ></textarea>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <span id="feedback-char-count">0</span>/500 characters
+                    </p>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button 
+                        type="button"
+                        onclick="closeFeedbackModal()"
+                        class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="submit"
+                        id="submit-feedback-btn"
+                        class="flex-1 px-4 py-2 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Submit Feedback
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -536,6 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewFilename = document.getElementById('preview-filename');
     const previewFilesize = document.getElementById('preview-filesize');
     let selectedImage = null;
+    let currentFeedbackMessageId = null;
     
     // Image upload handling
     imageInput.addEventListener('change', function(e) {
@@ -713,7 +818,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="${message.sender_type === 'user' ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'} rounded-2xl px-4 py-2 shadow-sm">
                     ${imageHtml}
                     ${textHtml}
-                    <p class="text-xs opacity-70 mt-1">${time}</p>
+                    <div class="flex items-center justify-between mt-2">
+                        <p class="text-xs opacity-70">${time}</p>
+                        ${message.sender_type === 'aei' ? `
+                            <div class="flex items-center space-x-2 ml-2">
+                                <button 
+                                    class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+                                    data-message-id="${message.id}"
+                                    data-rating="thumbs_up"
+                                    onclick="showFeedbackModal('${message.id}', 'thumbs_up')"
+                                    title="This response was helpful"
+                                >
+                                    <i class="fas fa-thumbs-up text-xs text-gray-400 hover:text-green-500 transition-colors"></i>
+                                </button>
+                                <button 
+                                    class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+                                    data-message-id="${message.id}"
+                                    data-rating="thumbs_down"
+                                    onclick="showFeedbackModal('${message.id}', 'thumbs_down')"
+                                    title="This response needs improvement"
+                                >
+                                    <i class="fas fa-thumbs-down text-xs text-gray-400 hover:text-red-500 transition-colors"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
             </div>
         `;
@@ -1213,5 +1342,151 @@ function closeImageModal() {
     const modal = document.getElementById('image-modal');
     modal.classList.add('hidden');
 }
+
+// Feedback modal functions
+function showFeedbackModal(messageId, rating) {
+    currentFeedbackMessageId = messageId;
+    
+    const modal = document.getElementById('feedback-modal');
+    const modalIcon = document.getElementById('feedback-modal-icon');
+    const modalTitle = document.getElementById('feedback-modal-title');
+    const feedbackMessageIdInput = document.getElementById('feedback-message-id');
+    const feedbackRatingInput = document.getElementById('feedback-rating');
+    const feedbackCategory = document.getElementById('feedback-category');
+    const feedbackText = document.getElementById('feedback-text');
+    
+    // Set values
+    feedbackMessageIdInput.value = messageId;
+    feedbackRatingInput.value = rating;
+    
+    // Update modal appearance based on rating
+    if (rating === 'thumbs_up') {
+        modalIcon.className = 'fas fa-thumbs-up text-green-500 mr-2';
+        modalTitle.textContent = 'Positive Feedback';
+        feedbackCategory.innerHTML = `
+            <option value="">Select category...</option>
+            <option value="helpful">Helpful & accurate</option>
+            <option value="accurate">Factually correct</option>
+            <option value="engaging">Engaging conversation</option>
+            <option value="other">Other</option>
+        `;
+    } else {
+        modalIcon.className = 'fas fa-thumbs-down text-red-500 mr-2';
+        modalTitle.textContent = 'Feedback for Improvement';
+        feedbackCategory.innerHTML = `
+            <option value="">Select category...</option>
+            <option value="inappropriate">Inappropriate content</option>
+            <option value="inaccurate">Factually incorrect</option>
+            <option value="boring">Boring or repetitive</option>
+            <option value="other">Other</option>
+        `;
+    }
+    
+    // Reset form
+    feedbackCategory.value = '';
+    feedbackText.value = '';
+    document.getElementById('feedback-char-count').textContent = '0';
+    
+    modal.classList.remove('hidden');
+    
+    // Close modal on click outside
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeFeedbackModal();
+        }
+    });
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeFeedbackModal();
+        }
+    });
+}
+
+function closeFeedbackModal() {
+    const modal = document.getElementById('feedback-modal');
+    modal.classList.add('hidden');
+    currentFeedbackMessageId = null;
+}
+
+// Setup feedback form handling
+document.addEventListener('DOMContentLoaded', function() {
+    // Character count for feedback text
+    const feedbackText = document.getElementById('feedback-text');
+    const charCount = document.getElementById('feedback-char-count');
+    
+    feedbackText.addEventListener('input', function() {
+        charCount.textContent = this.value.length;
+    });
+    
+    // Feedback form submission
+    const feedbackForm = document.getElementById('feedback-form');
+    feedbackForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submit-feedback-btn');
+        const originalText = submitBtn.textContent;
+        
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        
+        try {
+            const formData = {
+                message_id: document.getElementById('feedback-message-id').value,
+                rating: document.getElementById('feedback-rating').value,
+                category: document.getElementById('feedback-category').value,
+                feedback_text: document.getElementById('feedback-text').value,
+                csrf_token: document.getElementById('feedback-csrf-token').value
+            };
+            
+            const response = await fetch('/api/feedback.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to submit feedback');
+            }
+            
+            // Show success message
+            showAlert('Thank you for your feedback! It helps us improve.', 'success');
+            
+            // Close modal
+            closeFeedbackModal();
+            
+            // Update the feedback buttons for this message to show they were clicked
+            const messageButtons = document.querySelectorAll(`[data-message-id="${formData.message_id}"]`);
+            messageButtons.forEach(btn => {
+                if (btn.dataset.rating === formData.rating) {
+                    const icon = btn.querySelector('i');
+                    if (formData.rating === 'thumbs_up') {
+                        icon.classList.remove('text-gray-400', 'hover:text-green-500');
+                        icon.classList.add('text-green-500');
+                    } else {
+                        icon.classList.remove('text-gray-400', 'hover:text-red-500');
+                        icon.classList.add('text-red-500');
+                    }
+                    btn.disabled = true;
+                    btn.classList.add('cursor-not-allowed');
+                }
+            });
+            
+        } catch (error) {
+            console.error('Feedback error:', error);
+            showAlert(error.message || 'Failed to submit feedback. Please try again.');
+        } finally {
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    });
+});
 
 </script>

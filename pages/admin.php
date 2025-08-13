@@ -164,6 +164,10 @@ try {
                         <i class="fas fa-network-wired text-orange-500 mr-3"></i>
                         <span class="text-sm font-medium text-gray-900 dark:text-white">Social System</span>
                     </a>
+                    <a href="/admin/feedback" class="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-comment-dots text-blue-500 mr-3"></i>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">User Feedback</span>
+                    </a>
                 </div>
             </div>
             

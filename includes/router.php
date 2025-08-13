@@ -26,6 +26,7 @@ class Router {
             'admin/emotions' => ['page' => 'admin-emotions'],
             'admin/social' => ['page' => 'admin-social'],
             'admin/proactive' => ['page' => 'admin-proactive'],
+            'admin/feedback' => ['page' => 'admin-feedback'],
             'admin/logs' => ['page' => 'admin-logs'],
             'admin/decay' => ['page' => 'admin-decay'],
             'admin/migration' => ['page' => 'admin-migration'],
