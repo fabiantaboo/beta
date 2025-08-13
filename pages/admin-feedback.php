@@ -460,8 +460,8 @@ function showContextModal(feedbackId, context) {
         const timestamp = new Date(message.timestamp).toLocaleString();
         
         const bgColor = isTarget 
-            ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-800' 
-            : 'bg-gray-50 dark:bg-gray-700';
+            ? 'bg-yellow-100 dark:bg-yellow-900/40 border-2 border-yellow-300 dark:border-yellow-600' 
+            : 'bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600';
         
         const senderColor = isUser ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400';
         const senderIcon = isUser ? 'fa-user' : 'fa-robot';
@@ -475,16 +475,17 @@ function showContextModal(feedbackId, context) {
         }
         
         messagesHtml += `
-            <div class="p-4 rounded-lg border ${bgColor} ${isTarget ? 'shadow-md' : ''}">
+            <div class="p-4 rounded-lg ${bgColor} ${isTarget ? 'shadow-lg ring-2 ring-yellow-400 dark:ring-yellow-500' : 'shadow-sm'}">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center space-x-2">
                         <i class="fas ${senderIcon} ${senderColor}"></i>
                         <span class="font-medium ${senderColor} capitalize">${message.sender_type}</span>
-                        ${isTarget ? '<span class="ml-2 px-2 py-0.5 bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200 text-xs font-medium rounded-full">Feedback Target</span>' : ''}
+                        ${isTarget ? '<span class="ml-2 px-2 py-0.5 bg-yellow-300 dark:bg-yellow-700 text-yellow-900 dark:text-yellow-100 text-xs font-bold rounded-full animate-pulse">⭐ FEEDBACK TARGET</span>' : ''}
+                        ${message.debug_ids ? '<span class="ml-2 text-xs text-gray-500">[Debug: ' + message.debug_ids.msg_id + ' vs ' + message.debug_ids.input_id + ' = ' + isTarget + ']</span>' : ''}
                     </div>
                     <span class="text-xs text-gray-500 dark:text-gray-400">${timestamp}</span>
                 </div>
-                <div class="ml-6">
+                <div class="ml-6 ${isTarget ? 'font-medium' : ''}">
                     ${messageContent || '<span class="text-sm text-gray-400 italic">Empty message</span>'}
                 </div>
             </div>
@@ -496,7 +497,7 @@ function showContextModal(feedbackId, context) {
     
     // Scroll to target message if it exists
     setTimeout(() => {
-        const targetMessage = messagesContainer.querySelector('.border-yellow-200, .border-yellow-800');
+        const targetMessage = messagesContainer.querySelector('.ring-yellow-400, .ring-yellow-500, .border-yellow-300, .border-yellow-600');
         if (targetMessage) {
             targetMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }

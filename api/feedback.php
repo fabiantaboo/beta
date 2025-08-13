@@ -44,11 +44,7 @@ foreach ($required_fields as $field) {
 if (!verifyCSRFToken($input['csrf_token'])) {
     error_log("CSRF token verification failed. Received: " . ($input['csrf_token'] ?? 'null') . ", Session token: " . ($_SESSION['csrf_token'] ?? 'null'));
     http_response_code(403);
-    echo json_encode(['error' => 'Invalid CSRF token', 'debug' => [
-        'received_token' => $input['csrf_token'] ?? null,
-        'session_has_token' => isset($_SESSION['csrf_token']),
-        'session_id' => session_id()
-    ]]);
+    echo json_encode(['error' => 'Invalid CSRF token']);
     exit;
 }
 
@@ -128,7 +124,7 @@ try {
     $contextMessages = array_reverse($contextMessages);
     
     // Format context for storage
-    $messageContext = array_map(function($msg) {
+    $messageContext = array_map(function($msg) use ($input) {
         return [
             'id' => $msg['id'],
             'sender_type' => $msg['sender_type'],
@@ -136,7 +132,8 @@ try {
             'has_image' => (bool)$msg['has_image'],
             'image_name' => $msg['image_original_name'],
             'timestamp' => $msg['created_at'],
-            'is_target' => $msg['id'] === $input['message_id'] // Mark which message the feedback is for
+            'is_target' => (string)$msg['id'] === (string)$input['message_id'], // Mark which message the feedback is for
+            'debug_ids' => ['msg_id' => (string)$msg['id'], 'input_id' => (string)$input['message_id']] // Temporary debug
         ];
     }, $contextMessages);
     

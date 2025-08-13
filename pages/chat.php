@@ -1454,6 +1454,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error || 'Failed to submit feedback');
             }
             
+            console.log('Feedback submitted successfully:', data);
+            
             // Show success message
             showAlert('Thank you for your feedback! It helps us improve.', 'success');
             
