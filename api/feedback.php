@@ -15,6 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Start session for CSRF token verification
+session_start();
+
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 
@@ -39,8 +42,13 @@ foreach ($required_fields as $field) {
 
 // Verify CSRF token
 if (!verifyCSRFToken($input['csrf_token'])) {
+    error_log("CSRF token verification failed. Received: " . ($input['csrf_token'] ?? 'null') . ", Session token: " . ($_SESSION['csrf_token'] ?? 'null'));
     http_response_code(403);
-    echo json_encode(['error' => 'Invalid CSRF token']);
+    echo json_encode(['error' => 'Invalid CSRF token', 'debug' => [
+        'received_token' => $input['csrf_token'] ?? null,
+        'session_has_token' => isset($_SESSION['csrf_token']),
+        'session_id' => session_id()
+    ]]);
     exit;
 }
 

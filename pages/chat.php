@@ -395,7 +395,6 @@ if ($isCurrentUserAdmin) {
             <form id="feedback-form">
                 <input type="hidden" id="feedback-message-id" value="">
                 <input type="hidden" id="feedback-rating" value="">
-                <input type="hidden" id="feedback-csrf-token" value="<?= generateCSRFToken() ?>">
                 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -1438,7 +1437,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 rating: document.getElementById('feedback-rating').value,
                 category: document.getElementById('feedback-category').value,
                 feedback_text: document.getElementById('feedback-text').value,
-                csrf_token: document.getElementById('feedback-csrf-token').value
+                csrf_token: document.getElementById('csrf-token').value // Use the main chat CSRF token
             };
             
             const response = await fetch('/api/feedback.php', {
