@@ -99,7 +99,7 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
     
     // Add timestamp awareness instruction to system prompt
     if (!empty($messages) && isset($messages[0]['timestamp'])) {
-        $systemPrompt .= "\n\nIMPORTANT: Each message in the conversation includes a timestamp prefix showing when it was sent. Pay attention to these timestamps and respond naturally to the time context (e.g., if there was a long pause between messages, or if messages were sent in quick succession).";
+        $systemPrompt .= "\n\nIMPORTANT: Each message in the conversation includes a timestamp prefix showing when it was sent. Pay attention to these timestamps and respond naturally to the time context (e.g., if there was a long pause between messages, or if messages were sent in quick succession).\n\nCRITICAL: DO NOT include any timestamp prefixes in your responses. Never start your responses with timestamps like [2024-01-15 14:23:15] or similar. Only respond with your natural message content - the timestamp information is for your awareness only, not to be repeated in your responses.";
     }
     
     // If image data is provided, modify the last user message to include the image
