@@ -689,21 +689,33 @@ $conversationText";
             return "";
         }
         
-        $context = "\n\nRELEVANT CONVERSATION HISTORY (use naturally):\n";
+        $context = "\n\n=== MEMORIES FROM PAST CONVERSATIONS ===\n";
+        $context .= "These are relevant memories from your previous interactions. Use them naturally to maintain continuity and show you remember past conversations.\n\n";
         
         foreach ($allMemories as $memory) {
             $timeAgo = $this->getTimeAgo($memory['timestamp'] ?? time());
             $isQaPair = isset($memory['is_qa_pair']) && $memory['is_qa_pair'];
+            $importance = $memory['importance'] ?? 0.5;
+            
+            // Add importance indicator
+            $importanceIndicator = '';
+            if ($importance >= 0.8) {
+                $importanceIndicator = ' [IMPORTANT]';
+            } elseif ($importance >= 0.6) {
+                $importanceIndicator = ' [Notable]';
+            }
             
             if ($isQaPair) {
-                // Q&A pairs display differently
-                $context .= "[$timeAgo]\n" . $memory['content'] . "\n\n";
+                // Q&A pairs as memories
+                $context .= "💭 Memory from $timeAgo$importanceIndicator:\n" . $memory['content'] . "\n\n";
             } else {
-                // Single messages 
+                // Single messages as memories
                 $sender = $memory['sender'] ?? 'unknown';
-                $context .= "- [$timeAgo, $sender]: " . $memory['content'] . "\n";
+                $context .= "💭 Memory from $timeAgo ($sender)$importanceIndicator: " . $memory['content'] . "\n\n";
             }
         }
+        
+        $context .= "=== END OF MEMORIES ===\n";
         
         return $context;
     }
