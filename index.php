@@ -255,8 +255,8 @@ if (session_status() === PHP_SESSION_NONE) {
                             </div>
                         </div>
                         <div style="display: flex; gap: 8px;">
-                            <button onclick="installPWA()" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Install</button>
-                            <button onclick="dismissInstallBanner()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 8px; opacity: 0.7;">×</button>
+                            <button onclick="installPWA()" style="background: white; color: #39D2DF; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.1s;">📱 Install App</button>
+                            <button onclick="dismissInstallBanner()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;">Later</button>
                         </div>
                     </div>
                 </div>
@@ -312,16 +312,50 @@ if (session_status() === PHP_SESSION_NONE) {
         
         function installPWA() {
             if (deferredPrompt) {
+                // Hide our banner first
+                dismissInstallBanner();
+                
+                // Trigger the native browser install prompt
                 deferredPrompt.prompt();
+                
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
                         console.log('Ayuni PWA: User accepted the install prompt');
+                        // App will be installed - no need to show banner again
+                        localStorage.setItem('ayuni-pwa-installed', 'true');
                     } else {
                         console.log('Ayuni PWA: User dismissed the install prompt');
+                        // Maybe show a tip for manual installation
+                        setTimeout(showManualInstallTip, 1000);
                     }
                     deferredPrompt = null;
                 });
+            } else {
+                // Fallback if no native prompt available
+                showManualInstallTip();
             }
+        }
+        
+        function showManualInstallTip() {
+            const tip = document.createElement('div');
+            tip.innerHTML = `
+                <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; background: #546BEC; color: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 9999; font-family: Inter, sans-serif; animation: slideUp 0.3s ease-out;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="font-size: 14px;">
+                            💡 <strong>Tip:</strong> Tap your browser's menu → "Add to Home Screen"
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer; opacity: 0.8;">×</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(tip);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (tip.parentElement) {
+                    tip.remove();
+                }
+            }, 5000);
         }
     </script>
 </body>
