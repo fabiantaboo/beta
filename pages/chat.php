@@ -230,7 +230,7 @@ if ($isCurrentUserAdmin) {
             <?php endif; ?>
             
             <!-- Messages will be inserted here -->
-            <div id="messages-list">
+            <div id="messages-list" class="space-y-4">
             <?php if (empty($messages)): ?>
                 <div class="text-center py-8">
                     <div class="w-16 h-16 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -1894,7 +1894,7 @@ async function loadOlderMessages() {
         data.messages.forEach((message) => {
             const messageElement = document.createElement('div');
             messageElement.innerHTML = createMessageElement(message);
-            // No extra className needed - parent container has space-y-4
+            messageElement.style.marginBottom = '1rem'; // Explicit spacing to match space-y-4
             fragment.appendChild(messageElement);
         });
 
