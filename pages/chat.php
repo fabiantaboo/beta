@@ -1834,7 +1834,6 @@ function getFeedbackButtons(message) {
 
 async function loadOlderMessages() {
     console.log('loadOlderMessages called');
-    alert('Load More clicked! Check console for details.');
     
     if (isLoading) {
         console.log('Already loading, returning');
@@ -1895,12 +1894,11 @@ async function loadOlderMessages() {
             messageElement.innerHTML = createMessageElement(message);
             messageElement.className = 'space-y-4'; // Match existing spacing
             
-            // Insert at the beginning but after any existing messages
-            if (messagesList.firstChild && messagesList.firstChild.classList.contains('text-center')) {
-                // Skip the "no messages" placeholder
-                messagesList.appendChild(messageElement);
-            } else {
+            // Insert at the beginning of messages list
+            if (messagesList.firstChild) {
                 messagesList.insertBefore(messageElement, messagesList.firstChild);
+            } else {
+                messagesList.appendChild(messageElement);
             }
         });
         
