@@ -90,6 +90,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     }
                     break;
                     
+                case 'sync_messages':
+                    addDebugLog("🔄 Starting message sync", 'info');
+                    $setupResults = syncMessagesToMemory($_POST['aei_id'] ?? '', $_POST['limit'] ?? 1000, $_POST['offset'] ?? 0);
+                    if (!isset($setupResults['debug_log'])) {
+                        $setupResults['debug_log'] = $debugLog;
+                    }
+                    break;
+                    
                 default:
                     addDebugLog("❌ Unknown action received: " . $_POST['action'], 'error');
                     $setupResults = [
@@ -556,6 +564,145 @@ function getRecentErrorLogs($lines = 50) {
     }
     
     return $logs;
+}
+
+function syncMessagesToMemory($aeiId = '', $limit = 1000, $offset = 0) {
+    global $debugLog, $pdo;
+    
+    try {
+        addDebugLog("🔍 Analyzing message sync requirements...", 'info');
+        
+        if (!file_exists(__DIR__ . '/../config/memory_config.php')) {
+            addDebugLog("❌ Memory config not found", 'error');
+            return ['error' => 'Memory config not found', 'debug_log' => $debugLog];
+        }
+        
+        require_once __DIR__ . '/../config/memory_config.php';
+        require_once __DIR__ . '/../includes/memory_manager_inference.php';
+        
+        $memoryOptions = [
+            'default_model' => defined('MEMORY_DEFAULT_MODEL') ? MEMORY_DEFAULT_MODEL : 'sentence-transformers/all-MiniLM-L6-v2',
+            'quality_model' => defined('MEMORY_QUALITY_MODEL') ? MEMORY_QUALITY_MODEL : 'mixedbread-ai/mxbai-embed-large-v1',
+            'collection_prefix' => defined('MEMORY_COLLECTION_PREFIX') ? MEMORY_COLLECTION_PREFIX : 'aei_memories_'
+        ];
+        
+        $memoryManager = new MemoryManagerInference(QDRANT_URL, QDRANT_API_KEY, $pdo, $memoryOptions);
+        addDebugLog("✅ Memory manager initialized", 'success');
+        
+        // Get AEI info or all AEIs if not specified
+        if (empty($aeiId)) {
+            $stmt = $pdo->query("SELECT id, name FROM aeis WHERE is_active = TRUE ORDER BY name");
+            $aeis = $stmt->fetchAll();
+            addDebugLog("📋 Found " . count($aeis) . " active AEIs for sync", 'info');
+        } else {
+            $stmt = $pdo->prepare("SELECT id, name FROM aeis WHERE id = ? AND is_active = TRUE");
+            $stmt->execute([$aeiId]);
+            $aeis = [$stmt->fetch()];
+            if (!$aeis[0]) {
+                addDebugLog("❌ AEI not found: $aeiId", 'error');
+                return ['error' => 'AEI not found', 'debug_log' => $debugLog];
+            }
+            addDebugLog("🎯 Targeting specific AEI: " . $aeis[0]['name'], 'info');
+        }
+        
+        $totalSynced = 0;
+        $totalProcessed = 0;
+        
+        foreach ($aeis as $aei) {
+            addDebugLog("🤖 Processing AEI: " . $aei['name'] . " (" . $aei['id'] . ")", 'info');
+            
+            // Get chat sessions for this AEI
+            $stmt = $pdo->prepare("
+                SELECT cs.id as session_id, COUNT(cm.id) as message_count
+                FROM chat_sessions cs
+                LEFT JOIN chat_messages cm ON cs.id = cm.session_id  
+                WHERE cs.aei_id = ?
+                GROUP BY cs.id
+                HAVING message_count > 0
+                ORDER BY cs.created_at DESC
+                LIMIT ? OFFSET ?
+            ");
+            $stmt->execute([$aei['id'], $limit, $offset]);
+            $sessions = $stmt->fetchAll();
+            
+            addDebugLog("📁 Found " . count($sessions) . " sessions with messages (offset: $offset, limit: $limit)", 'info');
+            
+            foreach ($sessions as $session) {
+                addDebugLog("💬 Processing session: " . $session['session_id'] . " (" . $session['message_count'] . " messages)", 'info');
+                
+                // Get messages in pairs (user + aei response)
+                $stmt = $pdo->prepare("
+                    SELECT sender_type, message_text, created_at
+                    FROM chat_messages 
+                    WHERE session_id = ?
+                    ORDER BY created_at ASC
+                ");
+                $stmt->execute([$session['session_id']]);
+                $messages = $stmt->fetchAll();
+                
+                $qaPairs = [];
+                $tempUser = null;
+                
+                foreach ($messages as $message) {
+                    if ($message['sender_type'] === 'user') {
+                        $tempUser = $message;
+                    } elseif ($message['sender_type'] === 'aei' && $tempUser) {
+                        // Create Q&A pair
+                        $qaText = "User: " . $tempUser['message_text'] . "\n" . $aei['name'] . ": " . $message['message_text'];
+                        
+                        try {
+                            $memoryId = $memoryManager->storeChatMessage(
+                                $aei['id'],
+                                $qaText,
+                                'conversation',
+                                $session['session_id'],
+                                null // user_id not available from old messages
+                            );
+                            
+                            if ($memoryId) {
+                                $totalSynced++;
+                                if ($totalSynced % 10 === 0) {
+                                    addDebugLog("📊 Progress: $totalSynced Q&A pairs synced...", 'info');
+                                }
+                            }
+                            
+                        } catch (Exception $e) {
+                            addDebugLog("❌ Failed to store Q&A pair: " . $e->getMessage(), 'error');
+                        }
+                        
+                        $tempUser = null; // Reset for next pair
+                        $totalProcessed++;
+                    }
+                }
+                
+                // Rate limiting - small delay between sessions
+                usleep(100000); // 0.1 second delay
+            }
+        }
+        
+        addDebugLog("🎉 Sync completed!", 'success');
+        addDebugLog("📈 Total Q&A pairs synced: $totalSynced", 'success');
+        addDebugLog("📊 Total message pairs processed: $totalProcessed", 'info');
+        
+        return [
+            'success' => "Message sync completed successfully!",
+            'details' => [
+                'aeis_processed' => count($aeis),
+                'qa_pairs_synced' => $totalSynced,
+                'message_pairs_processed' => $totalProcessed,
+                'offset' => $offset,
+                'limit' => $limit
+            ],
+            'debug_log' => $debugLog
+        ];
+        
+    } catch (Exception $e) {
+        addDebugLog("💥 Critical sync error: " . $e->getMessage(), 'error');
+        return [
+            'error' => 'Sync failed: ' . $e->getMessage(),
+            'debug_log' => $debugLog
+        ];
+    }
 }
 
 function getMemorySystemStatus() {
@@ -1086,6 +1233,68 @@ try {
             </div>
         </div>
     </div>
+
+    <!-- Message Sync Section -->
+    <?php if (!empty($aeiList)): ?>
+        <div class="mt-8 bg-ayuni-dark/30 rounded-lg p-6">
+            <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                <i class="fas fa-sync-alt text-ayuni-blue mr-2"></i>
+                Message Sync to Memory
+            </h2>
+            
+            <div class="bg-blue-600/20 border border-blue-600/50 rounded p-4 mb-4">
+                <p class="text-blue-100 text-sm mb-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    <strong>Sync existing chat messages to vector database</strong>
+                </p>
+                <p class="text-blue-200 text-xs">
+                    Converts old chat messages into Q&A pairs and stores them as memories for better context retrieval. 
+                    Processes messages in batches to prevent timeouts.
+                </p>
+            </div>
+            
+            <form method="POST" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-300 text-sm mb-2">Select AEI</label>
+                        <select name="aei_id" class="w-full bg-ayuni-dark border border-gray-600 rounded px-3 py-2 text-white">
+                            <option value="">All AEIs</option>
+                            <?php foreach ($aeiList as $aei): ?>
+                                <option value="<?= htmlspecialchars($aei['id']) ?>">
+                                    <?= htmlspecialchars($aei['name']) ?> (<?= $aei['memory_count'] ?> current memories)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-300 text-sm mb-2">Batch Size</label>
+                        <select name="limit" class="w-full bg-ayuni-dark border border-gray-600 rounded px-3 py-2 text-white">
+                            <option value="500">500 sessions</option>
+                            <option value="1000" selected>1000 sessions</option>
+                            <option value="2000">2000 sessions</option>
+                            <option value="5000">5000 sessions (large batch)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-gray-300 text-sm mb-2">Offset (for continuing previous sync)</label>
+                    <input type="number" name="offset" value="0" min="0" 
+                           class="w-full bg-ayuni-dark border border-gray-600 rounded px-3 py-2 text-white">
+                    <p class="text-gray-400 text-xs mt-1">Start from session number (0 = start from beginning)</p>
+                </div>
+                
+                <button type="submit" name="action" value="sync_messages"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded transition-colors flex items-center">
+                    <i class="fas fa-upload mr-2"></i>
+                    Sync Messages to Memory
+                </button>
+            </form>
+        </div>
+    <?php endif; ?>
 
     <!-- Memory Cleanup -->
     <?php if (!empty($aeiList)): ?>
