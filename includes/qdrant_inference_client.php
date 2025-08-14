@@ -267,5 +267,19 @@ class QdrantInferenceClient {
         
         return $this->makeRequest('PUT', $url, $data);
     }
+    
+    /**
+     * Get base URL for API requests
+     */
+    public function getBaseUrl() {
+        return $this->baseUrl;
+    }
+    
+    /**
+     * Get API key for authentication
+     */
+    public function getApiKey() {
+        return $this->apiKey;
+    }
 }
 ?>

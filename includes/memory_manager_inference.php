@@ -92,6 +92,8 @@ class MemoryManagerInference {
                 $debugFunc("⚠️ timestamp index creation failed (may already exist): " . $indexError->getMessage());
             }
             
+            // Note: Timestamp filtering is done in PHP, so migration not needed
+            
             return $collectionName;
             
         } catch (Exception $e) {
@@ -137,6 +139,7 @@ class MemoryManagerInference {
             }
         }
     }
+    
     
     /**
      * Store a chat message or Q&A pair as memory with smart metadata
@@ -426,13 +429,8 @@ class MemoryManagerInference {
                 ]
             ];
             
-            // Add time filter if not searching all time
-            if ($maxDays < 999) {
-                $filter['must'][] = [
-                    'key' => 'timestamp',
-                    'range' => ['gte' => $cutoffTime]
-                ];
-            }
+            // Note: We'll do time filtering in PHP instead of Qdrant
+            // to avoid issues with missing timestamp fields in old memories
             
             // Search with enhanced scoring
             $results = $this->qdrantClient->searchWithText(
@@ -449,8 +447,17 @@ class MemoryManagerInference {
                     $similarity = $result['score'];
                     $payload = $result['payload'];
                     
+                    // Get timestamp (use MySQL created_at if no timestamp, or current time as fallback)
+                    $timestamp = $payload['timestamp'] ?? 
+                                 ($payload['created_at'] ? strtotime($payload['created_at']) : null) ??
+                                 $currentTime;
+                    
+                    // Apply time filter in PHP if we have timestamp and are filtering
+                    if ($maxDays < 999 && $timestamp < $cutoffTime) {
+                        continue; // Skip memories outside time range
+                    }
+                    
                     // Calculate time-decay boost
-                    $timestamp = $payload['timestamp'] ?? $currentTime;
                     $daysSince = ($currentTime - $timestamp) / 86400;
                     $recencyBoost = exp(-$daysSince / 10); // 10-day half-life
                     
