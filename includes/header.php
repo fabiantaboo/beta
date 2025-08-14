@@ -107,7 +107,7 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
                                 <i class="fas fa-arrow-left text-lg"></i>
                             </a>
                             
-                            <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-2 -m-2 transition-colors" onclick="openAEIInfoModal()">
                         <!-- AEI Avatar with emotion indicator -->
                         <div class="relative">
                             <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">

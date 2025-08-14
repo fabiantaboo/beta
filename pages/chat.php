@@ -210,6 +210,119 @@ if ($isCurrentUserAdmin) {
     </div>
     <?php endif; ?>
 
+    <!-- AEI Info Modal -->
+    <div id="aei-info-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
+                        <span class="text-xl text-white font-bold"><?= strtoupper(substr($aei['name'], 0, 1)) ?></span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></h3>
+                        <div class="flex items-center space-x-1">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Online</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closeAEIInfoModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 space-y-6">
+                <!-- AEI Details -->
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Basic Info</h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="text-gray-500 dark:text-gray-400">Age:</span>
+                                <span class="ml-2 text-gray-900 dark:text-white"><?= htmlspecialchars($aei['age'] ?? 'Unknown') ?></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500 dark:text-gray-400">Gender:</span>
+                                <span class="ml-2 text-gray-900 dark:text-white"><?= htmlspecialchars($aei['gender'] ?? 'Unknown') ?></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Personality</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <?php 
+                            $traits = $aei['personality_traits'] ? json_decode($aei['personality_traits'], true) : [];
+                            foreach ($traits as $trait): ?>
+                                <span class="px-2 py-1 bg-ayuni-blue/10 text-ayuni-blue rounded-full text-xs font-medium">
+                                    <?= htmlspecialchars($trait) ?>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($aei['interests'])): 
+                        $interests = json_decode($aei['interests'], true); ?>
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Interests</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <?php foreach ($interests as $interest): ?>
+                                    <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
+                                        <?= htmlspecialchars($interest) ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($aei['occupation'])): ?>
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Occupation</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($aei['occupation']) ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Font Size Settings -->
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Chat Settings</h4>
+                    
+                    <!-- Font Size Slider -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm text-gray-600 dark:text-gray-400">Message Font Size</label>
+                            <span id="font-size-display" class="text-sm font-medium text-ayuni-blue">Medium</span>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-font text-xs text-gray-400"></i>
+                            <input 
+                                type="range" 
+                                id="font-size-slider" 
+                                min="12" 
+                                max="20" 
+                                value="14" 
+                                class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                                oninput="updateFontSize(this.value)"
+                            >
+                            <i class="fas fa-font text-lg text-gray-400"></i>
+                        </div>
+                        
+                        <!-- Preview -->
+                        <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">Preview:</div>
+                            <div id="font-preview" class="text-sm text-gray-900 dark:text-white">
+                                This is how your messages will look in the chat.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0">
         <!-- Messages Area -->
         <div class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" id="messages-container">
@@ -936,6 +1049,10 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         container.appendChild(messageDiv);
+        
+        // Apply current font size to new message
+        applyFontSizeToNewMessage(messageDiv);
+        
         scrollToBottomWithImages();
         
         // Return the message element so it can be updated later
@@ -1895,6 +2012,10 @@ async function loadOlderMessages() {
             const messageElement = document.createElement('div');
             messageElement.innerHTML = createMessageElement(message);
             messageElement.style.marginBottom = '1rem'; // Explicit spacing to match space-y-4
+            
+            // Apply current font size to new messages
+            applyFontSizeToNewMessage(messageElement);
+            
             fragment.appendChild(messageElement);
         });
 
@@ -1929,6 +2050,98 @@ async function loadOlderMessages() {
         loadText.classList.remove('hidden');
         loadSpinner.classList.add('hidden');
     }
+}
+
+// AEI Info Modal & Font Size Management
+let currentFontSize = 14; // Default font size
+
+// Load saved font size from localStorage
+function loadFontSize() {
+    const savedSize = localStorage.getItem('ayuni-chat-font-size');
+    if (savedSize) {
+        currentFontSize = parseInt(savedSize);
+        document.getElementById('font-size-slider').value = currentFontSize;
+        updateFontSize(currentFontSize);
+    }
+}
+
+// Save font size to localStorage
+function saveFontSize(size) {
+    localStorage.setItem('ayuni-chat-font-size', size.toString());
+}
+
+// Update font size throughout the chat
+function updateFontSize(size) {
+    currentFontSize = parseInt(size);
+    
+    // Update slider display
+    const sizeLabels = {
+        12: 'Small',
+        13: 'Small+',
+        14: 'Medium',
+        15: 'Medium+', 
+        16: 'Large',
+        17: 'Large+',
+        18: 'XL',
+        19: 'XL+',
+        20: 'XXL'
+    };
+    
+    document.getElementById('font-size-display').textContent = sizeLabels[size] || 'Medium';
+    
+    // Update preview
+    const preview = document.getElementById('font-preview');
+    preview.style.fontSize = size + 'px';
+    
+    // Update all message text in chat
+    const messageTexts = document.querySelectorAll('#messages-list .text-sm');
+    messageTexts.forEach(element => {
+        // Only update message content text, not timestamps
+        if (!element.classList.contains('opacity-70')) {
+            element.style.fontSize = size + 'px';
+        }
+    });
+    
+    // Save to localStorage
+    saveFontSize(size);
+    
+    console.log('Font size updated to:', size + 'px');
+}
+
+// Modal functions
+function openAEIInfoModal() {
+    console.log('Opening AEI Info Modal');
+    document.getElementById('aei-info-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeAEIInfoModal() {
+    console.log('Closing AEI Info Modal');
+    document.getElementById('aei-info-modal').classList.add('hidden');
+    document.body.style.overflow = ''; // Restore scrolling
+}
+
+// Close modal when clicking outside
+document.getElementById('aei-info-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAEIInfoModal();
+    }
+});
+
+// Initialize font size on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadFontSize();
+});
+
+// Apply font size to new messages when they're added
+function applyFontSizeToNewMessage(messageElement) {
+    const textElements = messageElement.querySelectorAll('.text-sm');
+    textElements.forEach(element => {
+        // Only update message content text, not timestamps
+        if (!element.classList.contains('opacity-70')) {
+            element.style.fontSize = currentFontSize + 'px';
+        }
+    });
 }
 
 </script>
