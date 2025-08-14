@@ -117,10 +117,30 @@ function runMemorySetup() {
             );
             
             if (!$testMemoryId) {
-                return ['error' => 'Memory storage test failed - storeMemory returned false'];
+                // Get recent error logs for debugging
+                $errorLogs = getRecentErrorLogs();
+                return [
+                    'error' => 'Memory storage test failed - storeMemory returned false',
+                    'error_logs' => $errorLogs,
+                    'debug_info' => [
+                        'aei_id' => $testAei['id'],
+                        'memory_options' => $memoryOptions,
+                        'last_php_error' => error_get_last()
+                    ]
+                ];
             }
         } catch (Exception $e) {
-            return ['error' => 'Memory storage test failed: ' . $e->getMessage()];
+            // Get recent error logs for debugging
+            $errorLogs = getRecentErrorLogs();
+            return [
+                'error' => 'Memory storage test failed: ' . $e->getMessage(),
+                'error_logs' => $errorLogs,
+                'debug_info' => [
+                    'exception_trace' => $e->getTraceAsString(),
+                    'aei_id' => $testAei['id'],
+                    'memory_options' => $memoryOptions
+                ]
+            ];
         }
         
         // Test memory retrieval  
@@ -207,6 +227,49 @@ function cleanupMemories($aeiId = '') {
     } catch (Exception $e) {
         return ['error' => 'Cleanup failed: ' . $e->getMessage()];
     }
+}
+
+function getRecentErrorLogs($lines = 50) {
+    $logs = [];
+    
+    // Try multiple common error log locations
+    $logPaths = [
+        ini_get('error_log'),
+        '/var/log/apache2/error.log',
+        '/var/log/nginx/error.log',
+        '/var/www/vhosts/' . $_SERVER['HTTP_HOST'] . '/logs/error.log',
+        '/home/' . get_current_user() . '/logs/error.log',
+        '/tmp/php_errors.log',
+        __DIR__ . '/../error.log'
+    ];
+    
+    foreach ($logPaths as $logPath) {
+        if ($logPath && file_exists($logPath) && is_readable($logPath)) {
+            try {
+                $command = "tail -n $lines " . escapeshellarg($logPath) . " 2>/dev/null";
+                $output = shell_exec($command);
+                if ($output) {
+                    $logs[] = [
+                        'source' => $logPath,
+                        'content' => $output
+                    ];
+                }
+            } catch (Exception $e) {
+                // Skip this log file
+            }
+        }
+    }
+    
+    // Also try to get PHP errors from error_get_last()
+    $lastError = error_get_last();
+    if ($lastError) {
+        $logs[] = [
+            'source' => 'PHP error_get_last()',
+            'content' => json_encode($lastError, JSON_PRETTY_PRINT)
+        ];
+    }
+    
+    return $logs;
 }
 
 function getMemorySystemStatus() {
@@ -355,6 +418,38 @@ try {
                                     <span class="text-white ml-2"><?= htmlspecialchars($value) ?></span>
                                 </div>
                             <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($setupResults['debug_info'])): ?>
+                        <div class="mt-4">
+                            <details class="text-sm">
+                                <summary class="text-red-300 cursor-pointer hover:text-red-200">Debug Information</summary>
+                                <div class="mt-2 bg-red-900/20 p-3 rounded border border-red-600/30">
+                                    <?php foreach ($setupResults['debug_info'] as $key => $value): ?>
+                                        <div class="mb-2">
+                                            <strong class="text-red-300"><?= ucfirst(str_replace('_', ' ', $key)) ?>:</strong>
+                                            <pre class="text-red-100 text-xs mt-1 overflow-x-auto"><?= htmlspecialchars(is_array($value) ? json_encode($value, JSON_PRETTY_PRINT) : $value) ?></pre>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </details>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <?php if (isset($setupResults['error_logs']) && !empty($setupResults['error_logs'])): ?>
+                        <div class="mt-4">
+                            <details class="text-sm">
+                                <summary class="text-red-300 cursor-pointer hover:text-red-200">Recent Error Logs</summary>
+                                <div class="mt-2 space-y-2">
+                                    <?php foreach ($setupResults['error_logs'] as $log): ?>
+                                        <div class="bg-red-900/20 p-3 rounded border border-red-600/30">
+                                            <div class="text-red-300 text-xs mb-1">Source: <?= htmlspecialchars($log['source']) ?></div>
+                                            <pre class="text-red-100 text-xs overflow-x-auto max-h-48 overflow-y-auto"><?= htmlspecialchars($log['content']) ?></pre>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </details>
                         </div>
                     <?php endif; ?>
                 </div>

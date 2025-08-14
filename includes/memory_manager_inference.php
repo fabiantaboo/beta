@@ -40,17 +40,20 @@ class MemoryManagerInference {
         
         try {
             // Check if collection exists
-            $this->qdrantClient->getCollectionInfo($collectionName);
+            $info = $this->qdrantClient->getCollectionInfo($collectionName);
+            error_log("Collection $collectionName already exists");
             return $collectionName; // Already exists
             
         } catch (Exception $e) {
             // Create new collection with quality model dimensions (can store both models)
             try {
-                $this->qdrantClient->createCollection($collectionName, $this->qualityModel);
-                error_log("Created memory collection: $collectionName");
+                error_log("Creating new collection: $collectionName with model: " . $this->qualityModel);
+                $result = $this->qdrantClient->createCollection($collectionName, $this->qualityModel);
+                error_log("Created memory collection: $collectionName, result: " . json_encode($result));
                 return $collectionName;
                 
             } catch (Exception $createError) {
+                error_log("Collection creation failed: " . $createError->getMessage());
                 throw new Exception("Failed to create memory collection: " . $createError->getMessage());
             }
         }
@@ -79,6 +82,7 @@ class MemoryManagerInference {
             ];
             
             // Store with automatic embedding generation
+            error_log("Attempting to store memory in Qdrant: Collection=$collectionName, ID=$memoryId, Model=$model");
             $result = $this->qdrantClient->storeTextWithEmbedding(
                 $collectionName,
                 $memoryId,
@@ -86,8 +90,10 @@ class MemoryManagerInference {
                 $payload,
                 $model
             );
+            error_log("Qdrant storage result: " . json_encode($result));
             
             // Store metadata in MySQL for additional queries
+            error_log("Storing memory metadata in MySQL");
             $stmt = $this->pdo->prepare("
                 INSERT INTO aei_memories (
                     memory_id, aei_id, memory_type, content, importance_score,
@@ -99,6 +105,7 @@ class MemoryManagerInference {
                 $memoryId, $aeiId, $memoryType, $memoryText, $importance,
                 $sessionId, $userId, $model
             ]);
+            error_log("MySQL storage completed successfully");
             
             if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
                 error_log("Memory stored: $memoryId (model: $model, importance: $importance)");
@@ -108,6 +115,8 @@ class MemoryManagerInference {
             
         } catch (Exception $e) {
             error_log("Failed to store memory: " . $e->getMessage());
+            error_log("Memory storage error details: AEI ID: $aeiId, Text length: " . strlen($memoryText) . ", Type: $memoryType, Importance: $importance");
+            error_log("Stack trace: " . $e->getTraceAsString());
             return false;
         }
     }
