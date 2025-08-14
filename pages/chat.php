@@ -1888,19 +1888,22 @@ async function loadOlderMessages() {
         const messagesList = document.getElementById('messages-list');
         const oldScrollHeight = messagesList.scrollHeight;
         
-        // Insert older messages at the top
-        data.messages.forEach((message, index) => {
+        // Insert older messages at the top in correct chronological order
+        const fragment = document.createDocumentFragment();
+        
+        data.messages.forEach((message) => {
             const messageElement = document.createElement('div');
             messageElement.innerHTML = createMessageElement(message);
             messageElement.className = 'space-y-4'; // Match existing spacing
-            
-            // Insert at the beginning of messages list
-            if (messagesList.firstChild) {
-                messagesList.insertBefore(messageElement, messagesList.firstChild);
-            } else {
-                messagesList.appendChild(messageElement);
-            }
+            fragment.appendChild(messageElement);
         });
+
+        // Insert the entire fragment at the beginning to preserve order
+        if (messagesList.firstChild) {
+            messagesList.insertBefore(fragment, messagesList.firstChild);
+        } else {
+            messagesList.appendChild(fragment);
+        }
         
         // Maintain scroll position - user stays at the same visual position
         const messagesContainer = document.getElementById('messages-container');
