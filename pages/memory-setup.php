@@ -49,16 +49,29 @@ function addDebugLog($message, $type = 'info') {
 $memoryStatus = getMemorySystemStatus();
 
 function testMemoryConnection() {
+    global $debugLog;
+    addDebugLog("🔌 Starting connection test", 'info');
+    
     try {
         if (!file_exists(__DIR__ . '/../config/memory_config.php')) {
-            return ['error' => 'Memory config not found. Please copy config/memory_config.example.php to config/memory_config.php'];
+            addDebugLog("❌ Memory config file not found", 'error');
+            return [
+                'error' => 'Memory config not found. Please copy config/memory_config.example.php to config/memory_config.php',
+                'debug_log' => $debugLog
+            ];
         }
+        addDebugLog("✅ Memory config file found", 'success');
         
         // Config already included at top
         
         if (!defined('QDRANT_URL') || !defined('QDRANT_API_KEY')) {
-            return ['error' => 'Missing QDRANT_URL or QDRANT_API_KEY in config'];
+            addDebugLog("❌ Missing QDRANT_URL or QDRANT_API_KEY in config", 'error');
+            return [
+                'error' => 'Missing QDRANT_URL or QDRANT_API_KEY in config',
+                'debug_log' => $debugLog
+            ];
         }
+        addDebugLog("✅ Qdrant credentials found in config", 'success');
         
         // Debug info
         $debugInfo = [
@@ -66,6 +79,7 @@ function testMemoryConnection() {
             'qdrant_api_key' => defined('QDRANT_API_KEY') ? 'Set' : 'Missing',
             'config_file' => file_exists(__DIR__ . '/../config/memory_config.php') ? 'Exists' : 'Missing'
         ];
+        addDebugLog("📋 Debug info: " . json_encode($debugInfo), 'info');
         
         global $pdo;
         $memoryOptions = [
@@ -74,10 +88,16 @@ function testMemoryConnection() {
             'collection_prefix' => defined('MEMORY_COLLECTION_PREFIX') ? MEMORY_COLLECTION_PREFIX : 'aei_memories_'
         ];
         
+        addDebugLog("🔧 Initializing Memory Manager for connection test...", 'info');
         $memoryManager = new MemoryManagerInference(QDRANT_URL, QDRANT_API_KEY, $pdo, $memoryOptions);
+        addDebugLog("✅ Memory Manager initialized", 'success');
+        
+        addDebugLog("🏥 Testing Qdrant cluster health...", 'info');
         $health = (new QdrantInferenceClient(QDRANT_URL, QDRANT_API_KEY))->healthCheck();
+        addDebugLog("📊 Health check result: " . json_encode($health), 'info');
         
         if ($health['status'] === 'healthy') {
+            addDebugLog("✅ Connection test successful!", 'success');
             return [
                 'success' => 'Connection successful!',
                 'details' => [
@@ -85,14 +105,23 @@ function testMemoryConnection() {
                     'collections' => $health['collections'],
                     'default_model' => $memoryOptions['default_model'],
                     'quality_model' => $memoryOptions['quality_model']
-                ]
+                ],
+                'debug_log' => $debugLog
             ];
         } else {
-            return ['error' => 'Cluster unhealthy: ' . ($health['error'] ?? 'Unknown error')];
+            addDebugLog("❌ Cluster unhealthy: " . ($health['error'] ?? 'Unknown error'), 'error');
+            return [
+                'error' => 'Cluster unhealthy: ' . ($health['error'] ?? 'Unknown error'),
+                'debug_log' => $debugLog
+            ];
         }
         
     } catch (Exception $e) {
-        return ['error' => 'Connection failed: ' . $e->getMessage()];
+        addDebugLog("💥 Connection test failed: " . $e->getMessage(), 'error');
+        return [
+            'error' => 'Connection failed: ' . $e->getMessage(),
+            'debug_log' => $debugLog
+        ];
     }
 }
 
@@ -221,7 +250,16 @@ function runMemorySetup() {
         ];
         
     } catch (Exception $e) {
-        return ['error' => 'Setup failed: ' . $e->getMessage()];
+        addDebugLog("💥 CRITICAL ERROR: " . $e->getMessage(), 'error');
+        addDebugLog("🔍 Exception trace: " . $e->getTraceAsString(), 'error');
+        return [
+            'error' => 'Setup failed: ' . $e->getMessage(),
+            'debug_log' => $debugLog,
+            'debug_info' => [
+                'exception_message' => $e->getMessage(),
+                'exception_trace' => $e->getTraceAsString()
+            ]
+        ];
     }
 }
 
