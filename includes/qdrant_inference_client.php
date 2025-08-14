@@ -267,18 +267,5 @@ class QdrantInferenceClient {
         
         return $this->makeRequest('PUT', $url, $data);
     }
-    
-    /**
-     * Delete points by IDs
-     */
-    public function deletePoints($collectionName, $pointIds) {
-        $url = $this->baseUrl . "/collections/" . urlencode($collectionName) . "/points/delete?wait=true";
-        
-        $data = [
-            'points' => $pointIds
-        ];
-        
-        return $this->makeRequest('POST', $url, $data);
-    }
 }
 ?>
