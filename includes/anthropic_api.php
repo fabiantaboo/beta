@@ -364,11 +364,18 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
         $memoryManager = null;
         $memoryContext = "";
         
+        // DEBUG: Log memory system initialization attempt
+        error_log("MEMORY_DEBUG: Checking memory config file...");
+        
         if (file_exists(__DIR__ . '/../config/memory_config.php')) {
+            error_log("MEMORY_DEBUG: memory_config.php found, loading...");
             require_once __DIR__ . '/../config/memory_config.php';
+            error_log("MEMORY_DEBUG: Config loaded, checking constants...");
             require_once __DIR__ . '/memory_manager_inference.php';
+            error_log("MEMORY_DEBUG: MemoryManagerInference class loaded");
             
             if (defined('QDRANT_URL') && defined('QDRANT_API_KEY')) {
+                error_log("MEMORY_DEBUG: QDRANT_URL and QDRANT_API_KEY are defined, initializing MemoryManager...");
                 try {
                     $memoryOptions = [
                         'default_model' => defined('MEMORY_DEFAULT_MODEL') ? MEMORY_DEFAULT_MODEL : 'sentence-transformers/all-MiniLM-L6-v2',
@@ -382,6 +389,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                         $pdo,
                         $memoryOptions
                     );
+                    error_log("MEMORY_DEBUG: MemoryManager created successfully");
                     
                     // Get relevant memories for current context
                     $memoryContext = $memoryManager->getMemoryContext(
@@ -389,6 +397,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                         $userMessage, 
                         defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 5
                     );
+                    error_log("MEMORY_DEBUG: Memory context retrieved: " . strlen($memoryContext) . " chars");
                     
                     if ($includeDebugData) {
                         $debugData['memory_enabled'] = true;
@@ -401,19 +410,22 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                     }
                     
                 } catch (Exception $memoryError) {
-                    error_log("Memory system error: " . $memoryError->getMessage());
+                    error_log("MEMORY_DEBUG: Memory system error: " . $memoryError->getMessage());
+                    error_log("MEMORY_DEBUG: Error trace: " . $memoryError->getTraceAsString());
                     if ($includeDebugData) {
                         $debugData['memory_error'] = $memoryError->getMessage();
                         $debugData['memory_system'] = 'failed_to_initialize';
                     }
                 }
             } else {
+                error_log("MEMORY_DEBUG: Missing QDRANT_URL or QDRANT_API_KEY - URL defined: " . (defined('QDRANT_URL') ? 'YES' : 'NO') . ", KEY defined: " . (defined('QDRANT_API_KEY') ? 'YES' : 'NO'));
                 if ($includeDebugData) {
                     $debugData['memory_enabled'] = false;
                     $debugData['memory_error'] = 'Missing QDRANT_URL or QDRANT_API_KEY in config';
                 }
             }
         } else {
+            error_log("MEMORY_DEBUG: memory_config.php NOT FOUND at: " . __DIR__ . '/../config/memory_config.php');
             if ($includeDebugData) {
                 $debugData['memory_enabled'] = false;
                 $debugData['memory_note'] = 'Memory config not found - copy memory_config.example.php to memory_config.php';

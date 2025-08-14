@@ -565,7 +565,9 @@ function getMemorySystemStatus() {
         'total_memories' => 0,
         'active_aeis_with_memories' => 0,
         'average_importance' => 0,
-        'models_in_use' => []
+        'models_in_use' => [],
+        'qdrant_collections' => [],
+        'memory_extraction_enabled' => false
     ];
     
     try {
@@ -593,7 +595,7 @@ function getMemorySystemStatus() {
             $status['models_in_use'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
-        // Test connection if config exists
+        // Test connection and get detailed info if config exists
         if ($status['config_exists']) {
             // Config already included at top
             if (defined('QDRANT_URL') && defined('QDRANT_API_KEY')) {
@@ -601,7 +603,29 @@ function getMemorySystemStatus() {
                     $qdrantClient = new QdrantInferenceClient(QDRANT_URL, QDRANT_API_KEY);
                     $health = $qdrantClient->healthCheck();
                     $status['qdrant_status'] = $health['status'];
-                    $status['qdrant_collections'] = $health['collections'] ?? 0;
+                    
+                    // Get collection details - not just count
+                    if (isset($health['result']['collections'])) {
+                        $collections = $health['result']['collections'];
+                        $status['qdrant_collections'] = [];
+                        
+                        foreach ($collections as $collection) {
+                            if (strpos($collection['name'], 'aei_memories_') === 0) {
+                                $status['qdrant_collections'][] = [
+                                    'name' => $collection['name'],
+                                    'vectors_count' => $collection['vectors_count'] ?? 0,
+                                    'points_count' => $collection['points_count'] ?? 0,
+                                    'status' => $collection['status'] ?? 'unknown'
+                                ];
+                            }
+                        }
+                    } else {
+                        $status['qdrant_collections'] = $health['collections'] ?? 0;
+                    }
+                    
+                    // Check if memory extraction is enabled
+                    $status['memory_extraction_enabled'] = defined('MEMORY_EXTRACTION_ENABLED') && MEMORY_EXTRACTION_ENABLED;
+                    
                 } catch (Exception $e) {
                     $status['qdrant_status'] = 'error';
                     $status['qdrant_error'] = $e->getMessage();
@@ -684,6 +708,88 @@ try {
             </div>
         </div>
     </div>
+
+    <!-- Memory Extraction Status -->
+    <div class="mb-8 p-4 rounded-lg <?= $memoryStatus['memory_extraction_enabled'] ? 'bg-green-600/20 border border-green-600/50' : 'bg-yellow-600/20 border border-yellow-600/50' ?>">
+        <div class="flex items-center mb-2">
+            <i class="fas fa-brain <?= $memoryStatus['memory_extraction_enabled'] ? 'text-green-400' : 'text-yellow-400' ?> mr-2"></i>
+            <h3 class="<?= $memoryStatus['memory_extraction_enabled'] ? 'text-green-400' : 'text-yellow-400' ?> font-semibold">
+                Memory Extraction: <?= $memoryStatus['memory_extraction_enabled'] ? 'ENABLED' : 'DISABLED' ?>
+            </h3>
+        </div>
+        <p class="<?= $memoryStatus['memory_extraction_enabled'] ? 'text-green-100' : 'text-yellow-100' ?> text-sm">
+            <?= $memoryStatus['memory_extraction_enabled'] 
+                ? 'Das System extrahiert automatisch Memories aus Chat-Gesprächen.' 
+                : 'Memory Extraction ist deaktiviert. Setze MEMORY_EXTRACTION_ENABLED = true in memory_config.php' ?>
+        </p>
+    </div>
+
+    <!-- Qdrant Collections Details -->
+    <?php if (!empty($memoryStatus['qdrant_collections']) && is_array($memoryStatus['qdrant_collections'])): ?>
+        <div class="mb-8">
+            <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+                <i class="fas fa-database text-ayuni-aqua mr-2"></i>
+                Qdrant Collections (Live Data)
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <?php foreach ($memoryStatus['qdrant_collections'] as $collection): ?>
+                    <div class="bg-ayuni-dark/50 rounded-lg p-4 border border-gray-600">
+                        <h4 class="text-white font-semibold mb-2"><?= htmlspecialchars($collection['name']) ?></h4>
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Vectors:</span>
+                                <span class="text-ayuni-aqua"><?= number_format($collection['vectors_count']) ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Points:</span>
+                                <span class="text-ayuni-aqua"><?= number_format($collection['points_count']) ?></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">Status:</span>
+                                <span class="text-green-400"><?= htmlspecialchars($collection['status']) ?></span>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!$configExists): ?>
+        <!-- Memory Configuration Setup -->
+        <div class="mb-8">
+            <div class="bg-red-600/20 border border-red-600/50 rounded-lg p-6">
+                <h3 class="text-red-400 font-bold mb-4 flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    MEMORY CONFIG MISSING
+                </h3>
+                <p class="text-red-100 mb-4">
+                    Das Memory-System ist nicht aktiv, weil <code>config/memory_config.php</code> fehlt.
+                </p>
+                
+                <div class="bg-red-900/30 rounded-lg p-4 mb-4">
+                    <h4 class="text-red-300 font-semibold mb-2">🛠️ Manual Setup:</h4>
+                    <ol class="text-red-100 text-sm space-y-1 list-decimal list-inside">
+                        <li>Kopiere <code>config/memory_config.example.php</code> zu <code>config/memory_config.php</code></li>
+                        <li>Editiere die Datei und füge deine Qdrant URL + API Key ein</li>
+                        <li>Setze <code>MEMORY_EXTRACTION_ENABLED = true</code></li>
+                        <li>Refresh diese Seite</li>
+                    </ol>
+                </div>
+                
+                <form method="POST" class="mt-4">
+                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                    <button type="submit" name="action" value="create_config" 
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors flex items-center">
+                        <i class="fas fa-magic mr-2"></i>
+                        Auto-Create Config (mit deinen aktuellen Qdrant-Daten)
+                    </button>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
     <!-- Emergency Debug Info (if no results but debug log exists) -->
     <?php if (empty($setupResults) && !empty($debugLog)): ?>
