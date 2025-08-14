@@ -82,30 +82,41 @@ class MemoryManagerInference {
             ];
             
             // Store with automatic embedding generation
-            error_log("Attempting to store memory in Qdrant: Collection=$collectionName, ID=$memoryId, Model=$model");
-            $result = $this->qdrantClient->storeTextWithEmbedding(
-                $collectionName,
-                $memoryId,
-                $memoryText,
-                $payload,
-                $model
-            );
-            error_log("Qdrant storage result: " . json_encode($result));
+            error_log("[MEMORY_DEBUG] Attempting to store memory in Qdrant: Collection=$collectionName, ID=$memoryId, Model=$model, TextLength=" . strlen($memoryText));
+            
+            try {
+                $result = $this->qdrantClient->storeTextWithEmbedding(
+                    $collectionName,
+                    $memoryId,
+                    $memoryText,
+                    $payload,
+                    $model
+                );
+                error_log("[MEMORY_DEBUG] Qdrant storage result: " . json_encode($result));
+            } catch (Exception $qdrantError) {
+                error_log("[MEMORY_DEBUG] Qdrant storage FAILED: " . $qdrantError->getMessage());
+                throw $qdrantError;
+            }
             
             // Store metadata in MySQL for additional queries
-            error_log("Storing memory metadata in MySQL");
-            $stmt = $this->pdo->prepare("
-                INSERT INTO aei_memories (
-                    memory_id, aei_id, memory_type, content, importance_score,
-                    session_id, user_id, embedding_model, created_at, last_accessed, access_count
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 0)
-            ");
-            
-            $stmt->execute([
-                $memoryId, $aeiId, $memoryType, $memoryText, $importance,
-                $sessionId, $userId, $model
-            ]);
-            error_log("MySQL storage completed successfully");
+            error_log("[MEMORY_DEBUG] Storing memory metadata in MySQL");
+            try {
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO aei_memories (
+                        memory_id, aei_id, memory_type, content, importance_score,
+                        session_id, user_id, embedding_model, created_at, last_accessed, access_count
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 0)
+                ");
+                
+                $stmt->execute([
+                    $memoryId, $aeiId, $memoryType, $memoryText, $importance,
+                    $sessionId, $userId, $model
+                ]);
+                error_log("[MEMORY_DEBUG] MySQL storage completed successfully");
+            } catch (Exception $mysqlError) {
+                error_log("[MEMORY_DEBUG] MySQL storage FAILED: " . $mysqlError->getMessage());
+                throw $mysqlError;
+            }
             
             if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
                 error_log("Memory stored: $memoryId (model: $model, importance: $importance)");

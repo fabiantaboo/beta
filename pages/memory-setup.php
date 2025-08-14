@@ -31,6 +31,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
+// Initialize debug terminal
+$debugLog = [];
+
+function addDebugLog($message, $type = 'info') {
+    global $debugLog;
+    $timestamp = date('H:i:s.') . sprintf('%03d', (microtime(true) - floor(microtime(true))) * 1000);
+    $debugLog[] = [
+        'timestamp' => $timestamp,
+        'type' => $type,
+        'message' => $message
+    ];
+    error_log("[$timestamp] MEMORY_DEBUG: $message");
+}
+
 // Get memory system status
 $memoryStatus = getMemorySystemStatus();
 
@@ -83,10 +97,15 @@ function testMemoryConnection() {
 }
 
 function runMemorySetup() {
+    global $debugLog;
+    addDebugLog("🚀 Starting Memory Setup Test", 'info');
+    
     try {
         if (!file_exists(__DIR__ . '/../config/memory_config.php')) {
-            return ['error' => 'Memory config not found'];
+            addDebugLog("❌ Memory config file not found", 'error');
+            return ['error' => 'Memory config not found', 'debug_log' => $debugLog];
         }
+        addDebugLog("✅ Memory config file found", 'success');
         
         // Config already included at top
         
@@ -97,18 +116,27 @@ function runMemorySetup() {
             'collection_prefix' => defined('MEMORY_COLLECTION_PREFIX') ? MEMORY_COLLECTION_PREFIX : 'aei_memories_'
         ];
         
+        addDebugLog("📋 Memory Options: " . json_encode($memoryOptions), 'info');
+        
+        addDebugLog("🔧 Initializing Memory Manager...", 'info');
         $memoryManager = new MemoryManagerInference(QDRANT_URL, QDRANT_API_KEY, $pdo, $memoryOptions);
+        addDebugLog("✅ Memory Manager initialized successfully", 'success');
         
         // Test with first available AEI
+        addDebugLog("👤 Looking for test AEI...", 'info');
         $stmt = $pdo->query("SELECT id, name FROM aeis WHERE is_active = TRUE LIMIT 1");
         $testAei = $stmt->fetch();
         
         if (!$testAei) {
-            return ['warning' => 'Setup completed but no AEIs found for testing. Create an AEI first.'];
+            addDebugLog("⚠️ No active AEIs found for testing", 'warning');
+            return ['warning' => 'Setup completed but no AEIs found for testing. Create an AEI first.', 'debug_log' => $debugLog];
         }
+        addDebugLog("✅ Found test AEI: " . $testAei['name'] . " (ID: " . $testAei['id'] . ")", 'success');
         
         // Test memory storage
+        addDebugLog("💾 Starting memory storage test...", 'info');
         try {
+            addDebugLog("📝 Calling storeMemory() with test data", 'info');
             $testMemoryId = $memoryManager->storeMemory(
                 $testAei['id'],
                 'Test memory for setup validation - system working correctly',
@@ -117,11 +145,10 @@ function runMemorySetup() {
             );
             
             if (!$testMemoryId) {
-                // Get recent error logs for debugging
-                $errorLogs = getRecentErrorLogs();
+                addDebugLog("❌ storeMemory() returned false", 'error');
                 return [
                     'error' => 'Memory storage test failed - storeMemory returned false',
-                    'error_logs' => $errorLogs,
+                    'debug_log' => $debugLog,
                     'debug_info' => [
                         'aei_id' => $testAei['id'],
                         'memory_options' => $memoryOptions,
@@ -129,12 +156,14 @@ function runMemorySetup() {
                     ]
                 ];
             }
+            addDebugLog("✅ Memory stored successfully with ID: " . $testMemoryId, 'success');
+            
         } catch (Exception $e) {
-            // Get recent error logs for debugging
-            $errorLogs = getRecentErrorLogs();
+            addDebugLog("❌ Exception in memory storage: " . $e->getMessage(), 'error');
+            addDebugLog("🔍 Exception trace: " . $e->getTraceAsString(), 'error');
             return [
                 'error' => 'Memory storage test failed: ' . $e->getMessage(),
-                'error_logs' => $errorLogs,
+                'debug_log' => $debugLog,
                 'debug_info' => [
                     'exception_trace' => $e->getTraceAsString(),
                     'aei_id' => $testAei['id'],
@@ -170,8 +199,7 @@ function runMemorySetup() {
             error_log("Test memory cleanup failed: " . $e->getMessage());
         }
         
-        // Get recent error logs even for successful tests (to see debug messages)
-        $errorLogs = getRecentErrorLogs(100);
+        addDebugLog("🎉 All tests completed successfully!", 'success');
         
         return [
             'success' => 'Memory system setup completed successfully!',
@@ -184,12 +212,12 @@ function runMemorySetup() {
                 'test_memory_id' => $testMemoryId,
                 'collection_name' => $memoryOptions['collection_prefix'] . $testAei['id']
             ],
+            'debug_log' => $debugLog,
             'debug_info' => [
                 'memory_options' => $memoryOptions,
                 'retrieved_memory' => $memories[0],
                 'cleanup_attempted' => 'Yes'
-            ],
-            'error_logs' => $errorLogs
+            ]
         ];
         
     } catch (Exception $e) {
@@ -502,6 +530,62 @@ try {
                                     <?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- Live Debug Terminal -->
+                    <?php if (isset($setupResults['debug_log']) && !empty($setupResults['debug_log'])): ?>
+                        <div class="mt-6 border-t border-green-600/30 pt-4">
+                            <div class="bg-black/80 rounded-lg border border-green-500/50 overflow-hidden">
+                                <div class="bg-green-600/20 px-4 py-2 border-b border-green-500/30">
+                                    <h4 class="text-green-400 font-mono text-sm flex items-center">
+                                        <i class="fas fa-terminal mr-2"></i>
+                                        MEMORY SYSTEM DEBUG TERMINAL
+                                        <span class="ml-auto text-green-300 text-xs">[LIVE LOG]</span>
+                                    </h4>
+                                </div>
+                                <div class="p-4 max-h-96 overflow-y-auto font-mono text-sm">
+                                    <?php foreach ($setupResults['debug_log'] as $log): ?>
+                                        <div class="mb-1 flex">
+                                            <span class="text-gray-400 mr-3"><?= $log['timestamp'] ?></span>
+                                            <span class="<?= match($log['type']) {
+                                                'success' => 'text-green-400',
+                                                'error' => 'text-red-400', 
+                                                'warning' => 'text-yellow-400',
+                                                default => 'text-gray-300'
+                                            } ?>"><?= htmlspecialchars($log['message']) ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- Live Debug Terminal for Errors -->
+                    <?php if (isset($setupResults['debug_log']) && !empty($setupResults['debug_log'])): ?>
+                        <div class="mt-6 border-t border-red-600/30 pt-4">
+                            <div class="bg-black/80 rounded-lg border border-red-500/50 overflow-hidden">
+                                <div class="bg-red-600/20 px-4 py-2 border-b border-red-500/30">
+                                    <h4 class="text-red-400 font-mono text-sm flex items-center">
+                                        <i class="fas fa-terminal mr-2"></i>
+                                        MEMORY SYSTEM DEBUG TERMINAL
+                                        <span class="ml-auto text-red-300 text-xs">[ERROR LOG]</span>
+                                    </h4>
+                                </div>
+                                <div class="p-4 max-h-96 overflow-y-auto font-mono text-sm">
+                                    <?php foreach ($setupResults['debug_log'] as $log): ?>
+                                        <div class="mb-1 flex">
+                                            <span class="text-gray-400 mr-3"><?= $log['timestamp'] ?></span>
+                                            <span class="<?= match($log['type']) {
+                                                'success' => 'text-green-400',
+                                                'error' => 'text-red-400', 
+                                                'warning' => 'text-yellow-400',
+                                                default => 'text-gray-300'
+                                            } ?>"><?= htmlspecialchars($log['message']) ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
                         </div>
                     <?php endif; ?>
                 </div>
