@@ -4,12 +4,29 @@
  * AEI Memory System Configuration 2025 - Qdrant Inference Only
  * NO OpenAI dependencies - everything runs on Qdrant Cloud!
  * 
- * Copy this file to memory_config.php and update with your Qdrant API keys
+ * SETUP ANLEITUNG:
+ * 1. Copy this file to memory_config.php
+ * 2. Go to https://cloud.qdrant.io
+ * 3. Create a new cluster if you don't have one
+ * 4. In your cluster settings, ENABLE "Inference API" 
+ * 5. Generate an "Inference API Key" (not the cluster API key!)
+ * 6. Update QDRANT_URL (without :6333 port) and QDRANT_API_KEY below
+ * 
+ * WICHTIGER UNTERSCHIED:
+ * - Cluster API: für Datenbank-Operationen (Port :6333)
+ * - Inference API: für Embedding-Generierung (KEIN Port, andere Keys!)
  */
 
-// Qdrant Cloud Configuration
-define('QDRANT_URL', 'https://your-cluster-id.us-east.aws.cloud.qdrant.io:6333');
-define('QDRANT_API_KEY', 'your-qdrant-api-key-here');
+// Qdrant Cloud Configuration - INFERENCE API ENDPOINTS
+// WICHTIG: Verwende die Inference API URLs, NICHT die Standard-Cluster-URLs!
+// 
+// Richtig (Inference API):
+define('QDRANT_URL', 'https://your-cluster-id.us-east.aws.cloud.qdrant.io');  // KEIN :6333 Port!
+define('QDRANT_API_KEY', 'your-inference-api-key-here');  // Inference API Key, nicht Cluster API Key
+//
+// FALSCH (Standard Cluster API):
+// define('QDRANT_URL', 'https://your-cluster-id.us-east.aws.cloud.qdrant.io:6333'); 
+// define('QDRANT_API_KEY', 'your-cluster-api-key');
 
 // Embedding Model Configuration (2025 Qdrant Inference Models)
 define('MEMORY_DEFAULT_MODEL', 'sentence-transformers/all-MiniLM-L6-v2');    // 384d - Fast, efficient

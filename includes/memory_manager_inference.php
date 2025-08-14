@@ -182,11 +182,24 @@ class MemoryManagerInference {
      * Retrieve relevant memories with automatic query embedding
      */
     public function retrieveMemories($aeiId, $queryText, $limit = 5, $memoryTypes = null, $minImportance = 0.0) {
+        // Use debug callback if available
+        $debugFunc = function($message, $type = 'info') {
+            if ($this->debugCallback && is_callable($this->debugCallback)) {
+                call_user_func($this->debugCallback, $message, $type);
+            } elseif (function_exists('addDebugLog')) {
+                addDebugLog($message, $type);
+            } else {
+                error_log("[MEMORY_DEBUG] $message");
+            }
+        };
+        
         try {
             $collectionName = $this->collectionPrefix . $aeiId;
+            $debugFunc("🔍 Starting memory retrieval from collection: $collectionName");
             
             // Use quality model for better retrieval
             $model = $this->qualityModel;
+            $debugFunc("🤖 Using retrieval model: $model");
             
             // Build filter
             $filter = [
@@ -197,6 +210,7 @@ class MemoryManagerInference {
                     ]
                 ]
             ];
+            $debugFunc("🔧 Base filter prepared for AEI: $aeiId");
             
             // Add memory type filter
             if ($memoryTypes && is_array($memoryTypes)) {
@@ -204,6 +218,7 @@ class MemoryManagerInference {
                     'key' => 'memory_type',
                     'match' => ['any' => $memoryTypes]
                 ];
+                $debugFunc("🏷️ Added memory type filter: " . implode(', ', $memoryTypes));
             }
             
             // Add importance filter
@@ -212,7 +227,11 @@ class MemoryManagerInference {
                     'key' => 'importance',
                     'range' => ['gte' => $minImportance]
                 ];
+                $debugFunc("⭐ Added importance filter >= $minImportance");
             }
+            
+            $debugFunc("📡 Executing search with query: '" . substr($queryText, 0, 100) . "'");
+            $debugFunc("🔍 Filter: " . json_encode($filter));
             
             // Search with automatic embedding
             $results = $this->qdrantClient->searchWithText(
@@ -223,9 +242,15 @@ class MemoryManagerInference {
                 $filter
             );
             
+            $debugFunc("📊 Qdrant search result: " . json_encode($results));
+            
             $memories = [];
             if (isset($results['result']) && is_array($results['result'])) {
-                foreach ($results['result'] as $result) {
+                $debugFunc("✅ Found " . count($results['result']) . " potential results");
+                
+                foreach ($results['result'] as $index => $result) {
+                    $debugFunc("📝 Processing result #$index: " . json_encode($result));
+                    
                     $memories[] = [
                         'memory_id' => $result['payload']['memory_id'],
                         'content' => $result['payload']['original_text'],
@@ -239,8 +264,14 @@ class MemoryManagerInference {
                     
                     // Update access count
                     $this->updateMemoryAccess($result['payload']['memory_id']);
+                    $debugFunc("📈 Updated access count for memory: " . $result['payload']['memory_id']);
                 }
+            } else {
+                $debugFunc("❌ No results found or invalid result structure");
+                $debugFunc("🔍 Raw results structure: " . json_encode($results));
             }
+            
+            $debugFunc("🎯 Final memories retrieved: " . count($memories));
             
             if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
                 error_log("Retrieved " . count($memories) . " memories for query: " . substr($queryText, 0, 50));
@@ -249,6 +280,9 @@ class MemoryManagerInference {
             return $memories;
             
         } catch (Exception $e) {
+            $debugFunc("💥 EXCEPTION in retrieveMemories(): " . $e->getMessage());
+            $debugFunc("📍 Exception file: " . $e->getFile() . ":" . $e->getLine());
+            $debugFunc("📜 Stack trace: " . $e->getTraceAsString());
             error_log("Failed to retrieve memories: " . $e->getMessage());
             return [];
         }

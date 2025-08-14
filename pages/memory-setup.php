@@ -347,18 +347,58 @@ function runMemorySetup() {
         }
         
         // Test memory retrieval  
+        addDebugLog("🔍 Starting memory retrieval test...", 'info');
         try {
+            addDebugLog("📝 Calling retrieveMemories() with query: 'test memory setup validation'", 'info');
+            
             $memories = $memoryManager->retrieveMemories($testAei['id'], 'test memory setup validation', 1);
             
+            addDebugLog("🔄 retrieveMemories call completed, found " . count($memories) . " memories", 'info');
+            
             if (empty($memories)) {
-                return ['error' => 'Memory retrieval test failed - no memories found'];
+                addDebugLog("❌ No memories found in retrieval test", 'error');
+                return [
+                    'error' => 'Memory retrieval test failed - no memories found',
+                    'debug_log' => $debugLog,
+                    'debug_info' => [
+                        'test_memory_id' => $testMemoryId,
+                        'aei_id' => $testAei['id'],
+                        'query' => 'test memory setup validation',
+                        'expected_result' => 'At least 1 memory matching the stored test memory'
+                    ]
+                ];
             }
             
+            addDebugLog("✅ Found " . count($memories) . " memories", 'success');
+            addDebugLog("🔍 First memory details: " . json_encode($memories[0]), 'info');
+            
             if ($memories[0]['memory_id'] !== $testMemoryId) {
-                return ['error' => 'Memory retrieval test failed - wrong memory returned (expected: ' . $testMemoryId . ', got: ' . $memories[0]['memory_id'] . ')'];
+                addDebugLog("❌ Memory ID mismatch - expected: $testMemoryId, got: " . $memories[0]['memory_id'], 'error');
+                return [
+                    'error' => 'Memory retrieval test failed - wrong memory returned (expected: ' . $testMemoryId . ', got: ' . $memories[0]['memory_id'] . ')',
+                    'debug_log' => $debugLog,
+                    'debug_info' => [
+                        'expected_memory_id' => $testMemoryId,
+                        'retrieved_memory_id' => $memories[0]['memory_id'],
+                        'retrieved_memories' => $memories
+                    ]
+                ];
             }
+            
+            addDebugLog("✅ Memory retrieval test successful!", 'success');
+            
         } catch (Exception $e) {
-            return ['error' => 'Memory retrieval test failed: ' . $e->getMessage()];
+            addDebugLog("❌ Exception in memory retrieval: " . $e->getMessage(), 'error');
+            addDebugLog("🔍 Exception trace: " . $e->getTraceAsString(), 'error');
+            return [
+                'error' => 'Memory retrieval test failed: ' . $e->getMessage(),
+                'debug_log' => $debugLog,
+                'debug_info' => [
+                    'exception_trace' => $e->getTraceAsString(),
+                    'test_memory_id' => $testMemoryId,
+                    'aei_id' => $testAei['id']
+                ]
+            ];
         }
         
         // Cleanup test memory
