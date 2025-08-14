@@ -11,6 +11,7 @@ function renderAdminNavigation($currentPage = '') {
         'admin-proactive' => ['name' => 'Proactive Messaging', 'icon' => 'fas fa-bell', 'url' => '/admin/proactive'],
         'admin-feedback' => ['name' => 'User Feedback', 'icon' => 'fas fa-comment-dots', 'url' => '/admin/feedback'],
         'admin-decay' => ['name' => 'Emotional Decay', 'icon' => 'fas fa-heart-broken', 'url' => '/admin/decay'],
+        'memory-setup' => ['name' => 'Memory Setup', 'icon' => 'fas fa-brain', 'url' => '/admin/memory-setup'],
         'admin-logs' => ['name' => 'Error Logs', 'icon' => 'fas fa-file-alt', 'url' => '/admin/logs'],
     ];
     

@@ -360,6 +360,66 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
         // Initialize emotions instance
         $emotions = new Emotions($pdo);
         
+        // Initialize Memory Manager with Qdrant Inference (2025)
+        $memoryManager = null;
+        $memoryContext = "";
+        
+        if (file_exists(__DIR__ . '/../config/memory_config.php')) {
+            require_once __DIR__ . '/../config/memory_config.php';
+            require_once __DIR__ . '/memory_manager_inference.php';
+            
+            if (defined('QDRANT_URL') && defined('QDRANT_API_KEY')) {
+                try {
+                    $memoryOptions = [
+                        'default_model' => defined('MEMORY_DEFAULT_MODEL') ? MEMORY_DEFAULT_MODEL : 'sentence-transformers/all-MiniLM-L6-v2',
+                        'quality_model' => defined('MEMORY_QUALITY_MODEL') ? MEMORY_QUALITY_MODEL : 'mixedbread-ai/mxbai-embed-large-v1',
+                        'collection_prefix' => defined('MEMORY_COLLECTION_PREFIX') ? MEMORY_COLLECTION_PREFIX : 'aei_memories_'
+                    ];
+                    
+                    $memoryManager = new MemoryManagerInference(
+                        QDRANT_URL, 
+                        QDRANT_API_KEY, 
+                        $pdo,
+                        $memoryOptions
+                    );
+                    
+                    // Get relevant memories for current context
+                    $memoryContext = $memoryManager->getMemoryContext(
+                        $aei['id'], 
+                        $userMessage, 
+                        defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 5
+                    );
+                    
+                    if ($includeDebugData) {
+                        $debugData['memory_enabled'] = true;
+                        $debugData['memory_system'] = 'qdrant_inference_2025';
+                        $debugData['memory_models'] = [
+                            'default' => $memoryOptions['default_model'],
+                            'quality' => $memoryOptions['quality_model']
+                        ];
+                        $debugData['memory_context'] = $memoryContext;
+                    }
+                    
+                } catch (Exception $memoryError) {
+                    error_log("Memory system error: " . $memoryError->getMessage());
+                    if ($includeDebugData) {
+                        $debugData['memory_error'] = $memoryError->getMessage();
+                        $debugData['memory_system'] = 'failed_to_initialize';
+                    }
+                }
+            } else {
+                if ($includeDebugData) {
+                    $debugData['memory_enabled'] = false;
+                    $debugData['memory_error'] = 'Missing QDRANT_URL or QDRANT_API_KEY in config';
+                }
+            }
+        } else {
+            if ($includeDebugData) {
+                $debugData['memory_enabled'] = false;
+                $debugData['memory_note'] = 'Memory config not found - copy memory_config.example.php to memory_config.php';
+            }
+        }
+        
         // Get recent chat history (including the current message that was just saved)
         $chatHistory = getChatHistory($sessionId, 40);
         if ($includeDebugData) {
@@ -393,10 +453,10 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             }
         }
         
-        // Generate system prompt with emotional and social context
+        // Generate system prompt with emotional, social, and memory context
         $baseSystemPrompt = generateSystemPrompt($aei, $user, $sessionId);
         $emotionContext = $emotions->generateEmotionContext($currentEmotions);
-        $systemPrompt = $baseSystemPrompt . "\n\n" . $emotionContext;
+        $systemPrompt = $baseSystemPrompt . "\n\n" . $emotionContext . $memoryContext;
         
         if ($includeDebugData) {
             $debugData['base_system_prompt'] = $baseSystemPrompt;
@@ -465,6 +525,42 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             error_log("Emotion analysis error: " . $e->getMessage());
             if ($includeDebugData) {
                 $debugData['emotion_analysis_error'] = $e->getMessage();
+            }
+        }
+        
+        // Extract and store memories from the conversation
+        if ($memoryManager && defined('MEMORY_EXTRACTION_ENABLED') && MEMORY_EXTRACTION_ENABLED) {
+            try {
+                // Get recent conversation for memory extraction (last few messages including current)
+                $recentMessages = getChatHistory($sessionId, 6); // Get last 6 messages for context
+                
+                if (!empty($recentMessages)) {
+                    $extractedMemories = $memoryManager->extractMemoriesFromConversation(
+                        $aei['id'], 
+                        $recentMessages, 
+                        $user['id'], 
+                        $sessionId
+                    );
+                    
+                    if ($includeDebugData) {
+                        $debugData['memory_extraction'] = [
+                            'enabled' => true,
+                            'messages_analyzed' => count($recentMessages),
+                            'memories_extracted' => count($extractedMemories),
+                            'extracted_memories' => $extractedMemories
+                        ];
+                    }
+                    
+                    if (!empty($extractedMemories) && defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
+                        error_log("Memory extraction for AEI {$aei['id']}: " . count($extractedMemories) . " memories stored");
+                    }
+                }
+                
+            } catch (Exception $memoryError) {
+                error_log("Memory extraction error: " . $memoryError->getMessage());
+                if ($includeDebugData) {
+                    $debugData['memory_extraction_error'] = $memoryError->getMessage();
+                }
             }
         }
         

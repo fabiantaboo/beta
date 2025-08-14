@@ -16,9 +16,17 @@
       "Bash(php:*)",
       "Bash(git commit:*)",
       "Bash(dir)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "WebSearch",
+      "WebFetch(domain:qdrant.tech)",
+      "WebFetch(domain:huggingface.co)",
+      "WebFetch(domain:api.qdrant.tech)",
+      "WebFetch(domain:qdrant.github.io)"
     ],
     "deny": [],
-    "defaultMode": "acceptEdits"
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "C:\\c\\Users\\Shadow\\Documents"
+    ]
   }
 }

@@ -30,6 +30,7 @@ class Router {
             'admin/logs' => ['page' => 'admin-logs'],
             'admin/decay' => ['page' => 'admin-decay'],
             'admin/migration' => ['page' => 'admin-migration'],
+            'admin/memory-setup' => ['page' => 'memory-setup'],
             'dashboard' => ['page' => 'dashboard'],
             'create-aei' => ['page' => 'create-aei'],
             'chat' => ['page' => 'chat'],

@@ -734,6 +734,32 @@ function createTablesIfNotExist($pdo) {
             
             -- Unique constraint to prevent duplicate feedback
             UNIQUE KEY unique_user_message_feedback (user_id, message_id)
+        )",
+
+        // AEI Memory System - Long-term memory storage (2025 Qdrant Inference)
+        'aei_memories' => "CREATE TABLE IF NOT EXISTS aei_memories (
+            memory_id VARCHAR(32) PRIMARY KEY,
+            aei_id VARCHAR(32) NOT NULL,
+            user_id VARCHAR(32) NULL,
+            session_id VARCHAR(32) NULL,
+            memory_type ENUM('fact', 'event', 'emotion', 'preference', 'relationship', 'goal', 'concern') NOT NULL,
+            content TEXT NOT NULL,
+            importance_score DECIMAL(3,2) DEFAULT 0.5,
+            embedding_model VARCHAR(100) DEFAULT 'sentence-transformers/all-MiniLM-L6-v2',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            access_count INT DEFAULT 0,
+            
+            FOREIGN KEY (aei_id) REFERENCES aeis(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+            FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE SET NULL,
+            
+            -- Indexes for efficient querying
+            INDEX idx_aei_memories (aei_id, importance_score),
+            INDEX idx_memory_type (memory_type, created_at),
+            INDEX idx_memory_access (last_accessed, access_count),
+            INDEX idx_session_memories (session_id, created_at),
+            INDEX idx_embedding_model (embedding_model, created_at)
         )"
     ];
 
@@ -1294,6 +1320,42 @@ Be conversational, helpful, and maintain your unique personality. Keep responses
                 } catch (PDOException $e) {
                     error_log("Could not add proactive messages column $columnName: " . $e->getMessage());
                 }
+            }
+        }
+    } catch (PDOException $e) {
+        // Table might not exist yet, ignore
+    }
+    
+    // 15. Migrate aei_memories table for Qdrant Inference (2025)
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM aei_memories");
+        if ($stmt) {
+            $memoryColumns = array_column($stmt->fetchAll(), 'Field');
+            
+            $memoryMigrations = [
+                'embedding_model' => "ALTER TABLE aei_memories ADD COLUMN embedding_model VARCHAR(100) DEFAULT 'sentence-transformers/all-MiniLM-L6-v2' AFTER importance_score"
+            ];
+            
+            foreach ($memoryMigrations as $columnName => $alterSQL) {
+                if (!in_array($columnName, $memoryColumns)) {
+                    try {
+                        $pdo->exec($alterSQL);
+                        error_log("Added aei_memories column: $columnName");
+                    } catch (PDOException $e) {
+                        error_log("Could not add aei_memories column $columnName: " . $e->getMessage());
+                    }
+                }
+            }
+            
+            // Add index for embedding_model if it doesn't exist
+            try {
+                $stmt = $pdo->query("SHOW INDEX FROM aei_memories WHERE Key_name = 'idx_embedding_model'");
+                if (!$stmt->fetch()) {
+                    $pdo->exec("ALTER TABLE aei_memories ADD INDEX idx_embedding_model (embedding_model, created_at)");
+                    error_log("Added aei_memories index: idx_embedding_model");
+                }
+            } catch (PDOException $e) {
+                error_log("Could not add aei_memories index: " . $e->getMessage());
             }
         }
     } catch (PDOException $e) {
