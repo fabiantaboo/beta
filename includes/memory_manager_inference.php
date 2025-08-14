@@ -304,10 +304,10 @@ class MemoryManagerInference {
             $debugFunc("📊 Qdrant search result: " . json_encode($results));
             
             $memories = [];
-            if (isset($results['result']) && is_array($results['result'])) {
-                $debugFunc("✅ Found " . count($results['result']) . " potential results");
+            if (isset($results['result']['points']) && is_array($results['result']['points'])) {
+                $debugFunc("✅ Found " . count($results['result']['points']) . " potential results");
                 
-                foreach ($results['result'] as $index => $result) {
+                foreach ($results['result']['points'] as $index => $result) {
                     $debugFunc("📝 Processing result #$index: " . json_encode($result));
                     
                     $memories[] = [
