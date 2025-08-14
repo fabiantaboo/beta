@@ -365,6 +365,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
         $memoryContext = "";
         
         // DEBUG: Log memory system initialization attempt
+        error_log("MEMORY_DEBUG: === MEMORY SYSTEM INIT START ===");
         error_log("MEMORY_DEBUG: Checking memory config file...");
         
         if (file_exists(__DIR__ . '/../config/memory_config.php')) {
@@ -398,6 +399,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                         defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 6
                     );
                     error_log("MEMORY_DEBUG: Smart memory context retrieved: " . strlen($memoryContext) . " chars");
+                    error_log("MEMORY_DEBUG: Memory context content preview: " . substr($memoryContext, 0, 200));
                     
                     if ($includeDebugData) {
                         $debugData['memory_enabled'] = true;
@@ -426,11 +428,16 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             }
         } else {
             error_log("MEMORY_DEBUG: memory_config.php NOT FOUND at: " . __DIR__ . '/../config/memory_config.php');
+            error_log("MEMORY_DEBUG: === MEMORY SYSTEM DISABLED ===");
             if ($includeDebugData) {
                 $debugData['memory_enabled'] = false;
                 $debugData['memory_note'] = 'Memory config not found - copy memory_config.example.php to memory_config.php';
             }
         }
+        
+        error_log("MEMORY_DEBUG: === MEMORY SYSTEM FINAL STATUS ===");
+        error_log("MEMORY_DEBUG: Memory Manager: " . ($memoryManager ? 'INITIALIZED' : 'NULL'));
+        error_log("MEMORY_DEBUG: Memory Context Length: " . strlen($memoryContext) . " chars");
         
         // Get recent chat history (including the current message that was just saved)
         $chatHistory = getChatHistory($sessionId, 40);
