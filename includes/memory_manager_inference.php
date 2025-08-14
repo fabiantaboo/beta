@@ -128,9 +128,51 @@ class MemoryManagerInference {
     }
     
     /**
-     * Store memory with automatic embedding generation
+     * Store a chat message as memory with smart metadata
      */
-    public function storeMemory($aeiId, $memoryText, $memoryType, $importance = 0.5, $sessionId = null, $userId = null) {
+    public function storeChatMessage($aeiId, $message, $sender, $sessionId = null, $userId = null) {
+        // Calculate smart importance score
+        $importance = $this->calculateMessageImportance($message, $sender);
+        
+        // Smart metadata
+        $metadata = [
+            'sender' => $sender,
+            'session_id' => $sessionId,
+            'user_id' => $userId,
+            'timestamp' => time(),
+            'char_count' => strlen($message),
+            'has_question' => (strpos($message, '?') !== false),
+            'retrieval_count' => 0,
+            'message_type' => 'chat_message'
+        ];
+        
+        return $this->storeMemory($aeiId, $message, 'chat_message', $importance, $sessionId, $userId, $metadata);
+    }
+    
+    /**
+     * Calculate message importance based on simple rules
+     */
+    private function calculateMessageImportance($message, $sender) {
+        $importance = 0.5; // Base importance
+        
+        // Longer messages are more important
+        if (strlen($message) > 100) $importance += 0.2;
+        if (strlen($message) > 200) $importance += 0.1;
+        
+        // Questions are important
+        if (strpos($message, '?') !== false) $importance += 0.3;
+        
+        // User messages slightly more important
+        if ($sender === 'user') $importance += 0.1;
+        
+        // Cap at 1.0
+        return min(1.0, $importance);
+    }
+
+    /**
+     * Store memory with automatic embedding generation (Enhanced)
+     */
+    public function storeMemory($aeiId, $memoryText, $memoryType, $importance = 0.5, $sessionId = null, $userId = null, $customMetadata = []) {
         // Use debug callback if available, otherwise fall back to error_log
         $debugFunc = function($message, $type = 'info') {
             if ($this->debugCallback && is_callable($this->debugCallback)) {
@@ -155,8 +197,8 @@ class MemoryManagerInference {
             $model = $importance > 0.7 ? $this->qualityModel : $this->defaultModel;
             $debugFunc("🤖 Selected model: $model (importance: $importance)");
             
-            // Prepare metadata
-            $payload = [
+            // Prepare metadata (merge custom metadata)
+            $payload = array_merge([
                 'memory_id' => $memoryId,
                 'aei_id' => $aeiId,
                 'user_id' => $userId,
@@ -164,7 +206,7 @@ class MemoryManagerInference {
                 'memory_type' => $memoryType,
                 'importance' => $importance,
                 'model_used' => $model
-            ];
+            ], $customMetadata);
             $debugFunc("📦 Payload prepared: " . json_encode($payload));
             
             // Store with automatic embedding generation
@@ -348,6 +390,127 @@ class MemoryManagerInference {
     }
     
     /**
+     * Time-based memory retrieval with smart scoring
+     */
+    private function getTimeBasedMemories($aeiId, $query, $maxDays, $minSimilarity, $limit) {
+        $collectionName = $this->collectionPrefix . $aeiId;
+        $currentTime = time();
+        $cutoffTime = $currentTime - ($maxDays * 24 * 60 * 60);
+        
+        try {
+            // Build filter for time range
+            $filter = [
+                'must' => [
+                    ['key' => 'aei_id', 'match' => ['value' => $aeiId]]
+                ]
+            ];
+            
+            // Add time filter if not searching all time
+            if ($maxDays < 999) {
+                $filter['must'][] = [
+                    'key' => 'timestamp',
+                    'range' => ['gte' => $cutoffTime]
+                ];
+            }
+            
+            // Search with enhanced scoring
+            $results = $this->qdrantClient->searchWithText(
+                $collectionName,
+                $query,
+                $limit * 2, // Get more results for smart filtering
+                $this->qualityModel, // Use quality model for better retrieval
+                $filter
+            );
+            
+            $memories = [];
+            foreach ($results as $result) {
+                $similarity = $result['score'];
+                $payload = $result['payload'];
+                
+                // Calculate time-decay boost
+                $timestamp = $payload['timestamp'] ?? $currentTime;
+                $daysSince = ($currentTime - $timestamp) / 86400;
+                $recencyBoost = exp(-$daysSince / 10); // 10-day half-life
+                
+                // Calculate final score with recency boost
+                $finalScore = $similarity * $recencyBoost;
+                
+                // Apply minimum threshold
+                if ($finalScore >= $minSimilarity) {
+                    $memories[] = [
+                        'content' => $payload['original_text'] ?? 'Unknown content',
+                        'similarity_score' => $similarity,
+                        'final_score' => $finalScore,
+                        'recency_boost' => $recencyBoost,
+                        'timestamp' => $timestamp,
+                        'sender' => $payload['sender'] ?? 'unknown',
+                        'memory_id' => $payload['memory_id'] ?? 'unknown'
+                    ];
+                }
+            }
+            
+            // Sort by final score (similarity * recency)
+            usort($memories, function($a, $b) {
+                return $b['final_score'] <=> $a['final_score'];
+            });
+            
+            return array_slice($memories, 0, $limit);
+            
+        } catch (Exception $e) {
+            error_log("Error in time-based memory retrieval: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Remove duplicate memories based on content similarity
+     */
+    private function deduplicateMemories($memories) {
+        $unique = [];
+        $seen = [];
+        
+        foreach ($memories as $memory) {
+            $content = strtolower(trim($memory['content']));
+            $isDuplicate = false;
+            
+            foreach ($seen as $seenContent) {
+                if (similar_text($content, $seenContent, $percent) && $percent > 80) {
+                    $isDuplicate = true;
+                    break;
+                }
+            }
+            
+            if (!$isDuplicate) {
+                $unique[] = $memory;
+                $seen[] = $content;
+            }
+        }
+        
+        return $unique;
+    }
+    
+    /**
+     * Get human-readable time ago string
+     */
+    private function getTimeAgo($timestamp) {
+        $diff = time() - $timestamp;
+        
+        if ($diff < 3600) {
+            $minutes = max(1, floor($diff / 60));
+            return $minutes . "m ago";
+        } elseif ($diff < 86400) {
+            $hours = floor($diff / 3600);
+            return $hours . "h ago";
+        } elseif ($diff < 604800) {
+            $days = floor($diff / 86400);
+            return $days . "d ago";
+        } else {
+            $weeks = floor($diff / 604800);
+            return $weeks . "w ago";
+        }
+    }
+    
+    /**
      * Extract memories from conversation using AI (via existing Anthropic API)
      */
     public function extractMemoriesFromConversation($aeiId, $messages, $userId = null, $sessionId = null) {
@@ -445,7 +608,68 @@ $conversationText";
     }
     
     /**
-     * Get memory context for system prompt
+     * Get smart memory context with time-decay and multi-window retrieval
+     */
+    public function getSmartMemoryContext($aeiId, $currentMessage, $limit = 6) {
+        // AUTO-CREATE COLLECTION IF NOT EXISTS
+        try {
+            $collectionName = $this->initializeAEICollection($aeiId);
+            if ($this->debugCallback) {
+                call_user_func($this->debugCallback, "🏗️ Collection initialized: $collectionName", 'info');
+            }
+        } catch (Exception $e) {
+            if ($this->debugCallback) {
+                call_user_func($this->debugCallback, "❌ Failed to initialize collection for AEI $aeiId: " . $e->getMessage(), 'error');
+            }
+            error_log("Failed to initialize collection for AEI $aeiId: " . $e->getMessage());
+            return "";
+        }
+        
+        // Multi-window smart retrieval
+        $allMemories = [];
+        
+        // Window 1: Recent messages (1 day) - lower similarity threshold
+        $recent = $this->getTimeBasedMemories($aeiId, $currentMessage, 1, 0.4, 2);
+        if ($this->debugCallback) {
+            call_user_func($this->debugCallback, "📅 Found " . count($recent) . " recent memories (1 day)", 'info');
+        }
+        
+        // Window 2: Medium term (7 days) - medium similarity  
+        $medium = $this->getTimeBasedMemories($aeiId, $currentMessage, 7, 0.6, 2);
+        if ($this->debugCallback) {
+            call_user_func($this->debugCallback, "📆 Found " . count($medium) . " medium-term memories (7 days)", 'info');
+        }
+        
+        // Window 3: Long term (any time) - high similarity only
+        $longterm = $this->getTimeBasedMemories($aeiId, $currentMessage, 999, 0.8, 2);
+        if ($this->debugCallback) {
+            call_user_func($this->debugCallback, "🗄️ Found " . count($longterm) . " long-term memories (high similarity)", 'info');
+        }
+        
+        // Combine and deduplicate
+        $allMemories = array_merge($recent, $medium, $longterm);
+        $allMemories = $this->deduplicateMemories($allMemories);
+        
+        // Limit to requested amount
+        $allMemories = array_slice($allMemories, 0, $limit);
+        
+        if (empty($allMemories)) {
+            return "";
+        }
+        
+        $context = "\n\nRELEVANT CONVERSATION HISTORY (use naturally):\n";
+        
+        foreach ($allMemories as $memory) {
+            $timeAgo = $this->getTimeAgo($memory['timestamp'] ?? time());
+            $sender = $memory['sender'] ?? 'unknown';
+            $context .= "- [$timeAgo, $sender]: " . $memory['content'] . "\n";
+        }
+        
+        return $context;
+    }
+    
+    /**
+     * Legacy method for backward compatibility
      */
     public function getMemoryContext($aeiId, $currentMessage, $limit = 5) {
         // AUTO-CREATE COLLECTION IF NOT EXISTS

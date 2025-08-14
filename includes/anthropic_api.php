@@ -391,13 +391,13 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                     );
                     error_log("MEMORY_DEBUG: MemoryManager created successfully");
                     
-                    // Get relevant memories for current context
-                    $memoryContext = $memoryManager->getMemoryContext(
+                    // Get relevant memories with smart context retrieval
+                    $memoryContext = $memoryManager->getSmartMemoryContext(
                         $aei['id'], 
                         $userMessage, 
-                        defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 5
+                        defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 6
                     );
-                    error_log("MEMORY_DEBUG: Memory context retrieved: " . strlen($memoryContext) . " chars");
+                    error_log("MEMORY_DEBUG: Smart memory context retrieved: " . strlen($memoryContext) . " chars");
                     
                     if ($includeDebugData) {
                         $debugData['memory_enabled'] = true;
@@ -540,38 +540,48 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             }
         }
         
-        // Extract and store memories from the conversation
+        // Store chat messages directly as memories
         if ($memoryManager && defined('MEMORY_EXTRACTION_ENABLED') && MEMORY_EXTRACTION_ENABLED) {
             try {
-                // Get recent conversation for memory extraction (last few messages including current)
-                $recentMessages = getChatHistory($sessionId, 6); // Get last 6 messages for context
+                error_log("MEMORY_DEBUG: Storing chat messages as memories...");
                 
-                if (!empty($recentMessages)) {
-                    $extractedMemories = $memoryManager->extractMemoriesFromConversation(
-                        $aei['id'], 
-                        $recentMessages, 
-                        $user['id'], 
-                        $sessionId
-                    );
-                    
-                    if ($includeDebugData) {
-                        $debugData['memory_extraction'] = [
-                            'enabled' => true,
-                            'messages_analyzed' => count($recentMessages),
-                            'memories_extracted' => count($extractedMemories),
-                            'extracted_memories' => $extractedMemories
-                        ];
-                    }
-                    
-                    if (!empty($extractedMemories) && defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
-                        error_log("Memory extraction for AEI {$aei['id']}: " . count($extractedMemories) . " memories stored");
-                    }
+                // Store user message
+                $userMemoryId = $memoryManager->storeChatMessage(
+                    $aei['id'],
+                    $userMessage,
+                    'user',
+                    $sessionId,
+                    $user['id']
+                );
+                
+                // Store AEI response  
+                $aeiMemoryId = $memoryManager->storeChatMessage(
+                    $aei['id'],
+                    $response,
+                    'aei', 
+                    $sessionId,
+                    $user['id']
+                );
+                
+                if ($includeDebugData) {
+                    $debugData['memory_storage'] = [
+                        'enabled' => true,
+                        'user_message_stored' => $userMemoryId ? true : false,
+                        'aei_response_stored' => $aeiMemoryId ? true : false,
+                        'user_memory_id' => $userMemoryId,
+                        'aei_memory_id' => $aeiMemoryId,
+                        'storage_method' => 'direct_chat_messages'
+                    ];
+                }
+                
+                if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
+                    error_log("MEMORY_DEBUG: Stored chat messages - User: $userMemoryId, AEI: $aeiMemoryId");
                 }
                 
             } catch (Exception $memoryError) {
-                error_log("Memory extraction error: " . $memoryError->getMessage());
+                error_log("MEMORY_DEBUG: Memory storage error: " . $memoryError->getMessage());
                 if ($includeDebugData) {
-                    $debugData['memory_extraction_error'] = $memoryError->getMessage();
+                    $debugData['memory_storage_error'] = $memoryError->getMessage();
                 }
             }
         }
