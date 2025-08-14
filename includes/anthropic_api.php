@@ -540,25 +540,19 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             }
         }
         
-        // Store chat messages directly as memories
+        // Store Q&A pair as single memory
         if ($memoryManager && defined('MEMORY_EXTRACTION_ENABLED') && MEMORY_EXTRACTION_ENABLED) {
             try {
-                error_log("MEMORY_DEBUG: Storing chat messages as memories...");
+                error_log("MEMORY_DEBUG: Storing Q&A pair as memory...");
                 
-                // Store user message
-                $userMemoryId = $memoryManager->storeChatMessage(
-                    $aei['id'],
-                    $userMessage,
-                    'user',
-                    $sessionId,
-                    $user['id']
-                );
+                // Create Q&A pair format
+                $qaMemoryText = "User: " . $userMessage . "\n" . $aei['name'] . ": " . $response;
                 
-                // Store AEI response  
-                $aeiMemoryId = $memoryManager->storeChatMessage(
+                // Store as single conversation memory
+                $qaMemoryId = $memoryManager->storeChatMessage(
                     $aei['id'],
-                    $response,
-                    'aei', 
+                    $qaMemoryText,
+                    'conversation',
                     $sessionId,
                     $user['id']
                 );
@@ -566,16 +560,16 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                 if ($includeDebugData) {
                     $debugData['memory_storage'] = [
                         'enabled' => true,
-                        'user_message_stored' => $userMemoryId ? true : false,
-                        'aei_response_stored' => $aeiMemoryId ? true : false,
-                        'user_memory_id' => $userMemoryId,
-                        'aei_memory_id' => $aeiMemoryId,
-                        'storage_method' => 'direct_chat_messages'
+                        'qa_pair_stored' => $qaMemoryId ? true : false,
+                        'qa_memory_id' => $qaMemoryId,
+                        'qa_length' => strlen($qaMemoryText),
+                        'storage_method' => 'qa_pairs',
+                        'qa_preview' => substr($qaMemoryText, 0, 100) . '...'
                     ];
                 }
                 
                 if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
-                    error_log("MEMORY_DEBUG: Stored chat messages - User: $userMemoryId, AEI: $aeiMemoryId");
+                    error_log("MEMORY_DEBUG: Stored Q&A pair: $qaMemoryId (" . strlen($qaMemoryText) . " chars)");
                 }
                 
             } catch (Exception $memoryError) {

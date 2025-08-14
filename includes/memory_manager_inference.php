@@ -128,11 +128,14 @@ class MemoryManagerInference {
     }
     
     /**
-     * Store a chat message as memory with smart metadata
+     * Store a chat message or Q&A pair as memory with smart metadata
      */
     public function storeChatMessage($aeiId, $message, $sender, $sessionId = null, $userId = null) {
         // Calculate smart importance score
         $importance = $this->calculateMessageImportance($message, $sender);
+        
+        // Detect if it's a Q&A pair or single message
+        $isQaPair = ($sender === 'conversation' && strpos($message, "\n") !== false);
         
         // Smart metadata
         $metadata = [
@@ -143,10 +146,11 @@ class MemoryManagerInference {
             'char_count' => strlen($message),
             'has_question' => (strpos($message, '?') !== false),
             'retrieval_count' => 0,
-            'message_type' => 'chat_message'
+            'message_type' => $isQaPair ? 'qa_pair' : 'chat_message',
+            'is_qa_pair' => $isQaPair
         ];
         
-        return $this->storeMemory($aeiId, $message, 'chat_message', $importance, $sessionId, $userId, $metadata);
+        return $this->storeMemory($aeiId, $message, $isQaPair ? 'qa_pair' : 'chat_message', $importance, $sessionId, $userId, $metadata);
     }
     
     /**
@@ -155,14 +159,20 @@ class MemoryManagerInference {
     private function calculateMessageImportance($message, $sender) {
         $importance = 0.5; // Base importance
         
+        // Q&A pairs are more important than single messages
+        if ($sender === 'conversation') {
+            $importance += 0.3; // Q&A pairs get bonus
+        }
+        
         // Longer messages are more important
         if (strlen($message) > 100) $importance += 0.2;
         if (strlen($message) > 200) $importance += 0.1;
+        if (strlen($message) > 300) $importance += 0.1; // Extra boost for long Q&A pairs
         
         // Questions are important
         if (strpos($message, '?') !== false) $importance += 0.3;
         
-        // User messages slightly more important
+        // User messages slightly more important (but Q&A pairs are better)
         if ($sender === 'user') $importance += 0.1;
         
         // Cap at 1.0
@@ -444,7 +454,9 @@ class MemoryManagerInference {
                         'recency_boost' => $recencyBoost,
                         'timestamp' => $timestamp,
                         'sender' => $payload['sender'] ?? 'unknown',
-                        'memory_id' => $payload['memory_id'] ?? 'unknown'
+                        'memory_id' => $payload['memory_id'] ?? 'unknown',
+                        'is_qa_pair' => $payload['is_qa_pair'] ?? false,
+                        'message_type' => $payload['message_type'] ?? 'unknown'
                     ];
                 }
             }
@@ -661,8 +673,16 @@ $conversationText";
         
         foreach ($allMemories as $memory) {
             $timeAgo = $this->getTimeAgo($memory['timestamp'] ?? time());
-            $sender = $memory['sender'] ?? 'unknown';
-            $context .= "- [$timeAgo, $sender]: " . $memory['content'] . "\n";
+            $isQaPair = isset($memory['is_qa_pair']) && $memory['is_qa_pair'];
+            
+            if ($isQaPair) {
+                // Q&A pairs display differently
+                $context .= "[$timeAgo]\n" . $memory['content'] . "\n\n";
+            } else {
+                // Single messages 
+                $sender = $memory['sender'] ?? 'unknown';
+                $context .= "- [$timeAgo, $sender]: " . $memory['content'] . "\n";
+            }
         }
         
         return $context;
