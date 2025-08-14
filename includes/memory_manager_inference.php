@@ -427,37 +427,39 @@ class MemoryManagerInference {
             $results = $this->qdrantClient->searchWithText(
                 $collectionName,
                 $query,
-                $limit * 2, // Get more results for smart filtering
                 $this->qualityModel, // Use quality model for better retrieval
+                $limit * 2, // Get more results for smart filtering
                 $filter
             );
             
             $memories = [];
-            foreach ($results as $result) {
-                $similarity = $result['score'];
-                $payload = $result['payload'];
-                
-                // Calculate time-decay boost
-                $timestamp = $payload['timestamp'] ?? $currentTime;
-                $daysSince = ($currentTime - $timestamp) / 86400;
-                $recencyBoost = exp(-$daysSince / 10); // 10-day half-life
-                
-                // Calculate final score with recency boost
-                $finalScore = $similarity * $recencyBoost;
-                
-                // Apply minimum threshold
-                if ($finalScore >= $minSimilarity) {
-                    $memories[] = [
-                        'content' => $payload['original_text'] ?? 'Unknown content',
-                        'similarity_score' => $similarity,
-                        'final_score' => $finalScore,
-                        'recency_boost' => $recencyBoost,
-                        'timestamp' => $timestamp,
-                        'sender' => $payload['sender'] ?? 'unknown',
-                        'memory_id' => $payload['memory_id'] ?? 'unknown',
-                        'is_qa_pair' => $payload['is_qa_pair'] ?? false,
-                        'message_type' => $payload['message_type'] ?? 'unknown'
-                    ];
+            if (isset($results['result']['points']) && is_array($results['result']['points'])) {
+                foreach ($results['result']['points'] as $result) {
+                    $similarity = $result['score'];
+                    $payload = $result['payload'];
+                    
+                    // Calculate time-decay boost
+                    $timestamp = $payload['timestamp'] ?? $currentTime;
+                    $daysSince = ($currentTime - $timestamp) / 86400;
+                    $recencyBoost = exp(-$daysSince / 10); // 10-day half-life
+                    
+                    // Calculate final score with recency boost
+                    $finalScore = $similarity * $recencyBoost;
+                    
+                    // Apply minimum threshold
+                    if ($finalScore >= $minSimilarity) {
+                        $memories[] = [
+                            'content' => $payload['original_text'] ?? 'Unknown content',
+                            'similarity_score' => $similarity,
+                            'final_score' => $finalScore,
+                            'recency_boost' => $recencyBoost,
+                            'timestamp' => $timestamp,
+                            'sender' => $payload['sender'] ?? 'unknown',
+                            'memory_id' => $payload['memory_id'] ?? 'unknown',
+                            'is_qa_pair' => $payload['is_qa_pair'] ?? false,
+                            'message_type' => $payload['message_type'] ?? 'unknown'
+                        ];
+                    }
                 }
             }
             
