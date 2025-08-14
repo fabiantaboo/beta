@@ -64,11 +64,17 @@ class MemoryManagerInference {
      */
     public function storeMemory($aeiId, $memoryText, $memoryType, $importance = 0.5, $sessionId = null, $userId = null) {
         try {
+            error_log("[MEMORY_DEBUG] storeMemory() called with AEI: $aeiId, TextLength: " . strlen($memoryText) . ", Type: $memoryType);
+            
             $memoryId = bin2hex(random_bytes(16));
+            error_log("[MEMORY_DEBUG] Generated memory ID: $memoryId");
+            
             $collectionName = $this->initializeAEICollection($aeiId);
+            error_log("[MEMORY_DEBUG] Collection name: $collectionName");
             
             // Select model based on importance
             $model = $importance > 0.7 ? $this->qualityModel : $this->defaultModel;
+            error_log("[MEMORY_DEBUG] Selected model: $model (importance: $importance)");
             
             // Prepare metadata
             $payload = [
@@ -80,6 +86,7 @@ class MemoryManagerInference {
                 'importance' => $importance,
                 'model_used' => $model
             ];
+            error_log("[MEMORY_DEBUG] Payload prepared: " . json_encode($payload));
             
             // Store with automatic embedding generation
             error_log("[MEMORY_DEBUG] Attempting to store memory in Qdrant: Collection=$collectionName, ID=$memoryId, Model=$model, TextLength=" . strlen($memoryText));
@@ -93,8 +100,15 @@ class MemoryManagerInference {
                     $model
                 );
                 error_log("[MEMORY_DEBUG] Qdrant storage result: " . json_encode($result));
+                
+                // Check if Qdrant storage was successful
+                if (!$result || (isset($result['status']) && $result['status'] !== 'ok')) {
+                    throw new Exception("Qdrant storage failed: " . json_encode($result));
+                }
+                
             } catch (Exception $qdrantError) {
                 error_log("[MEMORY_DEBUG] Qdrant storage FAILED: " . $qdrantError->getMessage());
+                error_log("[MEMORY_DEBUG] Qdrant error trace: " . $qdrantError->getTraceAsString());
                 throw $qdrantError;
             }
             
@@ -108,15 +122,26 @@ class MemoryManagerInference {
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 0)
                 ");
                 
-                $stmt->execute([
+                $executeResult = $stmt->execute([
                     $memoryId, $aeiId, $memoryType, $memoryText, $importance,
                     $sessionId, $userId, $model
                 ]);
-                error_log("[MEMORY_DEBUG] MySQL storage completed successfully");
+                
+                if (!$executeResult) {
+                    $errorInfo = $stmt->errorInfo();
+                    throw new Exception("MySQL execute failed: " . json_encode($errorInfo));
+                }
+                
+                $rowCount = $stmt->rowCount();
+                error_log("[MEMORY_DEBUG] MySQL storage completed successfully. Rows affected: $rowCount");
+                
             } catch (Exception $mysqlError) {
                 error_log("[MEMORY_DEBUG] MySQL storage FAILED: " . $mysqlError->getMessage());
+                error_log("[MEMORY_DEBUG] MySQL error trace: " . $mysqlError->getTraceAsString());
                 throw $mysqlError;
             }
+            
+            error_log("[MEMORY_DEBUG] Memory storage SUCCESSFUL - returning ID: $memoryId");
             
             if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
                 error_log("Memory stored: $memoryId (model: $model, importance: $importance)");
@@ -125,9 +150,10 @@ class MemoryManagerInference {
             return $memoryId;
             
         } catch (Exception $e) {
-            error_log("Failed to store memory: " . $e->getMessage());
-            error_log("Memory storage error details: AEI ID: $aeiId, Text length: " . strlen($memoryText) . ", Type: $memoryType, Importance: $importance");
-            error_log("Stack trace: " . $e->getTraceAsString());
+            error_log("[MEMORY_DEBUG] EXCEPTION in storeMemory(): " . $e->getMessage());
+            error_log("[MEMORY_DEBUG] Exception file: " . $e->getFile() . ":" . $e->getLine());
+            error_log("[MEMORY_DEBUG] Memory storage error details: AEI ID: $aeiId, Text length: " . strlen($memoryText) . ", Type: $memoryType, Importance: $importance");
+            error_log("[MEMORY_DEBUG] Full stack trace: " . $e->getTraceAsString());
             return false;
         }
     }

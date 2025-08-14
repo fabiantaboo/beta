@@ -198,9 +198,24 @@ function testMemoryConnection() {
 
 function runMemorySetup() {
     global $debugLog;
+    $errors = [];
+    
+    // Set up custom error handler to capture all PHP errors/warnings
+    set_error_handler(function($errno, $errstr, $errfile, $errline) use (&$errors) {
+        $errors[] = [
+            'type' => 'PHP Error',
+            'errno' => $errno,
+            'message' => $errstr,
+            'file' => $errfile,
+            'line' => $errline
+        ];
+        addDebugLog("🔴 PHP Error [$errno]: $errstr in $errfile:$errline", 'error');
+        return false; // Don't interfere with normal error handling
+    });
     
     try {
         addDebugLog("🚀 Starting Memory Setup Test", 'info');
+        addDebugLog("🛡️ Custom error handler installed", 'info');
     } catch (Exception $logError) {
         // If even debug logging fails, add error directly
         $debugLog[] = [
@@ -247,6 +262,10 @@ function runMemorySetup() {
         addDebugLog("💾 Starting memory storage test...", 'info');
         try {
             addDebugLog("📝 Calling storeMemory() with test data", 'info');
+            
+            // Start output buffering to capture error_log output
+            ob_start();
+            
             $testMemoryId = $memoryManager->storeMemory(
                 $testAei['id'],
                 'Test memory for setup validation - system working correctly',
@@ -254,16 +273,37 @@ function runMemorySetup() {
                 0.8
             );
             
+            // Get any captured output
+            $capturedOutput = ob_get_clean();
+            if ($capturedOutput) {
+                addDebugLog("🔍 Captured debug output: " . $capturedOutput, 'info');
+            }
+            
             if (!$testMemoryId) {
                 addDebugLog("❌ storeMemory() returned false", 'error');
+                
+                // Get recent error logs for debugging
+                $recentLogs = getRecentErrorLogs(20);
+                $debugInfo = [
+                    'aei_id' => $testAei['id'],
+                    'memory_options' => $memoryOptions,
+                    'last_php_error' => error_get_last(),
+                    'captured_output' => $capturedOutput
+                ];
+                
+                // Add recent error logs if available
+                if (!empty($recentLogs)) {
+                    addDebugLog("📜 Found recent error logs, adding to debug info", 'info');
+                    $debugInfo['error_logs'] = $recentLogs;
+                } else {
+                    addDebugLog("⚠️ No accessible error logs found", 'warning');
+                }
+                
                 return [
                     'error' => 'Memory storage test failed - storeMemory returned false',
                     'debug_log' => $debugLog,
-                    'debug_info' => [
-                        'aei_id' => $testAei['id'],
-                        'memory_options' => $memoryOptions,
-                        'last_php_error' => error_get_last()
-                    ]
+                    'debug_info' => $debugInfo,
+                    'error_logs' => $recentLogs
                 ];
             }
             addDebugLog("✅ Memory stored successfully with ID: " . $testMemoryId, 'success');
@@ -311,6 +351,10 @@ function runMemorySetup() {
         
         addDebugLog("🎉 All tests completed successfully!", 'success');
         
+        // Restore original error handler
+        restore_error_handler();
+        addDebugLog("🛡️ Error handler restored", 'info');
+        
         return [
             'success' => 'Memory system setup completed successfully!',
             'details' => [
@@ -326,11 +370,15 @@ function runMemorySetup() {
             'debug_info' => [
                 'memory_options' => $memoryOptions,
                 'retrieved_memory' => $memories[0],
-                'cleanup_attempted' => 'Yes'
+                'cleanup_attempted' => 'Yes',
+                'php_errors_caught' => $errors
             ]
         ];
         
     } catch (Exception $e) {
+        // Restore error handler even in case of exception
+        restore_error_handler();
+        
         addDebugLog("💥 CRITICAL ERROR: " . $e->getMessage(), 'error');
         addDebugLog("🔍 Exception trace: " . $e->getTraceAsString(), 'error');
         return [
@@ -338,7 +386,8 @@ function runMemorySetup() {
             'debug_log' => $debugLog,
             'debug_info' => [
                 'exception_message' => $e->getMessage(),
-                'exception_trace' => $e->getTraceAsString()
+                'exception_trace' => $e->getTraceAsString(),
+                'php_errors_caught' => $errors
             ]
         ];
     }
