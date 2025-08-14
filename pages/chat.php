@@ -1833,12 +1833,20 @@ function getFeedbackButtons(message) {
 }
 
 async function loadOlderMessages() {
-    if (isLoading) return;
+    console.log('loadOlderMessages called');
+    alert('Load More clicked! Check console for details.');
+    
+    if (isLoading) {
+        console.log('Already loading, returning');
+        return;
+    }
     
     isLoading = true;
     const loadBtn = document.getElementById('load-more-btn');
     const loadText = document.getElementById('load-more-text');
     const loadSpinner = document.getElementById('load-more-loading');
+    
+    console.log('Elements found:', { loadBtn, loadText, loadSpinner });
     
     // Show loading state
     loadText.classList.add('hidden');
@@ -1846,23 +1854,32 @@ async function loadOlderMessages() {
     loadBtn.disabled = true;
     
     try {
+        const requestBody = {
+            session_id: sessionId,
+            offset: currentOffset,
+            limit: 20
+        };
+        
+        console.log('Making API request:', requestBody);
+        
         const response = await fetch('/api/load-messages.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                session_id: sessionId,
-                offset: currentOffset,
-                limit: 20
-            })
+            body: JSON.stringify(requestBody)
         });
         
+        console.log('Response received:', response.status, response.statusText);
+        
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error Response:', errorText);
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
+        console.log('API Response Data:', data);
         
         if (!data.success) {
             throw new Error(data.error || 'Failed to load messages');
