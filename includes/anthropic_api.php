@@ -396,7 +396,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                     $memoryContext = $memoryManager->getSmartMemoryContext(
                         $aei['id'], 
                         $userMessage, 
-                        defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 6
+                        defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 20
                     );
                     error_log("MEMORY_DEBUG: Smart memory context retrieved: " . strlen($memoryContext) . " chars");
                     error_log("MEMORY_DEBUG: Memory context content preview: " . substr($memoryContext, 0, 200));

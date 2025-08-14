@@ -661,19 +661,19 @@ $conversationText";
         $allMemories = [];
         
         // Window 1: Recent messages (1 day) - lower similarity threshold
-        $recent = $this->getTimeBasedMemories($aeiId, $currentMessage, 1, 0.4, 2);
+        $recent = $this->getTimeBasedMemories($aeiId, $currentMessage, 1, 0.4, 8);
         if ($this->debugCallback) {
             call_user_func($this->debugCallback, "📅 Found " . count($recent) . " recent memories (1 day)", 'info');
         }
         
         // Window 2: Medium term (7 days) - medium similarity  
-        $medium = $this->getTimeBasedMemories($aeiId, $currentMessage, 7, 0.6, 2);
+        $medium = $this->getTimeBasedMemories($aeiId, $currentMessage, 7, 0.6, 8);
         if ($this->debugCallback) {
             call_user_func($this->debugCallback, "📆 Found " . count($medium) . " medium-term memories (7 days)", 'info');
         }
         
         // Window 3: Long term (any time) - high similarity only
-        $longterm = $this->getTimeBasedMemories($aeiId, $currentMessage, 999, 0.8, 2);
+        $longterm = $this->getTimeBasedMemories($aeiId, $currentMessage, 999, 0.8, 8);
         if ($this->debugCallback) {
             call_user_func($this->debugCallback, "🗄️ Found " . count($longterm) . " long-term memories (high similarity)", 'info');
         }
