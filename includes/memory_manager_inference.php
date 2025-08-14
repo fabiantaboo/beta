@@ -12,6 +12,7 @@ class MemoryManagerInference {
     private $defaultModel;
     private $qualityModel;
     private $collectionPrefix;
+    private $debugCallback;
     
     // Model selection based on importance
     const MODEL_FAST = 'sentence-transformers/all-MiniLM-L6-v2';      // 384d
@@ -24,12 +25,20 @@ class MemoryManagerInference {
         $this->defaultModel = $options['default_model'] ?? self::MODEL_FAST;
         $this->qualityModel = $options['quality_model'] ?? self::MODEL_QUALITY;
         $this->collectionPrefix = $options['collection_prefix'] ?? 'aei_memories_';
+        $this->debugCallback = null;
         
         // Test connection
         $health = $this->qdrantClient->healthCheck();
         if ($health['status'] !== 'healthy') {
             throw new Exception("Qdrant connection failed: " . ($health['error'] ?? 'Unknown error'));
         }
+    }
+    
+    /**
+     * Set debug callback for detailed logging
+     */
+    public function setDebugCallback($callback) {
+        $this->debugCallback = $callback;
     }
     
     /**
@@ -63,18 +72,29 @@ class MemoryManagerInference {
      * Store memory with automatic embedding generation
      */
     public function storeMemory($aeiId, $memoryText, $memoryType, $importance = 0.5, $sessionId = null, $userId = null) {
+        // Use debug callback if available, otherwise fall back to error_log
+        $debugFunc = function($message, $type = 'info') {
+            if ($this->debugCallback && is_callable($this->debugCallback)) {
+                call_user_func($this->debugCallback, $message, $type);
+            } elseif (function_exists('addDebugLog')) {
+                addDebugLog($message, $type);
+            } else {
+                error_log("[MEMORY_DEBUG] $message");
+            }
+        };
+        
         try {
-            error_log("[MEMORY_DEBUG] storeMemory() called with AEI: $aeiId, TextLength: " . strlen($memoryText) . ", Type: $memoryType");
+            $debugFunc("🔧 storeMemory() called with AEI: $aeiId, TextLength: " . strlen($memoryText) . ", Type: $memoryType");
             
             $memoryId = bin2hex(random_bytes(16));
-            error_log("[MEMORY_DEBUG] Generated memory ID: $memoryId");
+            $debugFunc("🆔 Generated memory ID: $memoryId");
             
             $collectionName = $this->initializeAEICollection($aeiId);
-            error_log("[MEMORY_DEBUG] Collection name: $collectionName");
+            $debugFunc("📁 Collection name: $collectionName");
             
             // Select model based on importance
             $model = $importance > 0.7 ? $this->qualityModel : $this->defaultModel;
-            error_log("[MEMORY_DEBUG] Selected model: $model (importance: $importance)");
+            $debugFunc("🤖 Selected model: $model (importance: $importance)");
             
             // Prepare metadata
             $payload = [
@@ -86,10 +106,10 @@ class MemoryManagerInference {
                 'importance' => $importance,
                 'model_used' => $model
             ];
-            error_log("[MEMORY_DEBUG] Payload prepared: " . json_encode($payload));
+            $debugFunc("📦 Payload prepared: " . json_encode($payload));
             
             // Store with automatic embedding generation
-            error_log("[MEMORY_DEBUG] Attempting to store memory in Qdrant: Collection=$collectionName, ID=$memoryId, Model=$model, TextLength=" . strlen($memoryText));
+            $debugFunc("📡 Attempting to store memory in Qdrant: Collection=$collectionName, ID=$memoryId, Model=$model");
             
             try {
                 $result = $this->qdrantClient->storeTextWithEmbedding(
@@ -99,7 +119,7 @@ class MemoryManagerInference {
                     $payload,
                     $model
                 );
-                error_log("[MEMORY_DEBUG] Qdrant storage result: " . json_encode($result));
+                $debugFunc("✅ Qdrant storage result: " . json_encode($result));
                 
                 // Check if Qdrant storage was successful
                 if (!$result || (isset($result['status']) && $result['status'] !== 'ok')) {
@@ -107,13 +127,13 @@ class MemoryManagerInference {
                 }
                 
             } catch (Exception $qdrantError) {
-                error_log("[MEMORY_DEBUG] Qdrant storage FAILED: " . $qdrantError->getMessage());
-                error_log("[MEMORY_DEBUG] Qdrant error trace: " . $qdrantError->getTraceAsString());
+                $debugFunc("❌ Qdrant storage FAILED: " . $qdrantError->getMessage());
+                $debugFunc("🔍 Qdrant error trace: " . $qdrantError->getTraceAsString());
                 throw $qdrantError;
             }
             
             // Store metadata in MySQL for additional queries
-            error_log("[MEMORY_DEBUG] Storing memory metadata in MySQL");
+            $debugFunc("💾 Storing memory metadata in MySQL");
             try {
                 $stmt = $this->pdo->prepare("
                     INSERT INTO aei_memories (
@@ -133,15 +153,15 @@ class MemoryManagerInference {
                 }
                 
                 $rowCount = $stmt->rowCount();
-                error_log("[MEMORY_DEBUG] MySQL storage completed successfully. Rows affected: $rowCount");
+                $debugFunc("✅ MySQL storage completed successfully. Rows affected: $rowCount");
                 
             } catch (Exception $mysqlError) {
-                error_log("[MEMORY_DEBUG] MySQL storage FAILED: " . $mysqlError->getMessage());
-                error_log("[MEMORY_DEBUG] MySQL error trace: " . $mysqlError->getTraceAsString());
+                $debugFunc("❌ MySQL storage FAILED: " . $mysqlError->getMessage());
+                $debugFunc("🔍 MySQL error trace: " . $mysqlError->getTraceAsString());
                 throw $mysqlError;
             }
             
-            error_log("[MEMORY_DEBUG] Memory storage SUCCESSFUL - returning ID: $memoryId");
+            $debugFunc("🎉 Memory storage SUCCESSFUL - returning ID: $memoryId");
             
             if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
                 error_log("Memory stored: $memoryId (model: $model, importance: $importance)");
@@ -150,10 +170,10 @@ class MemoryManagerInference {
             return $memoryId;
             
         } catch (Exception $e) {
-            error_log("[MEMORY_DEBUG] EXCEPTION in storeMemory(): " . $e->getMessage());
-            error_log("[MEMORY_DEBUG] Exception file: " . $e->getFile() . ":" . $e->getLine());
-            error_log("[MEMORY_DEBUG] Memory storage error details: AEI ID: $aeiId, Text length: " . strlen($memoryText) . ", Type: $memoryType, Importance: $importance");
-            error_log("[MEMORY_DEBUG] Full stack trace: " . $e->getTraceAsString());
+            $debugFunc("💥 EXCEPTION in storeMemory(): " . $e->getMessage());
+            $debugFunc("📍 Exception file: " . $e->getFile() . ":" . $e->getLine());
+            $debugFunc("📋 Memory storage error details: AEI ID: $aeiId, Text length: " . strlen($memoryText) . ", Type: $memoryType, Importance: $importance");
+            $debugFunc("📜 Full stack trace: " . $e->getTraceAsString());
             return false;
         }
     }

@@ -247,6 +247,16 @@ function runMemorySetup() {
         $memoryManager = new MemoryManagerInference(QDRANT_URL, QDRANT_API_KEY, $pdo, $memoryOptions);
         addDebugLog("✅ Memory Manager initialized successfully", 'success');
         
+        // Test if storeMemory can access our debug function
+        addDebugLog("🧪 Testing debug function access from storeMemory...", 'info');
+        
+        // Make addDebugLog globally accessible
+        $GLOBALS['debugLog'] = &$debugLog;
+        function addDebugLogGlobal($message, $type = 'info') {
+            global $debugLog;
+            addDebugLog($message, $type);
+        }
+        
         // Test with first available AEI
         addDebugLog("👤 Looking for test AEI...", 'info');
         $stmt = $pdo->query("SELECT id, name FROM aeis WHERE is_active = TRUE LIMIT 1");
@@ -263,8 +273,20 @@ function runMemorySetup() {
         try {
             addDebugLog("📝 Calling storeMemory() with test data", 'info');
             
+            // Create a debug callback function
+            $debugCallback = function($message, $type = 'info') {
+                addDebugLog($message, $type);
+            };
+            
             // Start output buffering to capture error_log output
             ob_start();
+            
+            // Add debug callback to memory manager
+            if (method_exists($memoryManager, 'setDebugCallback')) {
+                $memoryManager->setDebugCallback($debugCallback);
+            }
+            
+            addDebugLog("🎬 About to call storeMemory with debug callback", 'info');
             
             $testMemoryId = $memoryManager->storeMemory(
                 $testAei['id'],
@@ -272,6 +294,8 @@ function runMemorySetup() {
                 'fact',
                 0.8
             );
+            
+            addDebugLog("🔄 storeMemory call completed, result: " . ($testMemoryId ? $testMemoryId : 'false'), 'info');
             
             // Get any captured output
             $capturedOutput = ob_get_clean();
