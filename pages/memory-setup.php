@@ -46,6 +46,13 @@ function testMemoryConnection() {
             return ['error' => 'Missing QDRANT_URL or QDRANT_API_KEY in config'];
         }
         
+        // Debug info
+        $debugInfo = [
+            'qdrant_url' => defined('QDRANT_URL') ? 'Set' : 'Missing',
+            'qdrant_api_key' => defined('QDRANT_API_KEY') ? 'Set' : 'Missing',
+            'config_file' => file_exists(__DIR__ . '/../config/memory_config.php') ? 'Exists' : 'Missing'
+        ];
+        
         global $pdo;
         $memoryOptions = [
             'default_model' => defined('MEMORY_DEFAULT_MODEL') ? MEMORY_DEFAULT_MODEL : 'sentence-transformers/all-MiniLM-L6-v2',
@@ -101,33 +108,46 @@ function runMemorySetup() {
         }
         
         // Test memory storage
-        $testMemoryId = $memoryManager->storeMemory(
-            $testAei['id'],
-            'Test memory for setup validation - system working correctly',
-            'fact',
-            0.8
-        );
-        
-        if (!$testMemoryId) {
-            return ['error' => 'Memory storage test failed'];
+        try {
+            $testMemoryId = $memoryManager->storeMemory(
+                $testAei['id'],
+                'Test memory for setup validation - system working correctly',
+                'fact',
+                0.8
+            );
+            
+            if (!$testMemoryId) {
+                return ['error' => 'Memory storage test failed - storeMemory returned false'];
+            }
+        } catch (Exception $e) {
+            return ['error' => 'Memory storage test failed: ' . $e->getMessage()];
         }
         
         // Test memory retrieval  
-        $memories = $memoryManager->retrieveMemories($testAei['id'], 'test memory setup validation', 1);
-        
-        if (empty($memories) || $memories[0]['memory_id'] !== $testMemoryId) {
-            return ['error' => 'Memory retrieval test failed'];
+        try {
+            $memories = $memoryManager->retrieveMemories($testAei['id'], 'test memory setup validation', 1);
+            
+            if (empty($memories)) {
+                return ['error' => 'Memory retrieval test failed - no memories found'];
+            }
+            
+            if ($memories[0]['memory_id'] !== $testMemoryId) {
+                return ['error' => 'Memory retrieval test failed - wrong memory returned (expected: ' . $testMemoryId . ', got: ' . $memories[0]['memory_id'] . ')'];
+            }
+        } catch (Exception $e) {
+            return ['error' => 'Memory retrieval test failed: ' . $e->getMessage()];
         }
         
         // Cleanup test memory
-        $stmt = $pdo->prepare("DELETE FROM aei_memories WHERE memory_id = ?");
-        $stmt->execute([$testMemoryId]);
-        
         try {
+            $stmt = $pdo->prepare("DELETE FROM aei_memories WHERE memory_id = ?");
+            $stmt->execute([$testMemoryId]);
+            
             $qdrantClient = new QdrantInferenceClient(QDRANT_URL, QDRANT_API_KEY);
             $qdrantClient->deletePoints($memoryOptions['collection_prefix'] . $testAei['id'], [$testMemoryId]);
         } catch (Exception $e) {
-            // Ignore cleanup errors
+            // Ignore cleanup errors - test was successful, cleanup is optional
+            error_log("Test memory cleanup failed: " . $e->getMessage());
         }
         
         return [
