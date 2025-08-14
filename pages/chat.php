@@ -1894,7 +1894,7 @@ async function loadOlderMessages() {
         data.messages.forEach((message) => {
             const messageElement = document.createElement('div');
             messageElement.innerHTML = createMessageElement(message);
-            messageElement.className = 'space-y-4'; // Match existing spacing
+            // No extra className needed - parent container has space-y-4
             fragment.appendChild(messageElement);
         });
 
