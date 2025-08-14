@@ -26,6 +26,26 @@ function getRelativeTimeDescription($timestamp) {
     }
 }
 
+function removeTimestampsFromResponse($response) {
+    // Remove timestamp patterns like [2024-01-15 14:23:15] or [2024-01-15 14:23:15 - 2 minutes ago]
+    $timestampPattern = '/^\s*\[[\d\-\s:]+(?:\s*-\s*[^\]]+)?\]\s*/';
+    
+    // Split response into lines and process each
+    $lines = explode("\n", $response);
+    $cleanedLines = [];
+    
+    foreach ($lines as $line) {
+        // Remove timestamp from beginning of line
+        $cleanedLine = preg_replace($timestampPattern, '', $line);
+        $cleanedLines[] = $cleanedLine;
+    }
+    
+    // Rejoin and trim any leading/trailing whitespace
+    $cleanedResponse = trim(implode("\n", $cleanedLines));
+    
+    return $cleanedResponse;
+}
+
 function getAnthropicApiKey() {
     global $pdo;
     try {
@@ -196,7 +216,12 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         throw new Exception("Invalid API response format");
     }
     
-    return $data['content'][0]['text'];
+    $responseText = $data['content'][0]['text'];
+    
+    // Remove any accidental timestamps from AI response
+    $responseText = removeTimestampsFromResponse($responseText);
+    
+    return $responseText;
 }
 
 function getChatHistory($sessionId, $limit = 40) {
