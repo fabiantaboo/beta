@@ -204,31 +204,110 @@ if (session_status() === PHP_SESSION_NONE) {
             });
         }
 
-        // PWA Install Prompt
+        // PWA Install Prompt - Smart Detection
         let deferredPrompt;
+        
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+        
+        function isPWA() {
+            return (window.matchMedia('(display-mode: standalone)').matches) || 
+                   (window.navigator.standalone === true) || 
+                   document.referrer.includes('android-app://');
+        }
+        
+        function hasBeenDismissed() {
+            return localStorage.getItem('ayuni-pwa-dismissed') === 'true';
+        }
         
         window.addEventListener('beforeinstallprompt', (e) => {
             console.log('Ayuni PWA: Install prompt triggered');
             e.preventDefault();
             deferredPrompt = e;
             
-            // Show install button/banner if desired
-            showInstallBanner();
+            // Only show banner on mobile, not in PWA, and not if dismissed
+            if (isMobile() && !isPWA() && !hasBeenDismissed()) {
+                showInstallBanner();
+            }
+        });
+        
+        // Also check on page load for mobile users
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (isMobile() && !isPWA() && !hasBeenDismissed() && !deferredPrompt) {
+                    showFallbackInstallBanner();
+                }
+            }, 3000); // Show after 3 seconds if no install prompt
         });
         
         function showInstallBanner() {
-            // Optional: Add install banner to UI
             const installBanner = document.createElement('div');
+            installBanner.id = 'ayuni-install-banner';
             installBanner.innerHTML = `
-                <div style="position: fixed; bottom: 20px; right: 20px; background: #39D2DF; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; font-family: Inter, sans-serif;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span>📱 Install Ayuni App</span>
-                        <button onclick="installPWA()" style="background: white; color: #39D2DF; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer;">Install</button>
-                        <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0 4px;">×</button>
+                <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; background: linear-gradient(135deg, #39D2DF, #546BEC); color: white; padding: 16px 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 9999; font-family: Inter, sans-serif; animation: slideUp 0.3s ease-out;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                            <span style="font-size: 24px;">🤖</span>
+                            <div>
+                                <div style="font-weight: 600; font-size: 16px; margin-bottom: 2px;">Install Ayuni App</div>
+                                <div style="font-size: 13px; opacity: 0.9;">Get the full app experience</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="installPWA()" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px;">Install</button>
+                            <button onclick="dismissInstallBanner()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 8px; opacity: 0.7;">×</button>
+                        </div>
                     </div>
                 </div>
+                <style>
+                    @keyframes slideUp {
+                        from { transform: translateY(100%); opacity: 0; }
+                        to { transform: translateY(0); opacity: 1; }
+                    }
+                </style>
             `;
             document.body.appendChild(installBanner);
+        }
+        
+        function showFallbackInstallBanner() {
+            // Fallback banner for browsers that don't trigger beforeinstallprompt
+            const installBanner = document.createElement('div');
+            installBanner.id = 'ayuni-install-banner';
+            installBanner.innerHTML = `
+                <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; background: linear-gradient(135deg, #39D2DF, #546BEC); color: white; padding: 16px 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 9999; font-family: Inter, sans-serif; animation: slideUp 0.3s ease-out;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px;">
+                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                            <span style="font-size: 24px;">📱</span>
+                            <div>
+                                <div style="font-weight: 600; font-size: 16px; margin-bottom: 2px;">Add to Home Screen</div>
+                                <div style="font-size: 13px; opacity: 0.9;">Tap Share → Add to Home Screen</div>
+                            </div>
+                        </div>
+                        <button onclick="dismissInstallBanner()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 8px; opacity: 0.7;">×</button>
+                    </div>
+                </div>
+                <style>
+                    @keyframes slideUp {
+                        from { transform: translateY(100%); opacity: 0; }
+                        to { transform: translateY(0); opacity: 1; }
+                    }
+                </style>
+            `;
+            document.body.appendChild(installBanner);
+        }
+        
+        function dismissInstallBanner() {
+            const banner = document.getElementById('ayuni-install-banner');
+            if (banner) {
+                banner.style.animation = 'slideUp 0.3s ease-out reverse';
+                setTimeout(() => banner.remove(), 300);
+            }
+            // Remember dismissal for 7 days
+            localStorage.setItem('ayuni-pwa-dismissed', 'true');
+            setTimeout(() => {
+                localStorage.removeItem('ayuni-pwa-dismissed');
+            }, 7 * 24 * 60 * 60 * 1000);
         }
         
         function installPWA() {
