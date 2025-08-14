@@ -170,6 +170,9 @@ function runMemorySetup() {
             error_log("Test memory cleanup failed: " . $e->getMessage());
         }
         
+        // Get recent error logs even for successful tests (to see debug messages)
+        $errorLogs = getRecentErrorLogs(100);
+        
         return [
             'success' => 'Memory system setup completed successfully!',
             'details' => [
@@ -177,8 +180,16 @@ function runMemorySetup() {
                 'memory_stored' => 'Yes',
                 'memory_retrieved' => 'Yes',
                 'similarity_score' => number_format($memories[0]['similarity_score'], 3),
-                'model_used' => $memories[0]['model_used']
-            ]
+                'model_used' => $memories[0]['model_used'],
+                'test_memory_id' => $testMemoryId,
+                'collection_name' => $memoryOptions['collection_prefix'] . $testAei['id']
+            ],
+            'debug_info' => [
+                'memory_options' => $memoryOptions,
+                'retrieved_memory' => $memories[0],
+                'cleanup_attempted' => 'Yes'
+            ],
+            'error_logs' => $errorLogs
         ];
         
     } catch (Exception $e) {
@@ -423,33 +434,74 @@ try {
                     
                     <?php if (isset($setupResults['debug_info'])): ?>
                         <div class="mt-4">
-                            <details class="text-sm">
-                                <summary class="text-red-300 cursor-pointer hover:text-red-200">Debug Information</summary>
-                                <div class="mt-2 bg-red-900/20 p-3 rounded border border-red-600/30">
-                                    <?php foreach ($setupResults['debug_info'] as $key => $value): ?>
-                                        <div class="mb-2">
-                                            <strong class="text-red-300"><?= ucfirst(str_replace('_', ' ', $key)) ?>:</strong>
-                                            <pre class="text-red-100 text-xs mt-1 overflow-x-auto"><?= htmlspecialchars(is_array($value) ? json_encode($value, JSON_PRETTY_PRINT) : $value) ?></pre>
+                            <div class="bg-red-900/20 p-4 rounded border border-red-600/50">
+                                <h3 class="text-red-300 font-bold mb-3 flex items-center">
+                                    <i class="fas fa-bug mr-2"></i>
+                                    DEBUG INFORMATION
+                                </h3>
+                                <?php foreach ($setupResults['debug_info'] as $key => $value): ?>
+                                    <div class="mb-4">
+                                        <strong class="text-red-300 text-sm"><?= strtoupper(str_replace('_', ' ', $key)) ?>:</strong>
+                                        <div class="bg-black/30 p-2 rounded mt-1">
+                                            <pre class="text-red-100 text-xs overflow-x-auto whitespace-pre-wrap"><?= htmlspecialchars(is_array($value) ? json_encode($value, JSON_PRETTY_PRINT) : $value) ?></pre>
                                         </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            </details>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     <?php endif; ?>
                     
                     <?php if (isset($setupResults['error_logs']) && !empty($setupResults['error_logs'])): ?>
                         <div class="mt-4">
-                            <details class="text-sm">
-                                <summary class="text-red-300 cursor-pointer hover:text-red-200">Recent Error Logs</summary>
-                                <div class="mt-2 space-y-2">
-                                    <?php foreach ($setupResults['error_logs'] as $log): ?>
-                                        <div class="bg-red-900/20 p-3 rounded border border-red-600/30">
-                                            <div class="text-red-300 text-xs mb-1">Source: <?= htmlspecialchars($log['source']) ?></div>
-                                            <pre class="text-red-100 text-xs overflow-x-auto max-h-48 overflow-y-auto"><?= htmlspecialchars($log['content']) ?></pre>
+                            <div class="bg-red-900/20 p-4 rounded border border-red-600/50">
+                                <h3 class="text-red-300 font-bold mb-3 flex items-center">
+                                    <i class="fas fa-file-alt mr-2"></i>
+                                    ERROR LOGS (LIVE)
+                                </h3>
+                                <?php foreach ($setupResults['error_logs'] as $log): ?>
+                                    <div class="mb-4">
+                                        <div class="text-red-300 text-sm font-medium mb-1">📁 <?= htmlspecialchars($log['source']) ?></div>
+                                        <div class="bg-black/50 p-3 rounded border border-red-600/30">
+                                            <pre class="text-red-100 text-xs overflow-x-auto whitespace-pre-wrap max-h-64 overflow-y-auto"><?= htmlspecialchars($log['content']) ?></pre>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <!-- Show debug info even for successful tests -->
+                    <?php if (isset($setupResults['debug_info']) || isset($setupResults['error_logs'])): ?>
+                        <div class="mt-6 border-t border-green-600/30 pt-4">
+                            <h4 class="text-green-300 font-medium mb-3">🔍 Debug Information (Success)</h4>
+                            
+                            <?php if (isset($setupResults['debug_info'])): ?>
+                                <div class="bg-green-900/20 p-3 rounded border border-green-600/30 mb-4">
+                                    <h5 class="text-green-300 text-sm font-medium mb-2">Debug Data:</h5>
+                                    <?php foreach ($setupResults['debug_info'] as $key => $value): ?>
+                                        <div class="mb-2">
+                                            <strong class="text-green-300 text-xs"><?= strtoupper(str_replace('_', ' ', $key)) ?>:</strong>
+                                            <div class="bg-black/30 p-2 rounded mt-1">
+                                                <pre class="text-green-100 text-xs overflow-x-auto whitespace-pre-wrap"><?= htmlspecialchars(is_array($value) ? json_encode($value, JSON_PRETTY_PRINT) : $value) ?></pre>
+                                            </div>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
-                            </details>
+                            <?php endif; ?>
+                            
+                            <?php if (isset($setupResults['error_logs']) && !empty($setupResults['error_logs'])): ?>
+                                <div class="bg-green-900/20 p-3 rounded border border-green-600/30">
+                                    <h5 class="text-green-300 text-sm font-medium mb-2">Process Logs:</h5>
+                                    <?php foreach ($setupResults['error_logs'] as $log): ?>
+                                        <div class="mb-3">
+                                            <div class="text-green-400 text-xs mb-1">📁 <?= htmlspecialchars($log['source']) ?></div>
+                                            <div class="bg-black/50 p-2 rounded border border-green-600/20">
+                                                <pre class="text-green-100 text-xs overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto"><?= htmlspecialchars($log['content']) ?></pre>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>
