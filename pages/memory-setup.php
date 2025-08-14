@@ -1,6 +1,31 @@
 <?php
 requireAdmin();
 
+// Initialize debug terminal FIRST
+$debugLog = [];
+$setupResults = [];
+$memoryStatus = [];
+$configExists = file_exists(__DIR__ . '/../config/memory_config.php');
+
+function addDebugLog($message, $type = 'info') {
+    global $debugLog;
+    try {
+        $timestamp = date('H:i:s.') . sprintf('%03d', (microtime(true) - floor(microtime(true))) * 1000);
+        $debugLog[] = [
+            'timestamp' => $timestamp,
+            'type' => $type,
+            'message' => $message
+        ];
+        error_log("[$timestamp] MEMORY_DEBUG: $message");
+    } catch (Exception $e) {
+        $debugLog[] = [
+            'timestamp' => 'ERROR',
+            'type' => 'error',
+            'message' => 'Failed to log: ' . $e->getMessage()
+        ];
+    }
+}
+
 // Include required classes
 if (file_exists(__DIR__ . '/../config/memory_config.php')) {
     require_once __DIR__ . '/../config/memory_config.php';
@@ -8,41 +33,87 @@ if (file_exists(__DIR__ . '/../config/memory_config.php')) {
 require_once __DIR__ . '/../includes/qdrant_inference_client.php';
 require_once __DIR__ . '/../includes/memory_manager_inference.php';
 
-$setupResults = [];
-$memoryStatus = [];
-$configExists = file_exists(__DIR__ . '/../config/memory_config.php');
-
 // Handle setup execution
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    addDebugLog("🎯 Processing POST request - Action: " . ($_POST['action'] ?? 'unknown'), 'info');
+    
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
-        $setupResults['error'] = 'Invalid CSRF token';
+        addDebugLog("❌ CSRF token verification failed", 'error');
+        $setupResults = [
+            'error' => 'Invalid CSRF token',
+            'debug_log' => $debugLog
+        ];
     } else {
-        switch ($_POST['action']) {
-            case 'test_connection':
-                $setupResults = testMemoryConnection();
-                break;
-            case 'run_setup':
-                $setupResults = runMemorySetup();
-                break;
-            case 'cleanup_memories':
-                $setupResults = cleanupMemories($_POST['aei_id'] ?? '');
-                break;
+        addDebugLog("✅ CSRF token verified successfully", 'info');
+        
+        try {
+            switch ($_POST['action']) {
+                case 'test_connection':
+                    addDebugLog("🔌 Starting connection test", 'info');
+                    $setupResults = testMemoryConnection();
+                    if (!isset($setupResults['debug_log'])) {
+                        $setupResults['debug_log'] = $debugLog;
+                    }
+                    break;
+                    
+                case 'run_setup':
+                    addDebugLog("🚀 Starting memory setup", 'info');
+                    try {
+                        $setupResults = runMemorySetup();
+                        addDebugLog("✅ runMemorySetup() completed", 'info');
+                        
+                        // Always ensure debug log is included
+                        if (!isset($setupResults['debug_log'])) {
+                            $setupResults['debug_log'] = $debugLog;
+                        }
+                    } catch (Exception $setupE) {
+                        addDebugLog("💥 runMemorySetup() threw exception: " . $setupE->getMessage(), 'error');
+                        addDebugLog("📍 Exception at: " . $setupE->getFile() . ":" . $setupE->getLine(), 'error');
+                        $setupResults = [
+                            'error' => 'Setup failed: ' . $setupE->getMessage(),
+                            'debug_log' => $debugLog,
+                            'debug_info' => [
+                                'exception_message' => $setupE->getMessage(),
+                                'exception_file' => $setupE->getFile(),
+                                'exception_line' => $setupE->getLine(),
+                                'exception_trace' => $setupE->getTraceAsString()
+                            ]
+                        ];
+                    }
+                    break;
+                    
+                case 'cleanup_memories':
+                    addDebugLog("🧹 Starting memory cleanup", 'info');
+                    $setupResults = cleanupMemories($_POST['aei_id'] ?? '');
+                    if (!isset($setupResults['debug_log'])) {
+                        $setupResults['debug_log'] = $debugLog;
+                    }
+                    break;
+                    
+                default:
+                    addDebugLog("❌ Unknown action received: " . $_POST['action'], 'error');
+                    $setupResults = [
+                        'error' => 'Unknown action: ' . $_POST['action'],
+                        'debug_log' => $debugLog
+                    ];
+            }
+        } catch (Exception $e) {
+            addDebugLog("💥 FATAL ERROR in action handler: " . $e->getMessage(), 'error');
+            addDebugLog("📍 Fatal error location: " . $e->getFile() . ":" . $e->getLine(), 'error');
+            addDebugLog("📜 Stack trace: " . $e->getTraceAsString(), 'error');
+            $setupResults = [
+                'error' => 'Fatal error: ' . $e->getMessage(),
+                'debug_log' => $debugLog,
+                'debug_info' => [
+                    'action' => $_POST['action'] ?? 'unknown',
+                    'exception_message' => $e->getMessage(),
+                    'exception_trace' => $e->getTraceAsString()
+                ]
+            ];
         }
     }
-}
-
-// Initialize debug terminal
-$debugLog = [];
-
-function addDebugLog($message, $type = 'info') {
-    global $debugLog;
-    $timestamp = date('H:i:s.') . sprintf('%03d', (microtime(true) - floor(microtime(true))) * 1000);
-    $debugLog[] = [
-        'timestamp' => $timestamp,
-        'type' => $type,
-        'message' => $message
-    ];
-    error_log("[$timestamp] MEMORY_DEBUG: $message");
+    
+    addDebugLog("📋 Final results prepared for display", 'info');
 }
 
 // Get memory system status
@@ -127,7 +198,17 @@ function testMemoryConnection() {
 
 function runMemorySetup() {
     global $debugLog;
-    addDebugLog("🚀 Starting Memory Setup Test", 'info');
+    
+    try {
+        addDebugLog("🚀 Starting Memory Setup Test", 'info');
+    } catch (Exception $logError) {
+        // If even debug logging fails, add error directly
+        $debugLog[] = [
+            'timestamp' => date('H:i:s.000'),
+            'type' => 'error',
+            'message' => 'Debug logging failed: ' . $logError->getMessage()
+        ];
+    }
     
     try {
         if (!file_exists(__DIR__ . '/../config/memory_config.php')) {
@@ -476,6 +557,38 @@ try {
         </div>
     </div>
 
+    <!-- Emergency Debug Info (if no results but debug log exists) -->
+    <?php if (empty($setupResults) && !empty($debugLog)): ?>
+        <div class="mb-6">
+            <div class="bg-orange-600/20 border border-orange-600/50 rounded-lg p-4">
+                <div class="flex items-center mb-2">
+                    <i class="fas fa-exclamation-triangle text-orange-400 mr-2"></i>
+                    <span class="text-orange-400 font-semibold">No Results - Emergency Debug</span>
+                </div>
+                <p class="text-white mb-4">Something went wrong before results could be generated. Here's the debug log:</p>
+                
+                <div class="bg-black/80 rounded-lg border border-orange-500/50 overflow-hidden">
+                    <div class="bg-orange-600/20 px-4 py-2 border-b border-orange-500/30">
+                        <h4 class="text-orange-400 font-mono text-sm">EMERGENCY DEBUG LOG</h4>
+                    </div>
+                    <div class="p-4 max-h-64 overflow-y-auto font-mono text-sm">
+                        <?php foreach ($debugLog as $log): ?>
+                            <div class="mb-1 flex">
+                                <span class="text-gray-400 mr-3"><?= $log['timestamp'] ?></span>
+                                <span class="<?= match($log['type']) {
+                                    'success' => 'text-green-400',
+                                    'error' => 'text-red-400', 
+                                    'warning' => 'text-yellow-400',
+                                    default => 'text-gray-300'
+                                } ?>"><?= htmlspecialchars($log['message']) ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <!-- Setup Results -->
     <?php if (!empty($setupResults)): ?>
         <div class="mb-6">
@@ -486,6 +599,34 @@ try {
                         <span class="text-green-400 font-semibold">Success</span>
                     </div>
                     <p class="text-white"><?= htmlspecialchars($setupResults['success']) ?></p>
+                    
+                    <!-- Always show debug terminal for successful operations -->
+                    <?php if (isset($setupResults['debug_log']) && !empty($setupResults['debug_log'])): ?>
+                        <div class="mt-6 border-t border-green-600/30 pt-4">
+                            <div class="bg-black/80 rounded-lg border border-green-500/50 overflow-hidden">
+                                <div class="bg-green-600/20 px-4 py-2 border-b border-green-500/30">
+                                    <h4 class="text-green-400 font-mono text-sm flex items-center">
+                                        <i class="fas fa-terminal mr-2"></i>
+                                        MEMORY SYSTEM DEBUG TERMINAL
+                                        <span class="ml-auto text-green-300 text-xs">[SUCCESS LOG]</span>
+                                    </h4>
+                                </div>
+                                <div class="p-4 max-h-96 overflow-y-auto font-mono text-sm">
+                                    <?php foreach ($setupResults['debug_log'] as $log): ?>
+                                        <div class="mb-1 flex">
+                                            <span class="text-gray-400 mr-3"><?= $log['timestamp'] ?></span>
+                                            <span class="<?= match($log['type']) {
+                                                'success' => 'text-green-400',
+                                                'error' => 'text-red-400', 
+                                                'warning' => 'text-yellow-400',
+                                                default => 'text-gray-300'
+                                            } ?>"><?= htmlspecialchars($log['message']) ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                     
                     <?php if (isset($setupResults['details'])): ?>
                         <div class="mt-3 space-y-1">
@@ -570,36 +711,24 @@ try {
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
+                </div>
+            <?php elseif (isset($setupResults['warning'])): ?>
+                <div class="bg-yellow-600/20 border border-yellow-600/50 rounded-lg p-4">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
+                        <span class="text-yellow-400 font-semibold">Warning</span>
+                    </div>
+                    <p class="text-white"><?= htmlspecialchars($setupResults['warning']) ?></p>
+                </div>
+            <?php elseif (isset($setupResults['error'])): ?>
+                <div class="bg-red-600/20 border border-red-600/50 rounded-lg p-4">
+                    <div class="flex items-center mb-2">
+                        <i class="fas fa-exclamation-circle text-red-400 mr-2"></i>
+                        <span class="text-red-400 font-semibold">Error</span>
+                    </div>
+                    <p class="text-white"><?= htmlspecialchars($setupResults['error']) ?></p>
                     
-                    <!-- Live Debug Terminal -->
-                    <?php if (isset($setupResults['debug_log']) && !empty($setupResults['debug_log'])): ?>
-                        <div class="mt-6 border-t border-green-600/30 pt-4">
-                            <div class="bg-black/80 rounded-lg border border-green-500/50 overflow-hidden">
-                                <div class="bg-green-600/20 px-4 py-2 border-b border-green-500/30">
-                                    <h4 class="text-green-400 font-mono text-sm flex items-center">
-                                        <i class="fas fa-terminal mr-2"></i>
-                                        MEMORY SYSTEM DEBUG TERMINAL
-                                        <span class="ml-auto text-green-300 text-xs">[LIVE LOG]</span>
-                                    </h4>
-                                </div>
-                                <div class="p-4 max-h-96 overflow-y-auto font-mono text-sm">
-                                    <?php foreach ($setupResults['debug_log'] as $log): ?>
-                                        <div class="mb-1 flex">
-                                            <span class="text-gray-400 mr-3"><?= $log['timestamp'] ?></span>
-                                            <span class="<?= match($log['type']) {
-                                                'success' => 'text-green-400',
-                                                'error' => 'text-red-400', 
-                                                'warning' => 'text-yellow-400',
-                                                default => 'text-gray-300'
-                                            } ?>"><?= htmlspecialchars($log['message']) ?></span>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <!-- Live Debug Terminal for Errors -->
+                    <!-- Always show debug terminal for error operations -->
                     <?php if (isset($setupResults['debug_log']) && !empty($setupResults['debug_log'])): ?>
                         <div class="mt-6 border-t border-red-600/30 pt-4">
                             <div class="bg-black/80 rounded-lg border border-red-500/50 overflow-hidden">
@@ -626,22 +755,26 @@ try {
                             </div>
                         </div>
                     <?php endif; ?>
-                </div>
-            <?php elseif (isset($setupResults['warning'])): ?>
-                <div class="bg-yellow-600/20 border border-yellow-600/50 rounded-lg p-4">
-                    <div class="flex items-center mb-2">
-                        <i class="fas fa-exclamation-triangle text-yellow-400 mr-2"></i>
-                        <span class="text-yellow-400 font-semibold">Warning</span>
-                    </div>
-                    <p class="text-white"><?= htmlspecialchars($setupResults['warning']) ?></p>
-                </div>
-            <?php elseif (isset($setupResults['error'])): ?>
-                <div class="bg-red-600/20 border border-red-600/50 rounded-lg p-4">
-                    <div class="flex items-center mb-2">
-                        <i class="fas fa-exclamation-circle text-red-400 mr-2"></i>
-                        <span class="text-red-400 font-semibold">Error</span>
-                    </div>
-                    <p class="text-white"><?= htmlspecialchars($setupResults['error']) ?></p>
+                    
+                    <!-- Debug information for errors -->
+                    <?php if (isset($setupResults['debug_info'])): ?>
+                        <div class="mt-4">
+                            <div class="bg-red-900/20 p-4 rounded border border-red-600/50">
+                                <h3 class="text-red-300 font-bold mb-3 flex items-center">
+                                    <i class="fas fa-bug mr-2"></i>
+                                    DEBUG INFORMATION
+                                </h3>
+                                <?php foreach ($setupResults['debug_info'] as $key => $value): ?>
+                                    <div class="mb-4">
+                                        <strong class="text-red-300 text-sm"><?= strtoupper(str_replace('_', ' ', $key)) ?>:</strong>
+                                        <div class="bg-black/30 p-2 rounded mt-1">
+                                            <pre class="text-red-100 text-xs overflow-x-auto whitespace-pre-wrap"><?= htmlspecialchars(is_array($value) ? json_encode($value, JSON_PRETTY_PRINT) : $value) ?></pre>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </div>
