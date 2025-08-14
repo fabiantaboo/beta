@@ -64,7 +64,7 @@ class MemoryManagerInference {
      */
     public function storeMemory($aeiId, $memoryText, $memoryType, $importance = 0.5, $sessionId = null, $userId = null) {
         try {
-            error_log("[MEMORY_DEBUG] storeMemory() called with AEI: $aeiId, TextLength: " . strlen($memoryText) . ", Type: $memoryType);
+            error_log("[MEMORY_DEBUG] storeMemory() called with AEI: $aeiId, TextLength: " . strlen($memoryText) . ", Type: $memoryType");
             
             $memoryId = bin2hex(random_bytes(16));
             error_log("[MEMORY_DEBUG] Generated memory ID: $memoryId");
