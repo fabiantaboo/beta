@@ -42,26 +42,85 @@ class MemoryManagerInference {
     }
     
     /**
-     * Initialize memory collection for an AEI
+     * Initialize memory collection for an AEI with proper indexes
      */
     public function initializeAEICollection($aeiId) {
         $collectionName = $this->collectionPrefix . $aeiId;
         
+        // Use debug callback if available
+        $debugFunc = function($message, $type = 'info') {
+            if ($this->debugCallback && is_callable($this->debugCallback)) {
+                call_user_func($this->debugCallback, $message, $type);
+            } else {
+                error_log("[MEMORY_DEBUG] $message");
+            }
+        };
+        
         try {
             // Check if collection exists
             $info = $this->qdrantClient->getCollectionInfo($collectionName);
-            error_log("Collection $collectionName already exists");
-            return $collectionName; // Already exists
+            $debugFunc("📁 Collection $collectionName already exists");
+            
+            // Ensure indexes exist for existing collection
+            $debugFunc("🔧 Checking/creating indexes for existing collection...");
+            try {
+                // Try to create indexes (they will fail if they already exist, which is fine)
+                $this->qdrantClient->createFieldIndex($collectionName, 'aei_id', 'keyword');
+                $debugFunc("✅ Created/verified aei_id index");
+            } catch (Exception $indexError) {
+                $debugFunc("⚠️ aei_id index creation failed (may already exist): " . $indexError->getMessage());
+            }
+            
+            try {
+                $this->qdrantClient->createFieldIndex($collectionName, 'memory_type', 'keyword');
+                $debugFunc("✅ Created/verified memory_type index");
+            } catch (Exception $indexError) {
+                $debugFunc("⚠️ memory_type index creation failed (may already exist): " . $indexError->getMessage());
+            }
+            
+            try {
+                $this->qdrantClient->createFieldIndex($collectionName, 'importance', 'integer');
+                $debugFunc("✅ Created/verified importance index");
+            } catch (Exception $indexError) {
+                $debugFunc("⚠️ importance index creation failed (may already exist): " . $indexError->getMessage());
+            }
+            
+            return $collectionName;
             
         } catch (Exception $e) {
             // Create new collection with quality model dimensions (can store both models)
             try {
-                error_log("Creating new collection: $collectionName with model: " . $this->qualityModel);
+                $debugFunc("🏗️ Creating new collection: $collectionName with model: " . $this->qualityModel);
                 $result = $this->qdrantClient->createCollection($collectionName, $this->qualityModel);
-                error_log("Created memory collection: $collectionName, result: " . json_encode($result));
+                $debugFunc("✅ Created collection: " . json_encode($result));
+                
+                // Create indexes for filter fields
+                $debugFunc("🔧 Creating indexes for filter fields...");
+                
+                try {
+                    // Create index for aei_id (keyword index for exact matching)
+                    $indexResult1 = $this->qdrantClient->createFieldIndex($collectionName, 'aei_id', 'keyword');
+                    $debugFunc("✅ Created aei_id index: " . json_encode($indexResult1));
+                    
+                    // Create index for memory_type (keyword index)  
+                    $indexResult2 = $this->qdrantClient->createFieldIndex($collectionName, 'memory_type', 'keyword');
+                    $debugFunc("✅ Created memory_type index: " . json_encode($indexResult2));
+                    
+                    // Create index for importance (integer/float index for range queries)
+                    $indexResult3 = $this->qdrantClient->createFieldIndex($collectionName, 'importance', 'integer');
+                    $debugFunc("✅ Created importance index: " . json_encode($indexResult3));
+                    
+                } catch (Exception $indexError) {
+                    $debugFunc("⚠️ Index creation failed (collection still usable): " . $indexError->getMessage());
+                    error_log("Index creation failed: " . $indexError->getMessage());
+                    // Don't fail - collection is still usable, just filtering won't work optimally
+                }
+                
+                $debugFunc("🎉 Collection $collectionName fully initialized with indexes");
                 return $collectionName;
                 
             } catch (Exception $createError) {
+                $debugFunc("❌ Collection creation failed: " . $createError->getMessage());
                 error_log("Collection creation failed: " . $createError->getMessage());
                 throw new Exception("Failed to create memory collection: " . $createError->getMessage());
             }

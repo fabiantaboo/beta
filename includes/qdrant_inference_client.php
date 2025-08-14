@@ -251,5 +251,34 @@ class QdrantInferenceClient {
         
         return $responseData;
     }
+    
+    /**
+     * Create field index for filtering (NEW 2025 FORMAT)
+     */
+    public function createFieldIndex($collectionName, $fieldName, $fieldType = 'keyword') {
+        $url = $this->baseUrl . "/collections/" . urlencode($collectionName) . "/index?wait=true";
+        
+        $data = [
+            'field_name' => $fieldName,
+            'field_schema' => [
+                'type' => $fieldType
+            ]
+        ];
+        
+        return $this->makeRequest('PUT', $url, $data);
+    }
+    
+    /**
+     * Delete points by IDs
+     */
+    public function deletePoints($collectionName, $pointIds) {
+        $url = $this->baseUrl . "/collections/" . urlencode($collectionName) . "/points/delete?wait=true";
+        
+        $data = [
+            'points' => $pointIds
+        ];
+        
+        return $this->makeRequest('POST', $url, $data);
+    }
 }
 ?>
