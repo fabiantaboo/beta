@@ -85,6 +85,13 @@ class MemoryManagerInference {
                 $debugFunc("⚠️ importance index creation failed (may already exist): " . $indexError->getMessage());
             }
             
+            try {
+                $this->qdrantClient->createFieldIndex($collectionName, 'timestamp', 'integer');
+                $debugFunc("✅ Created/verified timestamp index");
+            } catch (Exception $indexError) {
+                $debugFunc("⚠️ timestamp index creation failed (may already exist): " . $indexError->getMessage());
+            }
+            
             return $collectionName;
             
         } catch (Exception $e) {
@@ -109,6 +116,10 @@ class MemoryManagerInference {
                     // Create index for importance (integer/float index for range queries)
                     $indexResult3 = $this->qdrantClient->createFieldIndex($collectionName, 'importance', 'integer');
                     $debugFunc("✅ Created importance index: " . json_encode($indexResult3));
+                    
+                    // Create index for timestamp (integer index for time-based filtering)
+                    $indexResult4 = $this->qdrantClient->createFieldIndex($collectionName, 'timestamp', 'integer');
+                    $debugFunc("✅ Created timestamp index: " . json_encode($indexResult4));
                     
                 } catch (Exception $indexError) {
                     $debugFunc("⚠️ Index creation failed (collection still usable): " . $indexError->getMessage());
