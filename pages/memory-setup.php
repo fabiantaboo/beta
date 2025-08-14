@@ -1,6 +1,13 @@
 <?php
 requireAdmin();
 
+// Include required classes
+if (file_exists(__DIR__ . '/../config/memory_config.php')) {
+    require_once __DIR__ . '/../config/memory_config.php';
+}
+require_once __DIR__ . '/../includes/qdrant_inference_client.php';
+require_once __DIR__ . '/../includes/memory_manager_inference.php';
+
 $setupResults = [];
 $memoryStatus = [];
 $configExists = file_exists(__DIR__ . '/../config/memory_config.php');
@@ -33,8 +40,7 @@ function testMemoryConnection() {
             return ['error' => 'Memory config not found. Please copy config/memory_config.example.php to config/memory_config.php'];
         }
         
-        require_once __DIR__ . '/../config/memory_config.php';
-        require_once __DIR__ . '/../includes/memory_manager_inference.php';
+        // Config already included at top
         
         if (!defined('QDRANT_URL') || !defined('QDRANT_API_KEY')) {
             return ['error' => 'Missing QDRANT_URL or QDRANT_API_KEY in config'];
@@ -75,8 +81,7 @@ function runMemorySetup() {
             return ['error' => 'Memory config not found'];
         }
         
-        require_once __DIR__ . '/../config/memory_config.php';
-        require_once __DIR__ . '/../includes/memory_manager_inference.php';
+        // Config already included at top
         
         global $pdo;
         $memoryOptions = [
@@ -147,8 +152,7 @@ function cleanupMemories($aeiId = '') {
             return ['error' => 'Memory config not found'];
         }
         
-        require_once __DIR__ . '/../config/memory_config.php';
-        require_once __DIR__ . '/../includes/memory_manager_inference.php';
+        // Config already included at top
         
         global $pdo;
         $memoryOptions = [
@@ -222,7 +226,7 @@ function getMemorySystemStatus() {
         
         // Test connection if config exists
         if ($status['config_exists']) {
-            require_once __DIR__ . '/../config/memory_config.php';
+            // Config already included at top
             if (defined('QDRANT_URL') && defined('QDRANT_API_KEY')) {
                 try {
                     $qdrantClient = new QdrantInferenceClient(QDRANT_URL, QDRANT_API_KEY);
