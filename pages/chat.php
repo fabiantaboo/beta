@@ -33,7 +33,7 @@ if (!$session) {
 
 // No more POST handling here - everything moved to AJAX API
 
-// Get messages and check which ones already have feedback
+// Get initial messages (latest 20) and check which ones already have feedback
 $stmt = $pdo->prepare("
     SELECT 
         cm.*, 
@@ -42,10 +42,16 @@ $stmt = $pdo->prepare("
     FROM chat_messages cm
     LEFT JOIN message_feedback mf ON cm.id = mf.message_id AND mf.user_id = ?
     WHERE cm.session_id = ? 
-    ORDER BY cm.created_at ASC
+    ORDER BY cm.created_at DESC
+    LIMIT 20
 ");
 $stmt->execute([getUserSession(), $sessionId]);
-$messages = $stmt->fetchAll();
+$messages = array_reverse($stmt->fetchAll()); // Reverse to show chronologically
+
+// Get total message count for pagination
+$stmt = $pdo->prepare("SELECT COUNT(*) as total FROM chat_messages WHERE session_id = ?");
+$stmt->execute([$sessionId]);
+$totalMessages = $stmt->fetch()['total'];
 
 // Get current emotional state for display (only for admins)
 $isCurrentUserAdmin = isAdmin();
@@ -207,6 +213,24 @@ if ($isCurrentUserAdmin) {
     <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0">
         <!-- Messages Area -->
         <div class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" id="messages-container">
+            <!-- Load More Button (shown when there are older messages) -->
+            <?php if ($totalMessages > 20): ?>
+                <div class="text-center py-4" id="load-more-container">
+                    <button 
+                        id="load-more-btn" 
+                        class="bg-ayuni-blue hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                        onclick="loadOlderMessages()"
+                    >
+                        <span id="load-more-text">📜 Load older messages (<?= $totalMessages - 20 ?> more)</span>
+                        <span id="load-more-loading" class="hidden">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </span>
+                    </button>
+                </div>
+            <?php endif; ?>
+            
+            <!-- Messages will be inserted here -->
+            <div id="messages-list">
             <?php if (empty($messages)): ?>
                 <div class="text-center py-8">
                     <div class="w-16 h-16 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -309,6 +333,7 @@ if ($isCurrentUserAdmin) {
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
+            </div> <!-- End messages-list -->
         </div>
 
         <!-- Message Input -->
@@ -1712,5 +1737,180 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Chat Pagination / Load More Messages
+let currentOffset = 20; // We already loaded first 20 messages
+let isLoading = false;
+const sessionId = '<?= $sessionId ?>';
+const aeiName = '<?= htmlspecialchars($aei['name']) ?>';
+
+function createMessageElement(message) {
+    const isUser = message.sender_type === 'user';
+    const avatarLetter = isUser ? 'U' : aeiName.charAt(0).toUpperCase();
+    
+    return `
+        <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
+            <div class="flex ${isUser ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-sm sm:max-w-md lg:max-w-lg">
+                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${isUser ? 'bg-gray-500 dark:bg-gray-600 ml-2' : 'bg-gradient-to-br from-ayuni-aqua to-ayuni-blue mr-2'}">
+                    <span class="text-xs font-bold text-white">${avatarLetter}</span>
+                </div>
+                <div class="${isUser ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'} rounded-2xl px-4 py-2 shadow-sm">
+                    ${message.has_image && message.image_filename ? `
+                        <div class="mb-2">
+                            <img 
+                                src="/uploads/chat_images/${message.image_filename}" 
+                                alt="${message.image_original_name || 'Shared image'}"
+                                class="max-w-full h-auto rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                                onclick="openImageModal('${message.image_filename}', '${message.image_original_name || 'Shared image'}')"
+                                loading="lazy"
+                            >
+                        </div>
+                    ` : ''}
+                    ${message.message_text ? `<p class="text-sm">${message.message_text.replace(/\n/g, '<br>')}</p>` : ''}
+                    <div class="flex items-center justify-between mt-2">
+                        <p class="text-xs opacity-70">
+                            ${new Date(message.created_at).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}
+                        </p>
+                        ${!isUser ? getFeedbackButtons(message) : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getFeedbackButtons(message) {
+    if (message.feedback_id) {
+        // Already has feedback
+        if (message.feedback_rating === 'thumbs_up') {
+            return `
+                <div class="flex items-center space-x-2 ml-2">
+                    <button class="feedback-btn p-1 rounded bg-green-100 dark:bg-green-900/20 cursor-default" disabled>
+                        <i class="fas fa-thumbs-up text-xs text-green-600 dark:text-green-400"></i>
+                    </button>
+                    <button class="feedback-btn p-1 rounded opacity-30 cursor-not-allowed" disabled>
+                        <i class="fas fa-thumbs-down text-xs text-gray-400"></i>
+                    </button>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="flex items-center space-x-2 ml-2">
+                    <button class="feedback-btn p-1 rounded opacity-30 cursor-not-allowed" disabled>
+                        <i class="fas fa-thumbs-up text-xs text-gray-400"></i>
+                    </button>
+                    <button class="feedback-btn p-1 rounded bg-red-100 dark:bg-red-900/20 cursor-default" disabled>
+                        <i class="fas fa-thumbs-down text-xs text-red-600 dark:text-red-400"></i>
+                    </button>
+                </div>
+            `;
+        }
+    } else {
+        // No feedback yet
+        return `
+            <div class="flex items-center space-x-2 ml-2">
+                <button 
+                    class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+                    data-message-id="${message.id}"
+                    data-rating="thumbs_up"
+                    onclick="showFeedbackModal('${message.id}', 'thumbs_up')"
+                    title="This response was helpful"
+                >
+                    <i class="fas fa-thumbs-up text-xs text-gray-400 hover:text-green-500 transition-colors"></i>
+                </button>
+                <button 
+                    class="feedback-btn p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" 
+                    data-message-id="${message.id}"
+                    data-rating="thumbs_down"
+                    onclick="showFeedbackModal('${message.id}', 'thumbs_down')"
+                    title="This response could be improved"
+                >
+                    <i class="fas fa-thumbs-down text-xs text-gray-400 hover:text-red-500 transition-colors"></i>
+                </button>
+            </div>
+        `;
+    }
+}
+
+async function loadOlderMessages() {
+    if (isLoading) return;
+    
+    isLoading = true;
+    const loadBtn = document.getElementById('load-more-btn');
+    const loadText = document.getElementById('load-more-text');
+    const loadSpinner = document.getElementById('load-more-loading');
+    
+    // Show loading state
+    loadText.classList.add('hidden');
+    loadSpinner.classList.remove('hidden');
+    loadBtn.disabled = true;
+    
+    try {
+        const response = await fetch('/api/load-messages.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                session_id: sessionId,
+                offset: currentOffset,
+                limit: 20
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load messages');
+        }
+        
+        // Add messages to the beginning of the messages list
+        const messagesList = document.getElementById('messages-list');
+        const oldScrollHeight = messagesList.scrollHeight;
+        
+        // Insert older messages at the top
+        data.messages.forEach((message, index) => {
+            const messageElement = document.createElement('div');
+            messageElement.innerHTML = createMessageElement(message);
+            messageElement.className = 'space-y-4'; // Match existing spacing
+            
+            // Insert at the beginning but after any existing messages
+            if (messagesList.firstChild && messagesList.firstChild.classList.contains('text-center')) {
+                // Skip the "no messages" placeholder
+                messagesList.appendChild(messageElement);
+            } else {
+                messagesList.insertBefore(messageElement, messagesList.firstChild);
+            }
+        });
+        
+        // Maintain scroll position - user stays at the same visual position
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.scrollTop = messagesList.scrollHeight - oldScrollHeight;
+        
+        // Update offset for next load
+        currentOffset += data.loaded;
+        
+        // Update or hide the load more button
+        if (data.has_more) {
+            const remaining = data.total - currentOffset;
+            loadText.textContent = `📜 Load older messages (${remaining} more)`;
+        } else {
+            document.getElementById('load-more-container').style.display = 'none';
+        }
+        
+    } catch (error) {
+        console.error('Error loading older messages:', error);
+        alert('Failed to load older messages. Please try again.');
+    } finally {
+        isLoading = false;
+        loadBtn.disabled = false;
+        loadText.classList.remove('hidden');
+        loadSpinner.classList.add('hidden');
+    }
+}
 
 </script>
