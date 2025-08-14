@@ -59,6 +59,22 @@ $page_title = match($page) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($page_title) ?></title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#39D2DF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ayuni">
+    <meta name="application-name" content="Ayuni">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" href="/assets/ayuni.png">
+    <link rel="apple-touch-icon" href="/assets/ayuni.png">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -173,5 +189,61 @@ if (session_status() === PHP_SESSION_NONE) {
 ?>
 <body class="min-h-screen bg-white dark:bg-ayuni-dark text-gray-900 dark:text-white font-sans antialiased">
     <?php echo $page_content; ?>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('Ayuni PWA: ServiceWorker registered successfully', registration.scope);
+                    })
+                    .catch(function(error) {
+                        console.log('Ayuni PWA: ServiceWorker registration failed', error);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('Ayuni PWA: Install prompt triggered');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button/banner if desired
+            showInstallBanner();
+        });
+        
+        function showInstallBanner() {
+            // Optional: Add install banner to UI
+            const installBanner = document.createElement('div');
+            installBanner.innerHTML = `
+                <div style="position: fixed; bottom: 20px; right: 20px; background: #39D2DF; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; font-family: Inter, sans-serif;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span>📱 Install Ayuni App</span>
+                        <button onclick="installPWA()" style="background: white; color: #39D2DF; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer;">Install</button>
+                        <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0 4px;">×</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(installBanner);
+        }
+        
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('Ayuni PWA: User accepted the install prompt');
+                    } else {
+                        console.log('Ayuni PWA: User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+    </script>
 </body>
 </html>

@@ -1,0 +1,28 @@
+{
+  "name": "Ayuni Beta - AI Companions",
+  "short_name": "Ayuni",
+  "description": "Chat with your personal AI emotional intelligence companions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#10142B",
+  "theme_color": "#39D2DF",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/ayuni.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/ayuni.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "communication", "entertainment"],
+  "lang": "en-US",
+  "scope": "/",
+  "prefer_related_applications": false
+}
