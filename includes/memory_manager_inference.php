@@ -355,8 +355,18 @@ class MemoryManagerInference {
             // Build conversation context
             $conversationText = "";
             foreach ($messages as $message) {
-                $sender = $message['sender_type'] === 'user' ? 'User' : 'AEI';
-                $conversationText .= "$sender: " . $message['message_text'] . "\n";
+                // Handle both formats: getChatHistory format (role/content) and direct DB format (sender_type/message_text)
+                if (isset($message['role']) && isset($message['content'])) {
+                    // getChatHistory format
+                    $sender = $message['role'] === 'user' ? 'User' : 'AEI';
+                    $conversationText .= "$sender: " . $message['content'] . "\n";
+                } elseif (isset($message['sender_type']) && isset($message['message_text'])) {
+                    // Direct DB format
+                    $sender = $message['sender_type'] === 'user' ? 'User' : 'AEI';
+                    $conversationText .= "$sender: " . $message['message_text'] . "\n";
+                } else {
+                    error_log("MEMORY_EXTRACTION_WARNING: Unknown message format: " . json_encode(array_keys($message)));
+                }
             }
             
             // Create enhanced extraction prompt
@@ -438,6 +448,20 @@ $conversationText";
      * Get memory context for system prompt
      */
     public function getMemoryContext($aeiId, $currentMessage, $limit = 5) {
+        // AUTO-CREATE COLLECTION IF NOT EXISTS
+        try {
+            $collectionName = $this->initializeAEICollection($aeiId);
+            if ($this->debugCallback) {
+                call_user_func($this->debugCallback, "🏗️ Collection initialized: $collectionName", 'info');
+            }
+        } catch (Exception $e) {
+            if ($this->debugCallback) {
+                call_user_func($this->debugCallback, "❌ Failed to initialize collection for AEI $aeiId: " . $e->getMessage(), 'error');
+            }
+            error_log("Failed to initialize collection for AEI $aeiId: " . $e->getMessage());
+            return "";
+        }
+        
         $memories = $this->retrieveMemories($aeiId, $currentMessage, $limit, null, 0.3);
         
         if (empty($memories)) {
