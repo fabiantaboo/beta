@@ -29,20 +29,23 @@ class ReplicateAPI {
         return $_ENV['REPLICATE_API_TOKEN'] ?? null;
     }
     
-    public function generateAvatar($prompt, $aspectRatio = '1:1', $guidanceScale = 3, $numOutputs = 1) {
+    public function generateAvatar($prompt, $aspectRatio = '1:1', $guidanceScale = 7.5, $numOutputs = 1) {
         if (!$this->apiToken) {
             throw new Exception("Replicate API token not configured");
         }
         
+        // Optimized settings for photorealistic portraits
         $data = [
             'version' => 'black-forest-labs/flux-dev',
             'input' => [
                 'prompt' => $prompt,
                 'aspect_ratio' => $aspectRatio,
-                'guidance' => $guidanceScale,
+                'guidance' => $guidanceScale, // Higher guidance for better prompt adherence
                 'num_outputs' => $numOutputs,
                 'output_format' => 'png',
-                'megapixels' => '1'
+                'megapixels' => '1', // Good quality without being too heavy
+                'safety_tolerance' => 2, // Allow realistic human features
+                'prompt_strength' => 0.8 // Strong prompt adherence
             ]
         ];
         
@@ -59,9 +62,9 @@ class ReplicateAPI {
                 throw new Exception("Replicate API token not configured");
             }
             
-            // Start the prediction for multiple outputs
+            // Start the prediction for multiple outputs with optimized settings for realism
             error_log("DEBUG Replicate: Calling generateAvatar with count=$count");
-            $prediction = $this->generateAvatar($prompt, $aspectRatio, 3, $count);
+            $prediction = $this->generateAvatar($prompt, $aspectRatio, 7.5, $count); // Higher guidance for photorealism
             error_log("DEBUG Replicate: Raw prediction response: " . json_encode($prediction));
             
             if (!isset($prediction['id'])) {
@@ -269,7 +272,8 @@ class ReplicateAPI {
     }
     
     public function buildPromptFromAppearance($appearanceData, $name, $gender = null) {
-        $prompt = "Portrait of ";
+        // Start with STRONG photorealistic base
+        $prompt = "Professional headshot photograph of a ";
         
         // Add gender and name context
         if ($gender) {
@@ -285,8 +289,11 @@ class ReplicateAPI {
         }
         
         if (!$appearance) {
-            // Fallback basic prompt
-            return $prompt . "friendly and approachable, high quality portrait, professional lighting, detailed face";
+            // Fallback with STRONG photorealistic prompt
+            return $prompt . "friendly and approachable expression, " .
+                   "PHOTOREALISTIC, hyperrealistic, professional photography, studio lighting, " .
+                   "shot with Canon EOS R5, 85mm lens, natural skin texture, high resolution, " .
+                   "NOT anime, NOT cartoon, NOT illustration, real human person";
         }
         
         $features = [];
@@ -354,8 +361,16 @@ class ReplicateAPI {
             $prompt .= implode(', ', $features) . ", ";
         }
         
-        // Add quality and style modifiers
-        $prompt .= "friendly and approachable expression, high quality portrait, professional lighting, detailed face, photorealistic, sharp focus, 4k quality";
+        // Add STRONG photorealistic quality modifiers - CRITICAL for realistic output
+        $prompt .= "friendly and approachable expression, ";
+        $prompt .= "PHOTOREALISTIC, hyperrealistic, ultra realistic, real person, actual human being, ";
+        $prompt .= "professional headshot photography, studio lighting, commercial portrait, ";
+        $prompt .= "sharp focus, highly detailed skin texture, natural skin, realistic skin pores, ";
+        $prompt .= "detailed facial features, natural lighting, depth of field, ";
+        $prompt .= "shot with Canon EOS R5, 85mm lens, f/1.4, professional photographer, ";
+        $prompt .= "high resolution, 8K quality, cinematic lighting, perfect exposure, ";
+        $prompt .= "NOT anime, NOT cartoon, NOT illustration, NOT artwork, NOT digital art, NOT stylized, ";
+        $prompt .= "real photography, genuine human portrait, authentic person";
         
         return $prompt;
     }
