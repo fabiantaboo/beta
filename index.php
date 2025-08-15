@@ -191,7 +191,7 @@ $page_title = match($page) {
             let isRefreshing = false;
             let pullDistance = 0;
             const maxPullDistance = 150;
-            const refreshThreshold = 80;
+            const refreshThreshold = 120; // Increased from 80 to 120
             let pullStarted = false;
 
             function createRefreshIndicator() {
@@ -299,7 +299,7 @@ $page_title = match($page) {
                 
                 console.log('Pull distance:', pullDistance);
                 
-                if (pullDistance > 5) {
+                if (pullDistance > 15) { // Increased from 5 to 15
                     if (!document.getElementById('refresh-indicator')) {
                         createRefreshIndicator();
                     }
