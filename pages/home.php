@@ -177,9 +177,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center">
                 <!-- Clean logo section -->
                 <div class="mb-16">
-                    <div class="flex justify-center mb-12">
-                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
-                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
+                    <div class="flex justify-center mb-8">
+                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-24 w-auto dark:hidden">
+                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-24 w-auto hidden dark:block">
                     </div>
                     <h1 class="text-2xl font-light text-gray-900 dark:text-white mb-3">
                         End loneliness forever
@@ -247,9 +247,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center">
                 <!-- Clean logo section -->
                 <div class="mb-16">
-                    <div class="flex justify-center mb-12">
-                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
-                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
+                    <div class="flex justify-center mb-8">
+                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-24 w-auto dark:hidden">
+                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-24 w-auto hidden dark:block">
                     </div>
                     <h1 class="text-2xl font-light text-gray-900 dark:text-white mb-3">
                         Welcome back
