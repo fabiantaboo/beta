@@ -1,6 +1,10 @@
 <?php
 function sanitizeInput($input) {
-    return htmlspecialchars(trim($input), ENT_QUOTES, 'UTF-8');
+    // Check if input is valid UTF-8, convert if needed
+    if (!mb_check_encoding($input, 'UTF-8')) {
+        $input = mb_convert_encoding($input, 'UTF-8', 'auto');
+    }
+    return htmlspecialchars(trim($input), ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
 }
 
 function generateId() {

@@ -210,7 +210,7 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         throw new Exception("API Error (HTTP $httpCode): " . $errorMessage);
     }
     
-    $data = json_decode($response, true);
+    $data = json_decode($response, true, 512, JSON_INVALID_UTF8_IGNORE);
     
     if (!$data || !isset($data['content'][0]['text'])) {
         throw new Exception("Invalid API response format");
@@ -335,7 +335,7 @@ Do not include any explanation or additional text - ONLY the JSON object.";
         throw new Exception("API Error (HTTP $httpCode): " . $errorMessage);
     }
     
-    $data = json_decode($response, true);
+    $data = json_decode($response, true, 512, JSON_INVALID_UTF8_IGNORE);
     
     if (!$data || !isset($data['content'][0]['text'])) {
         throw new Exception("Invalid API response format");
