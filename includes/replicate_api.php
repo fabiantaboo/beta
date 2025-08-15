@@ -29,23 +29,23 @@ class ReplicateAPI {
         return $_ENV['REPLICATE_API_TOKEN'] ?? null;
     }
     
-    public function generateAvatar($prompt, $aspectRatio = '1:1', $guidanceScale = 15.0, $numOutputs = 1) {
+    public function generateAvatar($prompt, $aspectRatio = '1:1', $guidanceScale = 10.0, $numOutputs = 1, $promptStrength = 1.0) {
         if (!$this->apiToken) {
             throw new Exception("Replicate API token not configured");
         }
         
-        // MAXIMUM STRENGTH settings for photorealistic portraits
+        // MAXIMUM STRENGTH settings for photorealistic portraits (within valid ranges)
         $data = [
             'version' => 'black-forest-labs/flux-dev',
             'input' => [
                 'prompt' => $prompt,
                 'aspect_ratio' => $aspectRatio,
-                'guidance' => $guidanceScale, // MAXIMUM guidance for strict prompt adherence
+                'guidance' => $guidanceScale, // Maximum valid guidance (1.0-10.0)
+                'prompt_strength' => $promptStrength, // MAXIMUM prompt adherence (0.0-1.0)
                 'num_outputs' => $numOutputs,
                 'output_format' => 'png',
                 'megapixels' => '1', // Good quality
-                'safety_tolerance' => 5, // Maximum tolerance for realistic human features
-                'prompt_strength' => 1.0, // MAXIMUM prompt adherence
+                'safety_tolerance' => 2, // Realistic human features
                 'num_inference_steps' => 50 // More steps for better quality
             ]
         ];
@@ -64,8 +64,8 @@ class ReplicateAPI {
             }
             
             // Start the prediction for multiple outputs with MAXIMUM STRENGTH settings for realism
-            error_log("DEBUG Replicate: Calling generateAvatar with count=$count");
-            $prediction = $this->generateAvatar($prompt, $aspectRatio, 15.0, $count); // MAXIMUM guidance for photorealism
+            error_log("DEBUG Replicate: Calling generateAvatar with count=$count, guidance=10.0, prompt_strength=1.0");
+            $prediction = $this->generateAvatar($prompt, $aspectRatio, 10.0, $count, 1.0); // MAXIMUM valid settings for photorealism
             error_log("DEBUG Replicate: Raw prediction response: " . json_encode($prediction));
             
             if (!isset($prediction['id'])) {
@@ -173,8 +173,8 @@ class ReplicateAPI {
         try {
             error_log("Replicate: Starting avatar generation with prompt: " . $prompt);
             
-            // Start the prediction
-            $prediction = $this->generateAvatar($prompt, $aspectRatio);
+            // Start the prediction with maximum photorealistic settings
+            $prediction = $this->generateAvatar($prompt, $aspectRatio, 10.0, 1, 1.0);
             
             if (!isset($prediction['id'])) {
                 throw new Exception("Failed to start image generation: " . json_encode($prediction));
