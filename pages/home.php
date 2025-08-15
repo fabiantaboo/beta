@@ -178,14 +178,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-8">
                     <div class="flex justify-center mb-6">
                         <div class="relative">
-                            <div class="w-24 h-24 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-3xl shadow-2xl flex items-center justify-center mb-4 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                                <i class="fas fa-brain text-white text-2xl"></i>
+                            <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-4 mb-4 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                                <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-20 w-auto dark:hidden">
+                                <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-20 w-auto hidden dark:block">
                             </div>
                         </div>
                     </div>
-                    <h1 class="text-4xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-2">
-                        Ayuni
-                    </h1>
                     <p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
                         AI Emotional Intelligence
                     </p>
@@ -263,14 +261,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="mb-8">
                     <div class="flex justify-center mb-6">
                         <div class="relative">
-                            <div class="w-24 h-24 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-3xl shadow-2xl flex items-center justify-center mb-4 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                                <i class="fas fa-brain text-white text-2xl"></i>
+                            <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-4 mb-4 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                                <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-20 w-auto dark:hidden">
+                                <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-20 w-auto hidden dark:block">
                             </div>
                         </div>
                     </div>
-                    <h1 class="text-4xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-2">
-                        Ayuni
-                    </h1>
                     <p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
                         AI Emotional Intelligence
                     </p>
