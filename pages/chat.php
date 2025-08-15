@@ -388,12 +388,6 @@ if ($isCurrentUserAdmin) {
                                 <?php endif; ?>
                                 <?php if (!empty($message['message_text'])): ?>
                                     <p class="text-sm"><?= nl2br(safeDisplayMessage($message['message_text'])) ?></p>
-                                    <!-- DEBUG: Show raw data -->
-                                    <?php if (isAdmin()): ?>
-                                        <div class="text-xs text-red-500 mt-1 font-mono">
-                                            RAW: <?= bin2hex($message['message_text']) ?>
-                                        </div>
-                                    <?php endif; ?>
                                 <?php endif; ?>
                                 <div class="flex items-center justify-between mt-2">
                                     <p class="text-xs opacity-70">
@@ -1024,16 +1018,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let textHtml = '';
         if (message.message_text && message.message_text.trim()) {
             textHtml = `<p class="text-sm">${message.message_text.replace(/\n/g, '<br>')}</p>`;
-            
-            // DEBUG: Add hex representation for admin
-            <?php if (isAdmin()): ?>
-            if (message.sender_type === 'aei') {
-                const encoder = new TextEncoder();
-                const bytes = encoder.encode(message.message_text);
-                const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-                textHtml += `<div class="text-xs text-red-500 mt-1 font-mono">JS RAW: ${hex}</div>`;
-            }
-            <?php endif; ?>
         }
         
         messageDiv.innerHTML = `

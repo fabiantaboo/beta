@@ -218,15 +218,8 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
     
     $responseText = $data['content'][0]['text'];
     
-    // DEBUG: Log raw response from Anthropic
-    error_log("DEBUG EMOJI: Raw Anthropic response: " . bin2hex($responseText));
-    error_log("DEBUG EMOJI: Raw Anthropic text: " . $responseText);
-    
     // Remove any accidental timestamps from AI response
     $responseText = removeTimestampsFromResponse($responseText);
-    
-    // DEBUG: Log after timestamp removal
-    error_log("DEBUG EMOJI: After timestamp removal: " . bin2hex($responseText));
     
     return $responseText;
 }
