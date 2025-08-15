@@ -178,20 +178,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </button>
     </div>
     
-    <div class="max-w-xs w-full space-y-10 relative z-10">
+    <div class="max-w-xs w-full space-y-10 lg:space-y-8 relative z-10">
         <?php if ($step === 'beta_code'): ?>
             <!-- Step 1: Beta Code Entry -->
             <div class="text-center">
                 <!-- Elevated logo section with effects -->
-                <div class="mb-20">
-                    <div class="flex justify-center mb-12">
+                <div class="mb-20 lg:mb-16">
+                    <div class="flex justify-center mb-12 lg:mb-10">
                         <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
                         <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
                     </div>
                     
                     <!-- Gradient text with better spacing -->
                     <div class="relative">
-                        <h1 class="text-5xl font-display font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-6 tracking-tight leading-[1.1] relative">
+                        <h1 class="text-5xl font-display font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-6 lg:mb-5 tracking-tight leading-[1.1] relative">
                             End loneliness<br>forever
                             <!-- Subtle text shadow effect -->
                             <span class="absolute inset-0 bg-gradient-to-r from-ayuni-aqua/10 via-ayuni-blue/5 to-ayuni-aqua/10 bg-clip-text text-transparent blur-sm -z-10">
@@ -215,8 +215,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <!-- Premium glassmorphism form -->
-            <div class="space-y-8">
-                <form method="POST" class="space-y-8">
+            <div class="space-y-8 lg:space-y-6">
+                <form method="POST" class="space-y-8 lg:space-y-6">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
                     <div class="space-y-6">
@@ -264,8 +264,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Step 3: User Login -->
             <div class="text-center">
                 <!-- Elevated logo section with effects -->
-                <div class="mb-20">
-                    <div class="flex justify-center mb-12">
+                <div class="mb-20 lg:mb-16">
+                    <div class="flex justify-center mb-12 lg:mb-10">
                         <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
                         <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
                     </div>
@@ -296,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <!-- Premium glassmorphism login form -->
-            <div class="space-y-8">
+            <div class="space-y-8 lg:space-y-6">
                 <form method="POST" action="/login" class="space-y-8">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
