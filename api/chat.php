@@ -164,6 +164,10 @@ try {
         $debugData = null;
     }
     
+    // DEBUG: Log the AI response before saving
+    error_log("DEBUG EMOJI: AI Response before saving: " . bin2hex($aeiResponse));
+    error_log("DEBUG EMOJI: AI Response text: " . $aeiResponse);
+    
     // Save AI response
     $aeiResponseId = generateId();
     $stmt = $pdo->prepare("INSERT INTO chat_messages (id, session_id, sender_type, message_text) VALUES (?, ?, 'aei', ?)");
