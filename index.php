@@ -1,8 +1,15 @@
 <?php
-// Configure session for longer lifetime
-ini_set('session.gc_maxlifetime', 86400); // 24 hours
-ini_set('session.cookie_lifetime', 86400); // 24 hours
-session_set_cookie_params(86400); // 24 hours
+// Configure session for VERY long lifetime
+ini_set('session.gc_maxlifetime', 2592000); // 30 days
+ini_set('session.cookie_lifetime', 2592000); // 30 days
+session_set_cookie_params([
+    'lifetime' => 2592000, // 30 days
+    'path' => '/',
+    'domain' => '',
+    'secure' => false,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
 session_start();
 
 include_once 'config/database.php';

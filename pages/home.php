@@ -151,7 +151,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div class="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-ayuni-dark dark:to-gray-900 flex items-center justify-center px-4 relative">
+<div class="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-ayuni-dark dark:via-gray-900 dark:to-indigo-900 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <!-- Animated background elements -->
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-ayuni-aqua/20 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-ayuni-blue/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-ayuni-aqua/10 to-ayuni-blue/10 rounded-full blur-3xl animate-spin" style="animation-duration: 20s;"></div>
+    </div>
     <div class="absolute top-4 right-4">
         <button 
             id="theme-toggle" 
@@ -164,23 +170,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </button>
     </div>
     
-    <div class="max-w-md w-full space-y-8">
+    <div class="max-w-md w-full space-y-6 relative z-10">
         <?php if ($step === 'beta_code'): ?>
             <!-- Step 1: Beta Code Entry -->
             <div class="text-center">
+                <!-- App-style header -->
                 <div class="mb-8">
                     <div class="flex justify-center mb-6">
                         <div class="relative">
-                            <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-28 w-auto dark:hidden">
-                            <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-28 w-auto hidden dark:block">
+                            <div class="w-24 h-24 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-3xl shadow-2xl flex items-center justify-center mb-4 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                                <i class="fas fa-brain text-white text-2xl"></i>
+                            </div>
                         </div>
                     </div>
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-2">
+                        Ayuni
+                    </h1>
+                    <p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        AI Emotional Intelligence
+                    </p>
                 </div>
                 
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome to the Future</h2>
-                <p class="text-gray-600 dark:text-gray-400 mb-8">
-                    Enter your beta code to begin your journey with AI companions that truly understand you.
-                </p>
+                <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-3xl border border-white/20 dark:border-gray-700/30 shadow-xl p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Welcome to Beta</h2>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Create and chat with <span class="font-semibold text-ayuni-blue">AEI companions</span> that understand your emotions
+                    </p>
+                </div>
             </div>
             
             <?php if (isset($error)): ?>
@@ -192,70 +208,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
             
-            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-8">
+            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-3xl border border-white/30 dark:border-gray-700/30 shadow-2xl p-8">
                 <form method="POST" class="space-y-6">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
                     <div>
-                        <label for="beta_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                            Beta Access Code
+                        <label for="beta_code" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                            <i class="fas fa-key text-ayuni-blue mr-2"></i>Beta Access Code
                         </label>
                         <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i class="fas fa-key text-gray-400"></i>
-                            </div>
                             <input 
                                 type="text" 
                                 id="beta_code" 
                                 name="beta_code" 
                                 required
                                 maxlength="20"
-                                class="block w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all text-lg font-mono tracking-wider"
-                                placeholder="Enter your beta code"
+                                class="block w-full px-6 py-5 border-2 border-gray-200 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-ayuni-blue dark:focus:border-ayuni-aqua transition-all text-lg font-mono tracking-wider text-center"
+                                placeholder="XXXX-XXXX-XXXX"
                                 value="<?= htmlspecialchars($_POST['beta_code'] ?? '') ?>"
                                 autocomplete="off"
                             />
                         </div>
-                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                            Your beta code was provided by the Ayuni team
+                        <p class="mt-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                            🔑 Provided by the Ayuni team
                         </p>
                     </div>
                     
                     <button 
                         type="submit" 
-                        class="w-full flex justify-center items-center px-6 py-4 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold rounded-xl text-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
+                        class="w-full flex justify-center items-center px-6 py-5 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-bold rounded-2xl text-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 focus:outline-none focus:ring-4 focus:ring-ayuni-blue/30 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl shadow-lg active:scale-[0.98]"
                     >
-                        <i class="fas fa-arrow-right mr-2"></i>
-                        Continue
+                        <i class="fas fa-rocket mr-3"></i>
+                        Start Your Journey
                     </button>
                 </form>
             </div>
             
             <div class="text-center">
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Already have an account?
-                </p>
-                <a href="/login" class="text-ayuni-blue hover:text-ayuni-aqua font-semibold transition-colors">
-                    Sign in to your account
-                </a>
+                <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-gray-700/30 p-4">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        Already have an account?
+                    </p>
+                    <a href="/login" class="inline-flex items-center text-ayuni-blue hover:text-ayuni-aqua font-semibold transition-colors">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Sign in to your account
+                    </a>
+                </div>
             </div>
             
         <?php elseif ($step === 'login'): ?>
             <!-- Step 3: User Login -->
             <div class="text-center">
+                <!-- App-style header -->
                 <div class="mb-8">
                     <div class="flex justify-center mb-6">
                         <div class="relative">
-                            <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-28 w-auto dark:hidden">
-                            <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-28 w-auto hidden dark:block">
+                            <div class="w-24 h-24 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-3xl shadow-2xl flex items-center justify-center mb-4 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                                <i class="fas fa-brain text-white text-2xl"></i>
+                            </div>
                         </div>
                     </div>
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-ayuni-aqua to-ayuni-blue bg-clip-text text-transparent mb-2">
+                        Ayuni
+                    </h1>
+                    <p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        AI Emotional Intelligence
+                    </p>
                 </div>
                 
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back</h2>
-                <p class="text-gray-600 dark:text-gray-400 mb-8">
-                    Sign in to continue your AI companion journey
-                </p>
+                <div class="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-3xl border border-white/20 dark:border-gray-700/30 shadow-xl p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Welcome Back</h2>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Continue your journey with your <span class="font-semibold text-ayuni-blue">AEI companions</span>
+                    </p>
+                </div>
             </div>
             
             <?php if (isset($error)): ?>
@@ -267,66 +293,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
             
-            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-8">
+            <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-3xl border border-white/30 dark:border-gray-700/30 shadow-2xl p-8">
                 <form method="POST" action="/login" class="space-y-6">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
                     <div>
-                        <label for="login_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                            Email Address
+                        <label for="login_email" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                            <i class="fas fa-envelope text-ayuni-blue mr-2"></i>Email Address
                         </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i class="fas fa-envelope text-gray-400"></i>
-                            </div>
-                            <input 
-                                type="email" 
-                                id="login_email" 
-                                name="email" 
-                                required
-                                class="block w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all text-lg"
-                                placeholder="Enter your email"
-                                value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-                            />
-                        </div>
+                        <input 
+                            type="email" 
+                            id="login_email" 
+                            name="email" 
+                            required
+                            class="block w-full px-6 py-5 border-2 border-gray-200 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-ayuni-blue dark:focus:border-ayuni-aqua transition-all text-lg"
+                            placeholder="your@email.com"
+                            value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
+                        />
                     </div>
                     
                     <div>
-                        <label for="login_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                            Password
+                        <label for="login_password" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">
+                            <i class="fas fa-lock text-ayuni-blue mr-2"></i>Password
                         </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i class="fas fa-lock text-gray-400"></i>
-                            </div>
-                            <input 
-                                type="password" 
-                                id="login_password" 
-                                name="password" 
-                                required
-                                class="block w-full pl-12 pr-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all text-lg"
-                                placeholder="Enter your password"
-                            />
-                        </div>
+                        <input 
+                            type="password" 
+                            id="login_password" 
+                            name="password" 
+                            required
+                            class="block w-full px-6 py-5 border-2 border-gray-200 dark:border-gray-600 rounded-2xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-ayuni-blue dark:focus:border-ayuni-aqua transition-all text-lg"
+                            placeholder="Your password"
+                        />
                     </div>
                     
                     <button 
                         type="submit" 
-                        class="w-full flex justify-center items-center px-6 py-4 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold rounded-xl text-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
+                        class="w-full flex justify-center items-center px-6 py-5 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-bold rounded-2xl text-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 focus:outline-none focus:ring-4 focus:ring-ayuni-blue/30 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl shadow-lg active:scale-[0.98]"
                     >
-                        <i class="fas fa-sign-in-alt mr-2"></i>
-                        Sign In
+                        <i class="fas fa-sign-in-alt mr-3"></i>
+                        Welcome Back
                     </button>
                 </form>
             </div>
             
             <div class="text-center">
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Need a beta code?
-                </p>
-                <a href="/beta-access" class="text-ayuni-blue hover:text-ayuni-aqua font-semibold transition-colors">
-                    Get beta access
-                </a>
+                <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-gray-700/30 p-4">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        Need a beta code?
+                    </p>
+                    <a href="/beta-access" class="inline-flex items-center text-ayuni-blue hover:text-ayuni-aqua font-semibold transition-colors">
+                        <i class="fas fa-key mr-2"></i>
+                        Get beta access
+                    </a>
+                </div>
             </div>
             
         <?php else: ?>
@@ -452,19 +471,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
         
+        <!-- Feature highlights -->
         <div class="text-center">
-            <div class="flex items-center justify-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-brain text-ayuni-blue"></i>
-                    <span>Emotional AI</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-shield-alt text-ayuni-blue"></i>
-                    <span>Private & Secure</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <i class="fas fa-flask text-ayuni-blue"></i>
-                    <span>Beta Access</span>
+            <div class="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-3xl border border-white/20 dark:border-gray-700/30 p-6">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">What makes AEI special?</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                    <div class="flex flex-col items-center space-y-2 p-3 bg-gradient-to-br from-ayuni-aqua/10 to-ayuni-blue/10 rounded-2xl">
+                        <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
+                            <i class="fas fa-heart text-white text-sm"></i>
+                        </div>
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">Emotional Understanding</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Companions that truly get you</span>
+                    </div>
+                    <div class="flex flex-col items-center space-y-2 p-3 bg-gradient-to-br from-ayuni-blue/10 to-purple-500/10 rounded-2xl">
+                        <div class="w-10 h-10 bg-gradient-to-br from-ayuni-blue to-purple-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user-friends text-white text-sm"></i>
+                        </div>
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">Personal AEI</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Create your unique companion</span>
+                    </div>
+                    <div class="flex flex-col items-center space-y-2 p-3 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl">
+                        <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                            <i class="fas fa-shield-alt text-white text-sm"></i>
+                        </div>
+                        <span class="font-semibold text-gray-700 dark:text-gray-300">Private & Secure</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Your data stays yours</span>
+                    </div>
                 </div>
             </div>
         </div>
