@@ -186,133 +186,107 @@ $page_title = match($page) {
         });
 
         // Pull-to-refresh functionality for PWA
-        let startY = 0;
-        let isRefreshing = false;
-        let pullDistance = 0;
-        const maxPullDistance = 150;
-        const refreshThreshold = 80;
+        document.addEventListener('DOMContentLoaded', function() {
+            let startY = 0;
+            let isRefreshing = false;
+            let pullDistance = 0;
+            const maxPullDistance = 150;
+            const refreshThreshold = 80;
+            let pullStarted = false;
 
-        function createRefreshIndicator() {
-            const indicator = document.createElement('div');
-            indicator.id = 'refresh-indicator';
-            indicator.className = 'fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue flex items-center justify-center text-white font-semibold z-50 transform -translate-y-full transition-transform duration-300';
-            indicator.innerHTML = '<i class="fas fa-arrow-down mr-2"></i> Pull to refresh';
-            document.body.appendChild(indicator);
-            return indicator;
-        }
-
-        function updateRefreshIndicator(distance) {
-            const indicator = document.getElementById('refresh-indicator');
-            if (!indicator) return;
-
-            const progress = Math.min(distance / refreshThreshold, 1);
-            const translateY = Math.min(distance - 64, 0);
-            
-            indicator.style.transform = `translateY(${translateY}px)`;
-            
-            if (progress >= 1) {
-                indicator.innerHTML = '<i class="fas fa-sync-alt mr-2 animate-spin"></i> Release to refresh';
-                indicator.className = indicator.className.replace('from-ayuni-aqua to-ayuni-blue', 'from-green-400 to-green-600');
-            } else {
+            function createRefreshIndicator() {
+                // Remove existing indicator first
+                const existing = document.getElementById('refresh-indicator');
+                if (existing) existing.remove();
+                
+                const indicator = document.createElement('div');
+                indicator.id = 'refresh-indicator';
+                indicator.className = 'fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue flex items-center justify-center text-white font-semibold z-50 transform -translate-y-full transition-transform duration-300';
                 indicator.innerHTML = '<i class="fas fa-arrow-down mr-2"></i> Pull to refresh';
-                indicator.className = indicator.className.replace('from-green-400 to-green-600', 'from-ayuni-aqua to-ayuni-blue');
+                document.body.appendChild(indicator);
+                return indicator;
             }
-        }
 
-        function hideRefreshIndicator() {
-            const indicator = document.getElementById('refresh-indicator');
-            if (indicator) {
-                indicator.style.transform = 'translateY(-100%)';
-                setTimeout(() => {
-                    if (indicator.parentNode) {
-                        indicator.parentNode.removeChild(indicator);
+            function updateRefreshIndicator(distance) {
+                const indicator = document.getElementById('refresh-indicator');
+                if (!indicator) return;
+
+                const progress = Math.min(distance / refreshThreshold, 1);
+                const translateY = Math.min(distance - 64, 0);
+                
+                indicator.style.transform = `translateY(${translateY}px)`;
+                
+                if (progress >= 1) {
+                    indicator.innerHTML = '<i class="fas fa-sync-alt mr-2 animate-spin"></i> Release to refresh';
+                    indicator.style.background = 'linear-gradient(to right, #10b981, #059669)';
+                } else {
+                    indicator.innerHTML = '<i class="fas fa-arrow-down mr-2"></i> Pull to refresh';
+                    indicator.style.background = 'linear-gradient(to right, #39D2DF, #546BEC)';
+                }
+            }
+
+            function hideRefreshIndicator() {
+                const indicator = document.getElementById('refresh-indicator');
+                if (indicator) {
+                    indicator.style.transform = 'translateY(-100%)';
+                    setTimeout(() => indicator.remove(), 300);
+                }
+            }
+
+            function handleRefresh() {
+                if (isRefreshing) return;
+                isRefreshing = true;
+                
+                const indicator = document.getElementById('refresh-indicator');
+                if (indicator) {
+                    indicator.innerHTML = '<i class="fas fa-sync-alt mr-2 animate-spin"></i> Refreshing...';
+                    indicator.style.transform = 'translateY(0)';
+                }
+
+                setTimeout(() => window.location.reload(), 500);
+            }
+
+            // Touch events for mobile
+            document.addEventListener('touchstart', function(e) {
+                console.log('Touch start', window.scrollY);
+                if (window.scrollY <= 5 && !isRefreshing) {
+                    startY = e.touches[0].clientY;
+                    pullStarted = true;
+                    console.log('Pull started');
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchmove', function(e) {
+                if (!pullStarted || isRefreshing || window.scrollY > 5) return;
+
+                const currentY = e.touches[0].clientY;
+                pullDistance = Math.max(0, currentY - startY);
+                
+                console.log('Pull distance:', pullDistance);
+                
+                if (pullDistance > 5) {
+                    if (!document.getElementById('refresh-indicator')) {
+                        createRefreshIndicator();
                     }
-                }, 300);
-            }
-        }
+                    e.preventDefault();
+                    updateRefreshIndicator(pullDistance);
+                }
+            }, { passive: false });
 
-        function handleRefresh() {
-            if (isRefreshing) return;
-            isRefreshing = true;
-            
-            const indicator = document.getElementById('refresh-indicator');
-            if (indicator) {
-                indicator.innerHTML = '<i class="fas fa-sync-alt mr-2 animate-spin"></i> Refreshing...';
-                indicator.style.transform = 'translateY(0)';
-            }
+            document.addEventListener('touchend', function(e) {
+                console.log('Touch end, distance:', pullDistance);
+                if (!pullStarted || isRefreshing) return;
 
-            // Reload the page after a short delay
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
-        }
+                if (pullDistance >= refreshThreshold) {
+                    handleRefresh();
+                } else {
+                    hideRefreshIndicator();
+                }
 
-        // Touch events for mobile
-        document.addEventListener('touchstart', function(e) {
-            if (window.scrollY === 0 && !isRefreshing) {
-                startY = e.touches[0].clientY;
-                createRefreshIndicator();
-            }
-        }, { passive: true });
-
-        document.addEventListener('touchmove', function(e) {
-            if (startY === 0 || isRefreshing || window.scrollY > 0) return;
-
-            const currentY = e.touches[0].clientY;
-            pullDistance = Math.max(0, Math.min(currentY - startY, maxPullDistance));
-            
-            if (pullDistance > 10) {
-                e.preventDefault();
-                updateRefreshIndicator(pullDistance);
-            }
-        }, { passive: false });
-
-        document.addEventListener('touchend', function(e) {
-            if (startY === 0 || isRefreshing) return;
-
-            if (pullDistance >= refreshThreshold) {
-                handleRefresh();
-            } else {
-                hideRefreshIndicator();
-            }
-
-            startY = 0;
-            pullDistance = 0;
-        }, { passive: true });
-
-        // Mouse events for desktop testing
-        let isMouseDown = false;
-        document.addEventListener('mousedown', function(e) {
-            if (window.scrollY === 0 && !isRefreshing) {
-                isMouseDown = true;
-                startY = e.clientY;
-                createRefreshIndicator();
-            }
-        });
-
-        document.addEventListener('mousemove', function(e) {
-            if (!isMouseDown || startY === 0 || isRefreshing || window.scrollY > 0) return;
-
-            pullDistance = Math.max(0, Math.min(e.clientY - startY, maxPullDistance));
-            
-            if (pullDistance > 10) {
-                e.preventDefault();
-                updateRefreshIndicator(pullDistance);
-            }
-        });
-
-        document.addEventListener('mouseup', function(e) {
-            if (!isMouseDown || startY === 0 || isRefreshing) return;
-
-            if (pullDistance >= refreshThreshold) {
-                handleRefresh();
-            } else {
-                hideRefreshIndicator();
-            }
-
-            isMouseDown = false;
-            startY = 0;
-            pullDistance = 0;
+                pullStarted = false;
+                startY = 0;
+                pullDistance = 0;
+            }, { passive: true });
         });
     </script>
 </head>
