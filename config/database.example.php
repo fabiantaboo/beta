@@ -760,6 +760,24 @@ function createTablesIfNotExist($pdo) {
             INDEX idx_memory_access (last_accessed, access_count),
             INDEX idx_session_memories (session_id, created_at),
             INDEX idx_embedding_model (embedding_model, created_at)
+        )",
+
+        // Temporary avatar options for AEI creation
+        'temp_avatar_options' => "CREATE TABLE IF NOT EXISTS temp_avatar_options (
+            id VARCHAR(32) PRIMARY KEY,
+            user_id VARCHAR(32) NOT NULL,
+            aei_name VARCHAR(100) NOT NULL,
+            prompt_used TEXT NOT NULL,
+            avatar_1_url VARCHAR(500) NULL,
+            avatar_2_url VARCHAR(500) NULL,
+            avatar_3_url VARCHAR(500) NULL,
+            selected_avatar INT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL 24 HOUR),
+            
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_user_expires (user_id, expires_at),
+            INDEX idx_expires (expires_at)
         )"
     ];
 

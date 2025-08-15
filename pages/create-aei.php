@@ -3,6 +3,73 @@ requireOnboarding();
 require_once __DIR__ . '/../includes/background_social_processor.php';
 require_once __DIR__ . '/../includes/replicate_api.php';
 
+$step = $_GET['step'] ?? 'create';
+$userId = getUserSession();
+
+// Handle finalization with selected avatar
+if ($step === 'finalize' && isset($_SESSION['selected_avatar'])) {
+    $selectedAvatar = $_SESSION['selected_avatar'];
+    
+    // Get temp data to complete AEI creation
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM temp_avatar_options WHERE id = ? AND user_id = ?");
+        $stmt->execute([$selectedAvatar['temp_id'], $userId]);
+        $tempData = $stmt->fetch();
+        
+        if ($tempData && isset($_SESSION['aei_creation_data'])) {
+            $aeiData = $_SESSION['aei_creation_data'];
+            
+            // Complete AEI creation with selected avatar
+            $aeiId = generateId();
+            
+            // Copy selected avatar to final location
+            $sourceUrl = $selectedAvatar['avatar_url'];
+            $targetFilename = $aeiId . '.png';
+            $targetUrl = '/assets/avatars/' . $targetFilename;
+            $sourcePath = $_SERVER['DOCUMENT_ROOT'] . $sourceUrl;
+            $targetPath = $_SERVER['DOCUMENT_ROOT'] . $targetUrl;
+            
+            if (file_exists($sourcePath) && copy($sourcePath, $targetPath)) {
+                $finalAvatarUrl = $targetUrl;
+            } else {
+                $finalAvatarUrl = null;
+            }
+            
+            // Create AEI in database
+            $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $aeiId, $userId, $aeiData['name'], $aeiData['age'], $aeiData['gender'],
+                $aeiData['personality'], $aeiData['appearance'], $aeiData['background'],
+                $aeiData['interests'], $aeiData['communication'], $aeiData['quirks'],
+                $aeiData['occupation'], $aeiData['goals'], $aeiData['relationship'],
+                $finalAvatarUrl
+            ]);
+            
+            // Initialize social environment
+            try {
+                $socialProcessor = new BackgroundSocialProcessor($pdo);
+                $socialProcessor->initializeAEISocialEnvironment($aeiId);
+            } catch (Exception $e) {
+                error_log("Failed to initialize social environment for AEI $aeiId: " . $e->getMessage());
+            }
+            
+            // Clean up temp data
+            unset($_SESSION['selected_avatar']);
+            unset($_SESSION['aei_creation_data']);
+            
+            // Delete temp avatars
+            $stmt = $pdo->prepare("DELETE FROM temp_avatar_options WHERE id = ?");
+            $stmt->execute([$selectedAvatar['temp_id']]);
+            
+            redirectTo('dashboard');
+        }
+    } catch (Exception $e) {
+        error_log("Error finalizing AEI creation: " . $e->getMessage());
+        unset($_SESSION['selected_avatar']);
+        unset($_SESSION['aei_creation_data']);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         $error = "Invalid request. Please try again.";
@@ -67,10 +134,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "AEI name is required";
         } else {
             try {
-                $aeiId = generateId();
+                // Store AEI data in session for avatar selection
+                $_SESSION['aei_creation_data'] = [
+                    'name' => $name,
+                    'age' => $age,
+                    'gender' => $gender,
+                    'personality' => $personality,
+                    'appearance' => $appearance,
+                    'background' => $background,
+                    'interests' => $interests,
+                    'communication' => $communication,
+                    'quirks' => $quirks,
+                    'occupation' => $occupation,
+                    'goals' => $goals,
+                    'relationship' => $relationship
+                ];
                 
-                // Generate avatar if Replicate API is configured
-                $avatarUrl = null;
+                // Generate 3 avatar options if Replicate API is configured
                 try {
                     $replicateAPI = new ReplicateAPI();
                     
@@ -78,34 +158,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $prompt = $replicateAPI->buildPromptFromAppearance($appearance, $name, $gender);
                     error_log("Avatar generation prompt: " . $prompt);
                     
-                    // Generate and save avatar
-                    $avatarDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/avatars/';
-                    $avatarFilename = $aeiId . '.png';
-                    $avatarPath = $avatarDir . $avatarFilename;
+                    // Generate 3 avatars
+                    $imageUrls = $replicateAPI->generateMultipleAvatars($prompt, 3);
                     
-                    $savedPath = $replicateAPI->generateAndDownloadAvatar($prompt, $avatarPath);
-                    $avatarUrl = '/assets/avatars/' . $avatarFilename;
+                    if (!empty($imageUrls)) {
+                        // Create temp record
+                        $tempId = generateId();
+                        $avatarDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/avatars/temp/';
+                        
+                        // Download and save all avatars
+                        $savedAvatars = $replicateAPI->downloadAndSaveAvatars($imageUrls, $avatarDir, $tempId);
+                        
+                        // Store in database
+                        $stmt = $pdo->prepare("INSERT INTO temp_avatar_options (id, user_id, aei_name, prompt_used, avatar_1_url, avatar_2_url, avatar_3_url) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                        $stmt->execute([
+                            $tempId,
+                            $userId,
+                            $name,
+                            $prompt,
+                            $savedAvatars[0]['url'] ?? null,
+                            $savedAvatars[1]['url'] ?? null,
+                            $savedAvatars[2]['url'] ?? null
+                        ]);
+                        
+                        // Redirect to avatar selection
+                        redirectTo('choose-avatar?temp_id=' . $tempId);
+                    } else {
+                        throw new Exception("No avatars generated");
+                    }
                     
-                    error_log("Avatar generated successfully for AEI $name: $avatarUrl");
                 } catch (Exception $e) {
                     error_log("Avatar generation failed for AEI $name: " . $e->getMessage());
-                    // Continue without avatar - it's not a blocking error
+                    
+                    // Create AEI without avatar as fallback
+                    $aeiId = generateId();
+                    $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$aeiId, $userId, $name, $age, $gender, $personality, $appearance, $background, $interests, $communication, $quirks, $occupation, $goals, $relationship, null]);
+                    
+                    // Initialize social environment
+                    try {
+                        $socialProcessor = new BackgroundSocialProcessor($pdo);
+                        $socialProcessor->initializeAEISocialEnvironment($aeiId);
+                    } catch (Exception $e) {
+                        error_log("Failed to initialize social environment for AEI $aeiId: " . $e->getMessage());
+                    }
+                    
+                    // Clean up session data
+                    unset($_SESSION['aei_creation_data']);
+                    
+                    redirectTo('dashboard');
                 }
                 
-                $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$aeiId, getUserSession(), $name, $age, $gender, $personality, $appearance, $background, $interests, $communication, $quirks, $occupation, $goals, $relationship, $avatarUrl]);
-                
-                // Initialize social environment for new AEI
-                try {
-                    $socialProcessor = new BackgroundSocialProcessor($pdo);
-                    $socialProcessor->initializeAEISocialEnvironment($aeiId);
-                    error_log("Initialized social environment for new AEI: $aeiId");
-                } catch (Exception $e) {
-                    error_log("Failed to initialize social environment for AEI $aeiId: " . $e->getMessage());
-                    // Continue without blocking AEI creation
-                }
-                
-                redirectTo('dashboard');
             } catch (PDOException $e) {
                 error_log("Database error creating AEI: " . $e->getMessage());
                 $error = "An error occurred while creating your AEI. Please try again.";

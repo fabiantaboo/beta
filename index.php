@@ -38,7 +38,7 @@ if (isset($_GET['action'])) {
     }
 }
 
-$allowed_pages = ['home', 'onboarding', 'create-aei', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-feedback', 'admin-logs', 'admin-decay', 'admin-migration', 'admin-replicate', 'memory-setup'];
+$allowed_pages = ['home', 'onboarding', 'create-aei', 'choose-avatar', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-feedback', 'admin-logs', 'admin-decay', 'admin-migration', 'admin-replicate', 'admin-avatar-batch', 'memory-setup'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
@@ -51,6 +51,7 @@ $page_content = ob_get_clean(); // Get the page content
 $page_title = match($page) {
     'onboarding' => 'Welcome to Ayuni',
     'create-aei' => 'Create Your AEI',
+    'choose-avatar' => 'Choose Avatar',
     'chat' => 'Chat with AEI',
     'dashboard' => 'Dashboard',
     'profile' => 'Profile Settings',
@@ -67,6 +68,7 @@ $page_title = match($page) {
     'admin-decay' => 'Admin - Emotional Decay',
     'admin-migration' => 'Admin - Migration Tools',
     'admin-replicate' => 'Admin - Replicate AI',
+    'admin-avatar-batch' => 'Admin - Avatar Batch Generation',
     'memory-setup' => 'Admin - Memory System Setup',
     default => 'Ayuni Beta'
 };

@@ -49,6 +49,78 @@ class ReplicateAPI {
         return $this->makeRequest('POST', '/predictions', $data);
     }
     
+    public function generateMultipleAvatars($prompt, $count = 3, $aspectRatio = '1:1') {
+        try {
+            error_log("Replicate: Starting generation of $count avatars with prompt: " . $prompt);
+            
+            // Start the prediction for multiple outputs
+            $prediction = $this->generateAvatar($prompt, $aspectRatio, 3, $count);
+            
+            if (!isset($prediction['id'])) {
+                throw new Exception("Failed to start image generation: " . json_encode($prediction));
+            }
+            
+            error_log("Replicate: Prediction started with ID: " . $prediction['id']);
+            
+            // Wait for completion
+            $completedPrediction = $this->waitForCompletion($prediction['id']);
+            
+            if (!isset($completedPrediction['output']) || empty($completedPrediction['output'])) {
+                throw new Exception("No output images generated");
+            }
+            
+            // Return all generated image URLs
+            $imageUrls = $completedPrediction['output'];
+            if (!is_array($imageUrls)) {
+                $imageUrls = [$imageUrls];
+            }
+            
+            error_log("Replicate: Generated " . count($imageUrls) . " images successfully");
+            return $imageUrls;
+            
+        } catch (Exception $e) {
+            error_log("Replicate: Multiple avatar generation failed: " . $e->getMessage());
+            throw $e;
+        }
+    }
+    
+    public function downloadAndSaveAvatars($imageUrls, $baseDir, $baseFilename) {
+        $savedPaths = [];
+        
+        foreach ($imageUrls as $index => $imageUrl) {
+            try {
+                // Create filename with index
+                $filename = $baseFilename . '_' . ($index + 1) . '.png';
+                $targetPath = $baseDir . $filename;
+                
+                // Download the image
+                $imageData = $this->downloadImage($imageUrl);
+                
+                // Ensure directory exists
+                if (!file_exists($baseDir)) {
+                    mkdir($baseDir, 0755, true);
+                }
+                
+                // Save the image
+                if (file_put_contents($targetPath, $imageData) !== false) {
+                    $savedPaths[] = [
+                        'path' => $targetPath,
+                        'url' => '/assets/avatars/' . $filename,
+                        'index' => $index + 1
+                    ];
+                    error_log("Replicate: Avatar $filename saved successfully");
+                } else {
+                    error_log("Replicate: Failed to save avatar $filename");
+                }
+                
+            } catch (Exception $e) {
+                error_log("Replicate: Failed to download avatar " . ($index + 1) . ": " . $e->getMessage());
+            }
+        }
+        
+        return $savedPaths;
+    }
+    
     public function getPrediction($predictionId) {
         return $this->makeRequest('GET', "/predictions/{$predictionId}");
     }
