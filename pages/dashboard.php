@@ -29,11 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     $pdo->beginTransaction();
                     
                     // Soft delete the AEI
-                    $stmt = $pdo->prepare("UPDATE aeis SET is_active = FALSE, deleted_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
-                    $stmt->execute([$aeiId, $userId]);
-                    
-                    // Also mark associated chat sessions as inactive
-                    $stmt = $pdo->prepare("UPDATE chat_sessions SET is_active = FALSE WHERE aei_id = ? AND user_id = ?");
+                    $stmt = $pdo->prepare("UPDATE aeis SET is_active = FALSE WHERE id = ? AND user_id = ?");
                     $stmt->execute([$aeiId, $userId]);
                     
                     $pdo->commit();
@@ -116,15 +112,47 @@ try {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <?php foreach ($aeis as $aei): ?>
                     <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-ayuni-blue/50 dark:hover:border-ayuni-aqua/50 transition-all duration-300">
-                        <div class="flex items-center mb-4">
-                            <div class="w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center mr-4">
-                                <span class="text-xl text-white font-bold">
-                                    <?= strtoupper(substr($aei['name'], 0, 1)) ?>
-                                </span>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center mr-4">
+                                    <span class="text-xl text-white font-bold">
+                                        <?= strtoupper(substr($aei['name'], 0, 1)) ?>
+                                    </span>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Created <?= date('M j, Y', strtotime($aei['created_at'])) ?></p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Created <?= date('M j, Y', strtotime($aei['created_at'])) ?></p>
+                            
+                            <!-- Dropdown Menu -->
+                            <div class="relative" data-dropdown>
+                                <button 
+                                    onclick="toggleDropdown(this)"
+                                    class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    aria-label="Options"
+                                >
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                
+                                <div class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10 hidden">
+                                    <div class="py-1">
+                                        <a 
+                                            href="/chat/<?= urlencode($aei['id']) ?>" 
+                                            class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                        >
+                                            <i class="fas fa-comments mr-3 text-ayuni-blue"></i>
+                                            Start Chat
+                                        </a>
+                                        <button 
+                                            onclick="showDeleteModal('<?= htmlspecialchars($aei['id']) ?>', '<?= htmlspecialchars($aei['name']) ?>')"
+                                            class="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                        >
+                                            <i class="fas fa-trash mr-3"></i>
+                                            Delete AEI
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
@@ -132,20 +160,10 @@ try {
                             <p class="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3"><?= htmlspecialchars(substr($aei['personality'], 0, 120)) ?>...</p>
                         <?php endif; ?>
                         
-                        <div class="space-y-2">
-                            <a href="/chat/<?= urlencode($aei['id']) ?>" class="block w-full bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-2 px-4 rounded-lg text-center hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
-                                <i class="fas fa-comments mr-2"></i>
-                                Start Conversation
-                            </a>
-                            
-                            <button 
-                                onclick="showDeleteModal('<?= htmlspecialchars($aei['id']) ?>', '<?= htmlspecialchars($aei['name']) ?>')"
-                                class="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium py-2 px-4 rounded-lg text-center hover:bg-red-100 dark:hover:bg-red-900/30 transition-all duration-200 border border-red-200 dark:border-red-800"
-                            >
-                                <i class="fas fa-trash mr-2"></i>
-                                Delete AEI
-                            </button>
-                        </div>
+                        <a href="/chat/<?= urlencode($aei['id']) ?>" class="block w-full bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-4 rounded-lg text-center hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
+                            <i class="fas fa-comments mr-2"></i>
+                            Start Conversation
+                        </a>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -228,7 +246,41 @@ try {
 </div>
 
 <script>
+// Dropdown functionality
+function toggleDropdown(button) {
+    const dropdown = button.parentNode.querySelector('div');
+    const isHidden = dropdown.classList.contains('hidden');
+    
+    // Close all other dropdowns
+    document.querySelectorAll('[data-dropdown] div').forEach(d => {
+        if (d !== dropdown) {
+            d.classList.add('hidden');
+        }
+    });
+    
+    // Toggle current dropdown
+    if (isHidden) {
+        dropdown.classList.remove('hidden');
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('[data-dropdown]')) {
+        document.querySelectorAll('[data-dropdown] div').forEach(d => {
+            d.classList.add('hidden');
+        });
+    }
+});
+
 function showDeleteModal(aeiId, aeiName) {
+    // Close any open dropdowns
+    document.querySelectorAll('[data-dropdown] div').forEach(d => {
+        d.classList.add('hidden');
+    });
+    
     document.getElementById('modalAeiName').textContent = aeiName;
     document.getElementById('deleteAeiId').value = aeiId;
     document.getElementById('confirmDeleteInput').value = '';
@@ -249,16 +301,21 @@ function closeDeleteModal() {
 }
 
 // Enable delete button only when "DELETE" is typed
-document.getElementById('confirmDeleteInput').addEventListener('input', function(e) {
-    const deleteButton = document.getElementById('deleteButton');
-    if (e.target.value === 'DELETE') {
-        deleteButton.disabled = false;
-        deleteButton.classList.remove('bg-red-300', 'dark:bg-red-800');
-        deleteButton.classList.add('bg-red-600', 'hover:bg-red-700');
-    } else {
-        deleteButton.disabled = true;
-        deleteButton.classList.add('bg-red-300', 'dark:bg-red-800');
-        deleteButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmInput = document.getElementById('confirmDeleteInput');
+    if (confirmInput) {
+        confirmInput.addEventListener('input', function(e) {
+            const deleteButton = document.getElementById('deleteButton');
+            if (e.target.value === 'DELETE') {
+                deleteButton.disabled = false;
+                deleteButton.classList.remove('bg-red-300', 'dark:bg-red-800');
+                deleteButton.classList.add('bg-red-600', 'hover:bg-red-700');
+            } else {
+                deleteButton.disabled = true;
+                deleteButton.classList.add('bg-red-300', 'dark:bg-red-800');
+                deleteButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+            }
+        });
     }
 });
 
@@ -270,7 +327,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Close modal when clicking outside
-document.getElementById('deleteModal').addEventListener('click', function(e) {
+document.getElementById('deleteModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeDeleteModal();
     }
