@@ -16,19 +16,19 @@ include_once '../includes/proactive_messaging.php';
 
 // Clear any unwanted output
 ob_clean();
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 
 // Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
+    echo json_encode(['error' => 'Method not allowed'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Check authentication
 if (!isLoggedIn()) {
     http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
+    echo json_encode(['error' => 'Unauthorized'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -50,7 +50,7 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     
     if (!$uploadResult['success']) {
         http_response_code(400);
-        echo json_encode(['error' => 'Image upload failed: ' . $uploadResult['error']]);
+        echo json_encode(['error' => 'Image upload failed: ' . $uploadResult['error']], JSON_UNESCAPED_UNICODE);
         exit;
     }
     
@@ -62,7 +62,7 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     
     if (!$input) {
         http_response_code(400);
-        echo json_encode(['error' => 'Invalid input']);
+        echo json_encode(['error' => 'Invalid input'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 }
@@ -70,7 +70,7 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
 // Validate CSRF token
 if (!verifyCSRFToken($input['csrf_token'] ?? '')) {
     http_response_code(403);
-    echo json_encode(['error' => 'Invalid CSRF token']);
+    echo json_encode(['error' => 'Invalid CSRF token'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -80,14 +80,14 @@ $aeiId = sanitizeInput($input['aei_id'] ?? '');
 
 if ((empty($message) && !$uploadedImage) || empty($aeiId)) {
     http_response_code(400);
-    echo json_encode(['error' => 'Message or image and AEI ID are required']);
+    echo json_encode(['error' => 'Message or image and AEI ID are required'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Validate message length
 if (strlen($message) > 2000) {
     http_response_code(400);
-    echo json_encode(['error' => 'Message too long (max 2000 characters)']);
+    echo json_encode(['error' => 'Message too long (max 2000 characters)'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -99,7 +99,7 @@ try {
     
     if (!$aei) {
         http_response_code(404);
-        echo json_encode(['error' => 'AEI not found']);
+        echo json_encode(['error' => 'AEI not found'], JSON_UNESCAPED_UNICODE);
         exit;
     }
     
@@ -244,7 +244,7 @@ try {
         $response['debug_data'] = $debugData;
     }
     
-    echo json_encode($response);
+    echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     
 } catch (Exception $e) {
     // Rollback transaction on any error
@@ -259,7 +259,7 @@ try {
     ob_clean();
     
     http_response_code(500);
-    echo json_encode(['error' => 'Failed to send message. Please try again.']);
+    echo json_encode(['error' => 'Failed to send message. Please try again.'], JSON_UNESCAPED_UNICODE);
 }
 
 // Ensure we end output buffering and send response

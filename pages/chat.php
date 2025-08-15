@@ -1,6 +1,17 @@
 <?php
 requireOnboarding();
 
+// Function to safely display message text with emojis
+function safeDisplayMessage($text) {
+    // First, ensure proper UTF-8 encoding
+    if (!mb_check_encoding($text, 'UTF-8')) {
+        $text = mb_convert_encoding($text, 'UTF-8', 'auto');
+    }
+    
+    // Use htmlspecialchars with UTF-8 and preserve emojis
+    return htmlspecialchars($text, ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
+}
+
 $aeiId = $_GET['aei'] ?? '';
 if (empty($aeiId)) {
     redirectTo('dashboard');
@@ -376,7 +387,7 @@ if ($isCurrentUserAdmin) {
                                     </div>
                                 <?php endif; ?>
                                 <?php if (!empty($message['message_text'])): ?>
-                                    <p class="text-sm"><?= nl2br(htmlspecialchars($message['message_text'])) ?></p>
+                                    <p class="text-sm"><?= nl2br(safeDisplayMessage($message['message_text'])) ?></p>
                                 <?php endif; ?>
                                 <div class="flex items-center justify-between mt-2">
                                     <p class="text-xs opacity-70">
