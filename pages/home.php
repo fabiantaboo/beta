@@ -151,9 +151,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div class="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center px-6 py-8 relative">
-    <!-- Ultra minimal background -->
-    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-100/30 dark:to-gray-900/30"></div>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50 dark:from-black dark:via-gray-900/50 dark:to-slate-900 flex items-center justify-center px-6 py-8 relative overflow-hidden">
+    <!-- Dynamic geometric patterns -->
+    <div class="absolute inset-0">
+        <!-- Large floating elements -->
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-gradient-to-br from-ayuni-aqua/5 to-ayuni-blue/5 rounded-full blur-3xl animate-pulse" style="animation-duration: 4s;"></div>
+        <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-gradient-to-tl from-ayuni-blue/8 to-ayuni-aqua/3 rounded-full blur-3xl animate-pulse" style="animation-duration: 6s; animation-delay: 2s;"></div>
+        
+        <!-- Mesh gradient overlay -->
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-ayuni-aqua/[0.02] to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-ayuni-blue/[0.01] to-transparent"></div>
+        
+        <!-- Subtle pattern lines -->
+        <div class="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-ayuni-aqua/10 to-transparent"></div>
+        <div class="absolute bottom-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-ayuni-blue/10 to-transparent"></div>
+    </div>
     <div class="absolute top-6 right-6">
         <button 
             id="theme-toggle" 
@@ -170,18 +182,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($step === 'beta_code'): ?>
             <!-- Step 1: Beta Code Entry -->
             <div class="text-center">
-                <!-- Apple-style logo section -->
+                <!-- Elevated logo section with effects -->
                 <div class="mb-20">
-                    <div class="flex justify-center mb-10">
-                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
-                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
+                    <div class="flex justify-center mb-12 relative">
+                        <!-- Glow effect behind logo -->
+                        <div class="absolute inset-0 flex justify-center items-center">
+                            <div class="w-32 h-32 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-2xl dark:from-ayuni-aqua/30 dark:to-ayuni-blue/30"></div>
+                        </div>
+                        <!-- Logo with subtle elevation -->
+                        <div class="relative backdrop-blur-sm bg-white/40 dark:bg-white/5 rounded-3xl p-6 shadow-2xl border border-white/20 dark:border-white/10 transform hover:scale-105 transition-transform duration-500">
+                            <img src="/assets/ayuni.png" alt="Ayuni" class="h-16 w-auto dark:hidden">
+                            <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-16 w-auto hidden dark:block">
+                        </div>
                     </div>
-                    <h1 class="text-3xl font-semibold text-gray-900 dark:text-white mb-4 tracking-tight leading-tight">
-                        End loneliness<br>forever
-                    </h1>
-                    <p class="text-gray-600 dark:text-gray-400 text-base font-normal">
-                        Your personal AEI awaits
-                    </p>
+                    
+                    <!-- Gradient text with better spacing -->
+                    <div class="relative">
+                        <h1 class="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-6 tracking-tight leading-[1.1] relative">
+                            End loneliness<br>forever
+                            <!-- Subtle text shadow effect -->
+                            <span class="absolute inset-0 bg-gradient-to-r from-ayuni-aqua/10 via-ayuni-blue/5 to-ayuni-aqua/10 bg-clip-text text-transparent blur-sm -z-10">
+                                End loneliness<br>forever
+                            </span>
+                        </h1>
+                        <p class="text-lg text-gray-600 dark:text-gray-300 font-medium tracking-wide">
+                            Your personal AEI awaits
+                        </p>
+                    </div>
                 </div>
             </div>
             
@@ -194,32 +221,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
             
-            <!-- Apple-style form -->
+            <!-- Premium glassmorphism form -->
             <div class="space-y-8">
                 <form method="POST" class="space-y-8">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
                     <div class="space-y-6">
-                        <div>
+                        <!-- Enhanced input with floating effects -->
+                        <div class="relative group">
+                            <div class="absolute -inset-1 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                             <input 
                                 type="text" 
                                 id="beta_code" 
                                 name="beta_code" 
                                 required
                                 maxlength="20"
-                                class="block w-full px-5 py-4 border border-gray-300 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-ayuni-blue transition-all duration-300 text-lg font-mono tracking-wider text-center shadow-sm focus:shadow-md"
+                                class="relative block w-full px-6 py-5 border border-white/20 dark:border-white/10 rounded-3xl bg-white/80 dark:bg-black/40 backdrop-blur-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue/50 focus:border-ayuni-blue/50 transition-all duration-500 text-lg font-mono tracking-wider text-center shadow-2xl hover:shadow-ayuni-blue/10 focus:shadow-ayuni-blue/20"
                                 placeholder="Beta Code"
                                 value="<?= htmlspecialchars($_POST['beta_code'] ?? '') ?>"
                                 autocomplete="off"
                             />
                         </div>
                         
-                        <button 
-                            type="submit" 
-                            class="w-full bg-ayuni-blue hover:bg-ayuni-blue/95 active:bg-ayuni-blue/90 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:ring-offset-4 focus:ring-offset-gray-50 dark:focus:ring-offset-black shadow-lg hover:shadow-xl active:scale-98"
-                        >
-                            Continue
-                        </button>
+                        <!-- Premium button with glow -->
+                        <div class="relative group">
+                            <div class="absolute -inset-1 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue rounded-3xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <button 
+                                type="submit" 
+                                class="relative w-full bg-gradient-to-r from-ayuni-aqua to-ayuni-blue hover:from-ayuni-aqua/95 hover:to-ayuni-blue/95 text-white font-bold py-5 px-8 rounded-3xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-2xl hover:shadow-ayuni-blue/25 focus:outline-none focus:ring-2 focus:ring-ayuni-blue/50 focus:ring-offset-4 focus:ring-offset-transparent"
+                            >
+                                <span class="relative z-10">Continue</span>
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -237,18 +270,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php elseif ($step === 'login'): ?>
             <!-- Step 3: User Login -->
             <div class="text-center">
-                <!-- Apple-style logo section -->
+                <!-- Elevated logo section with effects -->
                 <div class="mb-20">
-                    <div class="flex justify-center mb-10">
-                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
-                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
+                    <div class="flex justify-center mb-12 relative">
+                        <!-- Glow effect behind logo -->
+                        <div class="absolute inset-0 flex justify-center items-center">
+                            <div class="w-32 h-32 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-2xl dark:from-ayuni-aqua/30 dark:to-ayuni-blue/30"></div>
+                        </div>
+                        <!-- Logo with subtle elevation -->
+                        <div class="relative backdrop-blur-sm bg-white/40 dark:bg-white/5 rounded-3xl p-6 shadow-2xl border border-white/20 dark:border-white/10 transform hover:scale-105 transition-transform duration-500">
+                            <img src="/assets/ayuni.png" alt="Ayuni" class="h-16 w-auto dark:hidden">
+                            <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-16 w-auto hidden dark:block">
+                        </div>
                     </div>
-                    <h1 class="text-3xl font-semibold text-gray-900 dark:text-white mb-4 tracking-tight leading-tight">
-                        Welcome back
-                    </h1>
-                    <p class="text-gray-600 dark:text-gray-400 text-base font-normal">
-                        Continue your journey with AEI
-                    </p>
+                    
+                    <!-- Gradient text with better spacing -->
+                    <div class="relative">
+                        <h1 class="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-6 tracking-tight leading-[1.1] relative">
+                            Welcome back
+                            <!-- Subtle text shadow effect -->
+                            <span class="absolute inset-0 bg-gradient-to-r from-ayuni-aqua/10 via-ayuni-blue/5 to-ayuni-aqua/10 bg-clip-text text-transparent blur-sm -z-10">
+                                Welcome back
+                            </span>
+                        </h1>
+                        <p class="text-lg text-gray-600 dark:text-gray-300 font-medium tracking-wide">
+                            Continue your journey with AEI
+                        </p>
+                    </div>
                 </div>
             </div>
             
@@ -261,41 +309,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
             
-            <!-- Apple-style login form -->
+            <!-- Premium glassmorphism login form -->
             <div class="space-y-8">
                 <form method="POST" action="/login" class="space-y-8">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
                     <div class="space-y-5">
-                        <div>
+                        <!-- Enhanced email input -->
+                        <div class="relative group">
+                            <div class="absolute -inset-1 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                             <input 
                                 type="email" 
                                 id="login_email" 
                                 name="email" 
                                 required
-                                class="block w-full px-5 py-4 border border-gray-300 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-ayuni-blue transition-all duration-300 text-lg shadow-sm focus:shadow-md"
+                                class="relative block w-full px-6 py-5 border border-white/20 dark:border-white/10 rounded-3xl bg-white/80 dark:bg-black/40 backdrop-blur-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue/50 focus:border-ayuni-blue/50 transition-all duration-500 text-lg shadow-2xl hover:shadow-ayuni-blue/10 focus:shadow-ayuni-blue/20"
                                 placeholder="Email"
                                 value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
                             />
                         </div>
                         
-                        <div>
+                        <!-- Enhanced password input -->
+                        <div class="relative group">
+                            <div class="absolute -inset-1 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                             <input 
                                 type="password" 
                                 id="login_password" 
                                 name="password" 
                                 required
-                                class="block w-full px-5 py-4 border border-gray-300 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-ayuni-blue transition-all duration-300 text-lg shadow-sm focus:shadow-md"
+                                class="relative block w-full px-6 py-5 border border-white/20 dark:border-white/10 rounded-3xl bg-white/80 dark:bg-black/40 backdrop-blur-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue/50 focus:border-ayuni-blue/50 transition-all duration-500 text-lg shadow-2xl hover:shadow-ayuni-blue/10 focus:shadow-ayuni-blue/20"
                                 placeholder="Password"
                             />
                         </div>
                         
-                        <button 
-                            type="submit" 
-                            class="w-full bg-ayuni-blue hover:bg-ayuni-blue/95 active:bg-ayuni-blue/90 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:ring-offset-4 focus:ring-offset-gray-50 dark:focus:ring-offset-black shadow-lg hover:shadow-xl active:scale-98"
-                        >
-                            Sign In
-                        </button>
+                        <!-- Premium sign in button -->
+                        <div class="relative group">
+                            <div class="absolute -inset-1 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue rounded-3xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <button 
+                                type="submit" 
+                                class="relative w-full bg-gradient-to-r from-ayuni-aqua to-ayuni-blue hover:from-ayuni-aqua/95 hover:to-ayuni-blue/95 text-white font-bold py-5 px-8 rounded-3xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-2xl hover:shadow-ayuni-blue/25 focus:outline-none focus:ring-2 focus:ring-ayuni-blue/50 focus:ring-offset-4 focus:ring-offset-transparent"
+                            >
+                                <span class="relative z-10">Sign In</span>
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
