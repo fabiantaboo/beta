@@ -151,40 +151,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div class="min-h-screen bg-white dark:bg-ayuni-dark flex items-center justify-center px-4 py-8 relative overflow-hidden">
-    <!-- Simple geometric background -->
-    <div class="absolute inset-0">
-        <div class="absolute top-20 right-20 w-32 h-32 bg-ayuni-aqua/5 transform rotate-45"></div>
-        <div class="absolute bottom-32 left-16 w-24 h-24 bg-ayuni-blue/5 rounded-full"></div>
-        <div class="absolute top-1/3 left-8 w-2 h-16 bg-ayuni-aqua/20"></div>
-        <div class="absolute bottom-1/4 right-12 w-1 h-12 bg-ayuni-blue/20"></div>
-    </div>
-    <div class="absolute top-4 right-4">
+<div class="min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center px-6 py-8 relative">
+    <!-- Ultra minimal background -->
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-100/30 dark:to-gray-900/30"></div>
+    <div class="absolute top-6 right-6">
         <button 
             id="theme-toggle" 
             onclick="toggleTheme()" 
-            class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white transition-all duration-200"
+            class="p-3 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-900 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
             title="Toggle theme"
         >
-            <i class="fas fa-sun sun-icon text-lg"></i>
-            <i class="fas fa-moon moon-icon text-lg"></i>
+            <i class="fas fa-sun sun-icon text-base"></i>
+            <i class="fas fa-moon moon-icon text-base"></i>
         </button>
     </div>
     
-    <div class="max-w-sm w-full space-y-8 relative z-10">
+    <div class="max-w-xs w-full space-y-10 relative z-10">
         <?php if ($step === 'beta_code'): ?>
             <!-- Step 1: Beta Code Entry -->
             <div class="text-center">
-                <!-- Clean logo section -->
-                <div class="mb-16">
-                    <div class="flex justify-center mb-8">
-                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-24 w-auto dark:hidden">
-                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-24 w-auto hidden dark:block">
+                <!-- Apple-style logo section -->
+                <div class="mb-20">
+                    <div class="flex justify-center mb-10">
+                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
+                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
                     </div>
-                    <h1 class="text-2xl font-light text-gray-900 dark:text-white mb-3">
-                        End loneliness forever
+                    <h1 class="text-3xl font-semibold text-gray-900 dark:text-white mb-4 tracking-tight leading-tight">
+                        End loneliness<br>forever
                     </h1>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm">
+                    <p class="text-gray-600 dark:text-gray-400 text-base font-normal">
                         Your personal AEI awaits
                     </p>
                 </div>
@@ -199,24 +194,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
             
-            <!-- Minimal form design -->
-            <div class="space-y-6">
-                <form method="POST" class="space-y-6">
+            <!-- Apple-style form -->
+            <div class="space-y-8">
+                <form method="POST" class="space-y-8">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
-                    <div class="space-y-4">
+                    <div class="space-y-6">
                         <div>
-                            <label for="beta_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Beta Access Code
-                            </label>
                             <input 
                                 type="text" 
                                 id="beta_code" 
                                 name="beta_code" 
                                 required
                                 maxlength="20"
-                                class="block w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all text-base font-mono tracking-wider text-center"
-                                placeholder="Enter your code"
+                                class="block w-full px-5 py-4 border border-gray-300 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-ayuni-blue transition-all duration-300 text-lg font-mono tracking-wider text-center shadow-sm focus:shadow-md"
+                                placeholder="Beta Code"
                                 value="<?= htmlspecialchars($_POST['beta_code'] ?? '') ?>"
                                 autocomplete="off"
                             />
@@ -224,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <button 
                             type="submit" 
-                            class="w-full bg-ayuni-blue hover:bg-ayuni-blue/90 text-white font-medium py-4 px-6 rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:ring-offset-2 dark:focus:ring-offset-ayuni-dark"
+                            class="w-full bg-ayuni-blue hover:bg-ayuni-blue/95 active:bg-ayuni-blue/90 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:ring-offset-4 focus:ring-offset-gray-50 dark:focus:ring-offset-black shadow-lg hover:shadow-xl active:scale-98"
                         >
                             Continue
                         </button>
@@ -232,11 +224,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
             </div>
             
-            <!-- Simple footer link -->
-            <div class="text-center pt-4">
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+            <!-- Apple-style footer -->
+            <div class="text-center pt-8">
+                <p class="text-base text-gray-600 dark:text-gray-400">
                     Already have an account? 
-                    <a href="/login" class="text-ayuni-blue hover:text-ayuni-aqua font-medium transition-colors">
+                    <a href="/login" class="text-ayuni-blue hover:text-ayuni-blue/80 font-medium transition-colors duration-200">
                         Sign in
                     </a>
                 </p>
@@ -245,16 +237,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php elseif ($step === 'login'): ?>
             <!-- Step 3: User Login -->
             <div class="text-center">
-                <!-- Clean logo section -->
-                <div class="mb-16">
-                    <div class="flex justify-center mb-8">
-                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-24 w-auto dark:hidden">
-                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-24 w-auto hidden dark:block">
+                <!-- Apple-style logo section -->
+                <div class="mb-20">
+                    <div class="flex justify-center mb-10">
+                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
+                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
                     </div>
-                    <h1 class="text-2xl font-light text-gray-900 dark:text-white mb-3">
+                    <h1 class="text-3xl font-semibold text-gray-900 dark:text-white mb-4 tracking-tight leading-tight">
                         Welcome back
                     </h1>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm">
+                    <p class="text-gray-600 dark:text-gray-400 text-base font-normal">
                         Continue your journey with AEI
                     </p>
                 </div>
@@ -269,44 +261,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
             
-            <!-- Minimal login form -->
-            <div class="space-y-6">
-                <form method="POST" action="/login" class="space-y-6">
+            <!-- Apple-style login form -->
+            <div class="space-y-8">
+                <form method="POST" action="/login" class="space-y-8">
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     
-                    <div class="space-y-4">
+                    <div class="space-y-5">
                         <div>
-                            <label for="login_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Email Address
-                            </label>
                             <input 
                                 type="email" 
                                 id="login_email" 
                                 name="email" 
                                 required
-                                class="block w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all text-base"
-                                placeholder="your@email.com"
+                                class="block w-full px-5 py-4 border border-gray-300 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-ayuni-blue transition-all duration-300 text-lg shadow-sm focus:shadow-md"
+                                placeholder="Email"
                                 value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
                             />
                         </div>
                         
                         <div>
-                            <label for="login_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Password
-                            </label>
                             <input 
                                 type="password" 
                                 id="login_password" 
                                 name="password" 
                                 required
-                                class="block w-full px-4 py-4 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all text-base"
-                                placeholder="Enter your password"
+                                class="block w-full px-5 py-4 border border-gray-300 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-ayuni-blue transition-all duration-300 text-lg shadow-sm focus:shadow-md"
+                                placeholder="Password"
                             />
                         </div>
                         
                         <button 
                             type="submit" 
-                            class="w-full bg-ayuni-blue hover:bg-ayuni-blue/90 text-white font-medium py-4 px-6 rounded-xl transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:ring-offset-2 dark:focus:ring-offset-ayuni-dark"
+                            class="w-full bg-ayuni-blue hover:bg-ayuni-blue/95 active:bg-ayuni-blue/90 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:ring-offset-4 focus:ring-offset-gray-50 dark:focus:ring-offset-black shadow-lg hover:shadow-xl active:scale-98"
                         >
                             Sign In
                         </button>
@@ -314,11 +300,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
             </div>
             
-            <!-- Simple footer link -->
-            <div class="text-center pt-4">
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+            <!-- Apple-style footer -->
+            <div class="text-center pt-8">
+                <p class="text-base text-gray-600 dark:text-gray-400">
                     Need a beta code? 
-                    <a href="/beta-access" class="text-ayuni-blue hover:text-ayuni-aqua font-medium transition-colors">
+                    <a href="/beta-access" class="text-ayuni-blue hover:text-ayuni-blue/80 font-medium transition-colors duration-200">
                         Get access
                     </a>
                 </p>
