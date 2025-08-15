@@ -71,6 +71,10 @@ $page_title = match($page) {
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="/assets/favicon.ico">
+    
     <!-- PWA Icons -->
     <link rel="icon" type="image/png" href="/assets/ayuni.png">
     <link rel="apple-touch-icon" href="/assets/ayuni.png">
