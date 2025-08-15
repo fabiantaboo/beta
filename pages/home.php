@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                     <p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        AI Emotional Intelligence
+                        End loneliness forever
                     </p>
                 </div>
                 
@@ -268,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                     <p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        AI Emotional Intelligence
+                        End loneliness forever
                     </p>
                 </div>
                 
