@@ -249,15 +249,34 @@ $page_title = match($page) {
             // Touch events for mobile
             document.addEventListener('touchstart', function(e) {
                 console.log('Touch start', window.scrollY);
-                if (window.scrollY <= 5 && !isRefreshing) {
+                
+                // Check if we're at the very top OR if we're in chat and scrolled to top
+                const isAtTop = window.scrollY <= 5;
+                const isInChat = window.location.pathname.includes('/chat/');
+                const chatContainer = document.getElementById('messages-container');
+                const isChatAtTop = isInChat && chatContainer && chatContainer.scrollTop <= 5;
+                
+                if ((isAtTop || isChatAtTop) && !isRefreshing) {
                     startY = e.touches[0].clientY;
                     pullStarted = true;
-                    console.log('Pull started');
+                    console.log('Pull started', isInChat ? 'in chat at top' : 'at page top');
                 }
             }, { passive: true });
 
             document.addEventListener('touchmove', function(e) {
-                if (!pullStarted || isRefreshing || window.scrollY > 5) return;
+                if (!pullStarted || isRefreshing) return;
+                
+                // Additional check during move
+                const isInChat = window.location.pathname.includes('/chat/');
+                const chatContainer = document.getElementById('messages-container');
+                const isChatAtTop = isInChat && chatContainer && chatContainer.scrollTop <= 5;
+                const isPageAtTop = window.scrollY <= 5;
+                
+                if (!isPageAtTop && !isChatAtTop) {
+                    pullStarted = false;
+                    hideRefreshIndicator();
+                    return;
+                }
 
                 const currentY = e.touches[0].clientY;
                 pullDistance = Math.max(0, currentY - startY);
