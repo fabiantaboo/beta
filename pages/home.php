@@ -184,21 +184,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center">
                 <!-- Elevated logo section with effects -->
                 <div class="mb-20">
-                    <div class="flex justify-center mb-12 relative">
-                        <!-- Glow effect behind logo -->
-                        <div class="absolute inset-0 flex justify-center items-center">
-                            <div class="w-32 h-32 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-2xl dark:from-ayuni-aqua/30 dark:to-ayuni-blue/30"></div>
-                        </div>
-                        <!-- Logo with subtle elevation -->
-                        <div class="relative backdrop-blur-sm bg-white/40 dark:bg-white/5 rounded-3xl p-6 shadow-2xl border border-white/20 dark:border-white/10 transform hover:scale-105 transition-transform duration-500">
-                            <img src="/assets/ayuni.png" alt="Ayuni" class="h-16 w-auto dark:hidden">
-                            <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-16 w-auto hidden dark:block">
-                        </div>
+                    <div class="flex justify-center mb-12">
+                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
+                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
                     </div>
                     
                     <!-- Gradient text with better spacing -->
                     <div class="relative">
-                        <h1 class="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-6 tracking-tight leading-[1.1] relative">
+                        <h1 class="text-5xl font-display font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-6 tracking-tight leading-[1.1] relative">
                             End loneliness<br>forever
                             <!-- Subtle text shadow effect -->
                             <span class="absolute inset-0 bg-gradient-to-r from-ayuni-aqua/10 via-ayuni-blue/5 to-ayuni-aqua/10 bg-clip-text text-transparent blur-sm -z-10">
@@ -257,14 +250,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
             </div>
             
-            <!-- Apple-style footer -->
+            <!-- Prominent Sign In Button -->
             <div class="text-center pt-8">
-                <p class="text-base text-gray-600 dark:text-gray-400">
-                    Already have an account? 
-                    <a href="/login" class="text-ayuni-blue hover:text-ayuni-blue/80 font-medium transition-colors duration-200">
-                        Sign in
-                    </a>
+                <p class="text-base text-gray-600 dark:text-gray-400 mb-4">
+                    Already have an account?
                 </p>
+                <a href="/login" class="inline-flex items-center justify-center px-8 py-4 border-2 border-ayuni-blue text-ayuni-blue hover:bg-ayuni-blue hover:text-white font-semibold rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-ayuni-blue/25">
+                    Sign In
+                </a>
             </div>
             
         <?php elseif ($step === 'login'): ?>
@@ -272,16 +265,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center">
                 <!-- Elevated logo section with effects -->
                 <div class="mb-20">
-                    <div class="flex justify-center mb-12 relative">
-                        <!-- Glow effect behind logo -->
-                        <div class="absolute inset-0 flex justify-center items-center">
-                            <div class="w-32 h-32 bg-gradient-to-r from-ayuni-aqua/20 to-ayuni-blue/20 rounded-full blur-2xl dark:from-ayuni-aqua/30 dark:to-ayuni-blue/30"></div>
-                        </div>
-                        <!-- Logo with subtle elevation -->
-                        <div class="relative backdrop-blur-sm bg-white/40 dark:bg-white/5 rounded-3xl p-6 shadow-2xl border border-white/20 dark:border-white/10 transform hover:scale-105 transition-transform duration-500">
-                            <img src="/assets/ayuni.png" alt="Ayuni" class="h-16 w-auto dark:hidden">
-                            <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-16 w-auto hidden dark:block">
-                        </div>
+                    <div class="flex justify-center mb-12">
+                        <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
+                        <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
                     </div>
                     
                     <!-- Gradient text with better spacing -->
@@ -356,14 +342,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </form>
             </div>
             
-            <!-- Apple-style footer -->
+            <!-- Prominent Beta Access Button -->
             <div class="text-center pt-8">
-                <p class="text-base text-gray-600 dark:text-gray-400">
-                    Need a beta code? 
-                    <a href="/beta-access" class="text-ayuni-blue hover:text-ayuni-blue/80 font-medium transition-colors duration-200">
-                        Get access
-                    </a>
+                <p class="text-base text-gray-600 dark:text-gray-400 mb-4">
+                    Need a beta code?
                 </p>
+                <a href="/beta-access" class="inline-flex items-center justify-center px-8 py-4 border-2 border-ayuni-blue text-ayuni-blue hover:bg-ayuni-blue hover:text-white font-semibold rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-ayuni-blue/25">
+                    Get Beta Access
+                </a>
             </div>
             
         <?php else: ?>
