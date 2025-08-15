@@ -176,7 +176,7 @@ class Emotions {
      */
     public function getConversationHistory($sessionId, $limit = 10) {
         try {
-            $sql = "SELECT sender_type, message_text, created_at 
+            $sql = "SELECT sender_type, message_text, created_at, has_image, image_filename, image_original_name 
                     FROM chat_messages 
                     WHERE session_id = ? 
                     ORDER BY created_at DESC 
@@ -186,6 +186,23 @@ class Emotions {
             $stmt->execute([$sessionId, $limit]);
             
             $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Process messages to include image context
+            foreach ($messages as &$message) {
+                if ($message['has_image'] && !empty($message['image_filename']) && $message['sender_type'] === 'user') {
+                    $imageContext = "shared an image";
+                    if (!empty($message['image_original_name'])) {
+                        $imageContext .= " (" . $message['image_original_name'] . ")";
+                    }
+                    
+                    if (!empty($message['message_text'])) {
+                        $message['message_text'] = "[User shared an image: " . $imageContext . "] " . $message['message_text'];
+                    } else {
+                        $message['message_text'] = "[User shared an image: " . $imageContext . "]";
+                    }
+                }
+            }
+            
             return array_reverse($messages); // Return in chronological order
         } catch (PDOException $e) {
             error_log("Error getting conversation history: " . $e->getMessage());

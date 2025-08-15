@@ -229,7 +229,7 @@ function getChatHistory($sessionId, $limit = 40) {
     
     try {
         $stmt = $pdo->prepare("
-            SELECT sender_type, message_text, created_at 
+            SELECT sender_type, message_text, created_at, has_image, image_filename, image_original_name 
             FROM chat_messages 
             WHERE session_id = ? 
             ORDER BY created_at DESC 
@@ -246,9 +246,28 @@ function getChatHistory($sessionId, $limit = 40) {
             $timestamp = date('Y-m-d H:i:s', strtotime($message['created_at']));
             $relativeTime = getRelativeTimeDescription($message['created_at']);
             
+            // Handle messages with images - keep as string for context, image already processed
+            $content = $message['message_text'];
+            if ($message['has_image'] && !empty($message['image_filename'])) {
+                // For user messages with images, add context but keep as text
+                // The actual image was already processed when first sent
+                if ($role === 'user') {
+                    $imageContext = "shared an image";
+                    if (!empty($message['image_original_name'])) {
+                        $imageContext .= " (" . $message['image_original_name'] . ")";
+                    }
+                    
+                    if (!empty($content)) {
+                        $content = "[User shared an image: " . $imageContext . "] " . $content;
+                    } else {
+                        $content = "[User shared an image: " . $imageContext . "]";
+                    }
+                }
+            }
+            
             $formattedMessages[] = [
                 'role' => $role,
-                'content' => $message['message_text'],
+                'content' => $content,
                 'timestamp' => $timestamp,
                 'sent_at' => $relativeTime
             ];

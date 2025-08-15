@@ -23,7 +23,8 @@
       "WebFetch(domain:api.qdrant.tech)",
       "WebFetch(domain:qdrant.github.io)",
       "WebFetch(domain:replicate.com)",
-      "Bash(where php)"
+      "Bash(where php)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
