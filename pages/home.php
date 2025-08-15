@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center">
                 <!-- Clean logo section -->
                 <div class="mb-16">
-                    <div class="flex justify-center mb-8">
+                    <div class="flex justify-center mb-12">
                         <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
                         <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
                     </div>
@@ -247,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-center">
                 <!-- Clean logo section -->
                 <div class="mb-16">
-                    <div class="flex justify-center mb-8">
+                    <div class="flex justify-center mb-12">
                         <img src="/assets/ayuni.png" alt="Ayuni" class="h-20 w-auto dark:hidden">
                         <img src="/assets/ayuni-white.png" alt="Ayuni" class="h-20 w-auto hidden dark:block">
                     </div>
