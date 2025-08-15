@@ -156,18 +156,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Build prompt from appearance
                     $prompt = $replicateAPI->buildPromptFromAppearance($appearance, $name, $gender);
-                    error_log("Avatar generation prompt: " . $prompt);
+                    error_log("DEBUG: Avatar generation prompt: " . $prompt);
+                    error_log("DEBUG: Starting 3-avatar generation for AEI: $name");
                     
                     // Generate 3 avatars
                     $imageUrls = $replicateAPI->generateMultipleAvatars($prompt, 3);
+                    error_log("DEBUG: Generated image URLs: " . json_encode($imageUrls));
                     
                     if (!empty($imageUrls)) {
                         // Create temp record
                         $tempId = generateId();
                         $avatarDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/avatars/temp/';
+                        error_log("DEBUG: Temp ID: $tempId, Avatar Dir: $avatarDir");
+                        
+                        // Ensure temp directory exists
+                        if (!file_exists($avatarDir)) {
+                            mkdir($avatarDir, 0755, true);
+                            error_log("DEBUG: Created temp directory: $avatarDir");
+                        }
                         
                         // Download and save all avatars
                         $savedAvatars = $replicateAPI->downloadAndSaveAvatars($imageUrls, $avatarDir, $tempId);
+                        error_log("DEBUG: Saved avatars: " . json_encode($savedAvatars));
                         
                         // Store in database
                         $stmt = $pdo->prepare("INSERT INTO temp_avatar_options (id, user_id, aei_name, prompt_used, avatar_1_url, avatar_2_url, avatar_3_url) VALUES (?, ?, ?, ?, ?, ?, ?)");
@@ -180,15 +190,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $savedAvatars[1]['url'] ?? null,
                             $savedAvatars[2]['url'] ?? null
                         ]);
+                        error_log("DEBUG: Stored temp avatar options in database");
                         
                         // Redirect to avatar selection
+                        error_log("DEBUG: Redirecting to choose-avatar with temp_id: $tempId");
                         redirectTo('choose-avatar?temp_id=' . $tempId);
                     } else {
+                        error_log("DEBUG: No image URLs returned from generation");
                         throw new Exception("No avatars generated");
                     }
                     
                 } catch (Exception $e) {
-                    error_log("Avatar generation failed for AEI $name: " . $e->getMessage());
+                    error_log("ERROR: Avatar generation failed for AEI $name: " . $e->getMessage());
+                    error_log("ERROR: Exception trace: " . $e->getTraceAsString());
                     
                     // Create AEI without avatar as fallback
                     $aeiId = generateId();

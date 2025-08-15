@@ -51,22 +51,34 @@ class ReplicateAPI {
     
     public function generateMultipleAvatars($prompt, $count = 3, $aspectRatio = '1:1') {
         try {
-            error_log("Replicate: Starting generation of $count avatars with prompt: " . $prompt);
+            error_log("DEBUG Replicate: Starting generation of $count avatars with prompt: " . $prompt);
+            
+            // Check API token first
+            if (!$this->apiToken) {
+                error_log("ERROR Replicate: No API token configured");
+                throw new Exception("Replicate API token not configured");
+            }
             
             // Start the prediction for multiple outputs
+            error_log("DEBUG Replicate: Calling generateAvatar with count=$count");
             $prediction = $this->generateAvatar($prompt, $aspectRatio, 3, $count);
+            error_log("DEBUG Replicate: Raw prediction response: " . json_encode($prediction));
             
             if (!isset($prediction['id'])) {
+                error_log("ERROR Replicate: No prediction ID in response");
                 throw new Exception("Failed to start image generation: " . json_encode($prediction));
             }
             
-            error_log("Replicate: Prediction started with ID: " . $prediction['id']);
+            error_log("DEBUG Replicate: Prediction started with ID: " . $prediction['id']);
             
             // Wait for completion
+            error_log("DEBUG Replicate: Waiting for completion...");
             $completedPrediction = $this->waitForCompletion($prediction['id']);
+            error_log("DEBUG Replicate: Completed prediction: " . json_encode($completedPrediction));
             
             if (!isset($completedPrediction['output']) || empty($completedPrediction['output'])) {
-                throw new Exception("No output images generated");
+                error_log("ERROR Replicate: No output in completed prediction");
+                throw new Exception("No output images generated. Response: " . json_encode($completedPrediction));
             }
             
             // Return all generated image URLs
@@ -75,49 +87,56 @@ class ReplicateAPI {
                 $imageUrls = [$imageUrls];
             }
             
-            error_log("Replicate: Generated " . count($imageUrls) . " images successfully");
+            error_log("DEBUG Replicate: Generated " . count($imageUrls) . " images successfully: " . json_encode($imageUrls));
             return $imageUrls;
             
         } catch (Exception $e) {
-            error_log("Replicate: Multiple avatar generation failed: " . $e->getMessage());
+            error_log("ERROR Replicate: Multiple avatar generation failed: " . $e->getMessage());
+            error_log("ERROR Replicate: Exception trace: " . $e->getTraceAsString());
             throw $e;
         }
     }
     
     public function downloadAndSaveAvatars($imageUrls, $baseDir, $baseFilename) {
         $savedPaths = [];
+        error_log("DEBUG Replicate: downloadAndSaveAvatars called with " . count($imageUrls) . " URLs, baseDir: $baseDir, baseFilename: $baseFilename");
         
         foreach ($imageUrls as $index => $imageUrl) {
             try {
                 // Create filename with index
                 $filename = $baseFilename . '_' . ($index + 1) . '.png';
                 $targetPath = $baseDir . $filename;
+                error_log("DEBUG Replicate: Processing image $index: $imageUrl -> $targetPath");
                 
                 // Download the image
                 $imageData = $this->downloadImage($imageUrl);
+                error_log("DEBUG Replicate: Downloaded " . strlen($imageData) . " bytes for image $index");
                 
                 // Ensure directory exists
                 if (!file_exists($baseDir)) {
                     mkdir($baseDir, 0755, true);
+                    error_log("DEBUG Replicate: Created directory: $baseDir");
                 }
                 
                 // Save the image
-                if (file_put_contents($targetPath, $imageData) !== false) {
+                $bytesWritten = file_put_contents($targetPath, $imageData);
+                if ($bytesWritten !== false) {
                     $savedPaths[] = [
                         'path' => $targetPath,
-                        'url' => '/assets/avatars/' . $filename,
+                        'url' => '/assets/avatars/temp/' . $filename,  // Fixed URL path
                         'index' => $index + 1
                     ];
-                    error_log("Replicate: Avatar $filename saved successfully");
+                    error_log("DEBUG Replicate: Avatar $filename saved successfully ($bytesWritten bytes)");
                 } else {
-                    error_log("Replicate: Failed to save avatar $filename");
+                    error_log("ERROR Replicate: Failed to save avatar $filename");
                 }
                 
             } catch (Exception $e) {
-                error_log("Replicate: Failed to download avatar " . ($index + 1) . ": " . $e->getMessage());
+                error_log("ERROR Replicate: Failed to download avatar " . ($index + 1) . ": " . $e->getMessage());
             }
         }
         
+        error_log("DEBUG Replicate: downloadAndSaveAvatars returning " . count($savedPaths) . " saved paths");
         return $savedPaths;
     }
     
