@@ -248,11 +248,11 @@ try {
 <script>
 // Dropdown functionality
 function toggleDropdown(button) {
-    const dropdown = button.parentNode.querySelector('div');
+    const dropdown = button.nextElementSibling;
     const isHidden = dropdown.classList.contains('hidden');
     
     // Close all other dropdowns
-    document.querySelectorAll('[data-dropdown] div').forEach(d => {
+    document.querySelectorAll('[data-dropdown] .absolute').forEach(d => {
         if (d !== dropdown) {
             d.classList.add('hidden');
         }
@@ -269,7 +269,7 @@ function toggleDropdown(button) {
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) {
     if (!e.target.closest('[data-dropdown]')) {
-        document.querySelectorAll('[data-dropdown] div').forEach(d => {
+        document.querySelectorAll('[data-dropdown] .absolute').forEach(d => {
             d.classList.add('hidden');
         });
     }
@@ -277,7 +277,7 @@ document.addEventListener('click', function(e) {
 
 function showDeleteModal(aeiId, aeiName) {
     // Close any open dropdowns
-    document.querySelectorAll('[data-dropdown] div').forEach(d => {
+    document.querySelectorAll('[data-dropdown] .absolute').forEach(d => {
         d.classList.add('hidden');
     });
     
