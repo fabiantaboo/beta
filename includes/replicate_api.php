@@ -29,23 +29,24 @@ class ReplicateAPI {
         return $_ENV['REPLICATE_API_TOKEN'] ?? null;
     }
     
-    public function generateAvatar($prompt, $aspectRatio = '1:1', $guidanceScale = 7.5, $numOutputs = 1) {
+    public function generateAvatar($prompt, $aspectRatio = '1:1', $guidanceScale = 15.0, $numOutputs = 1) {
         if (!$this->apiToken) {
             throw new Exception("Replicate API token not configured");
         }
         
-        // Optimized settings for photorealistic portraits
+        // MAXIMUM STRENGTH settings for photorealistic portraits
         $data = [
             'version' => 'black-forest-labs/flux-dev',
             'input' => [
                 'prompt' => $prompt,
                 'aspect_ratio' => $aspectRatio,
-                'guidance' => $guidanceScale, // Higher guidance for better prompt adherence
+                'guidance' => $guidanceScale, // MAXIMUM guidance for strict prompt adherence
                 'num_outputs' => $numOutputs,
                 'output_format' => 'png',
-                'megapixels' => '1', // Good quality without being too heavy
-                'safety_tolerance' => 2, // Allow realistic human features
-                'prompt_strength' => 0.8 // Strong prompt adherence
+                'megapixels' => '1', // Good quality
+                'safety_tolerance' => 5, // Maximum tolerance for realistic human features
+                'prompt_strength' => 1.0, // MAXIMUM prompt adherence
+                'num_inference_steps' => 50 // More steps for better quality
             ]
         ];
         
@@ -62,9 +63,9 @@ class ReplicateAPI {
                 throw new Exception("Replicate API token not configured");
             }
             
-            // Start the prediction for multiple outputs with optimized settings for realism
+            // Start the prediction for multiple outputs with MAXIMUM STRENGTH settings for realism
             error_log("DEBUG Replicate: Calling generateAvatar with count=$count");
-            $prediction = $this->generateAvatar($prompt, $aspectRatio, 7.5, $count); // Higher guidance for photorealism
+            $prediction = $this->generateAvatar($prompt, $aspectRatio, 15.0, $count); // MAXIMUM guidance for photorealism
             error_log("DEBUG Replicate: Raw prediction response: " . json_encode($prediction));
             
             if (!isset($prediction['id'])) {
@@ -289,11 +290,21 @@ class ReplicateAPI {
         }
         
         if (!$appearance) {
-            // Fallback with STRONG photorealistic prompt
+            // EXTREME FALLBACK PHOTOREALISTIC PROMPT
             return $prompt . "friendly and approachable expression, " .
-                   "PHOTOREALISTIC, hyperrealistic, professional photography, studio lighting, " .
-                   "shot with Canon EOS R5, 85mm lens, natural skin texture, high resolution, " .
-                   "NOT anime, NOT cartoon, NOT illustration, real human person";
+                   "PHOTOREALISTIC REAL HUMAN PHOTOGRAPHY, " .
+                   "HYPERREALISTIC ACTUAL PERSON PORTRAIT, " .
+                   "ULTRA REALISTIC GENUINE HUMAN BEING, " .
+                   "professional commercial headshot photography, " .
+                   "shot with Canon EOS R5 camera 85mm lens f/1.4, " .
+                   "natural skin texture with visible pores, " .
+                   "realistic eye reflections, natural hair texture, " .
+                   "8K ultra high resolution magazine quality, " .
+                   "ABSOLUTELY NOT anime style, " .
+                   "ABSOLUTELY NOT cartoon character, " .
+                   "ABSOLUTELY NOT digital art illustration, " .
+                   "ONLY REAL PHOTOGRAPHY OF REAL HUMAN PERSON, " .
+                   "REAL FLESH AND BLOOD HUMAN BEING PORTRAIT";
         }
         
         $features = [];
@@ -361,16 +372,59 @@ class ReplicateAPI {
             $prompt .= implode(', ', $features) . ", ";
         }
         
-        // Add STRONG photorealistic quality modifiers - CRITICAL for realistic output
+        // EXTREME PHOTOREALISTIC ENFORCEMENT - MAXIMUM STRENGTH
         $prompt .= "friendly and approachable expression, ";
-        $prompt .= "PHOTOREALISTIC, hyperrealistic, ultra realistic, real person, actual human being, ";
-        $prompt .= "professional headshot photography, studio lighting, commercial portrait, ";
-        $prompt .= "sharp focus, highly detailed skin texture, natural skin, realistic skin pores, ";
-        $prompt .= "detailed facial features, natural lighting, depth of field, ";
-        $prompt .= "shot with Canon EOS R5, 85mm lens, f/1.4, professional photographer, ";
-        $prompt .= "high resolution, 8K quality, cinematic lighting, perfect exposure, ";
-        $prompt .= "NOT anime, NOT cartoon, NOT illustration, NOT artwork, NOT digital art, NOT stylized, ";
-        $prompt .= "real photography, genuine human portrait, authentic person";
+        
+        // TRIPLE EMPHASIS on photorealism
+        $prompt .= "PHOTOREALISTIC REAL HUMAN PHOTOGRAPHY, ";
+        $prompt .= "HYPERREALISTIC ACTUAL PERSON PORTRAIT, ";
+        $prompt .= "ULTRA REALISTIC GENUINE HUMAN BEING, ";
+        $prompt .= "100% REAL PERSON NOT ARTIFICIAL, ";
+        $prompt .= "AUTHENTIC HUMAN FACE REAL SKIN, ";
+        $prompt .= "NATURAL HUMAN FEATURES REALISTIC PORTRAIT, ";
+        
+        // Professional photography context - MAXIMUM STRENGTH
+        $prompt .= "professional commercial headshot photography, ";
+        $prompt .= "studio portrait session by professional photographer, ";
+        $prompt .= "corporate headshot photoshoot, ";
+        $prompt .= "high-end portrait photography, ";
+        $prompt .= "executive business portrait, ";
+        
+        // Technical camera specs for realism
+        $prompt .= "shot with Canon EOS R5 camera, ";
+        $prompt .= "85mm portrait lens f/1.4 aperture, ";
+        $prompt .= "professional studio lighting setup, ";
+        $prompt .= "softbox lighting professional grade, ";
+        $prompt .= "shallow depth of field background blur, ";
+        
+        // Physical realism details
+        $prompt .= "sharp focus on eyes and face, ";
+        $prompt .= "natural skin texture with pores visible, ";
+        $prompt .= "realistic skin imperfections and details, ";
+        $prompt .= "natural hair texture and movement, ";
+        $prompt .= "realistic eye reflections and catchlights, ";
+        $prompt .= "natural facial expression and micro-expressions, ";
+        
+        // Quality and resolution
+        $prompt .= "8K ultra high resolution, ";
+        $prompt .= "magazine quality portrait, ";
+        $prompt .= "commercial photography standard, ";
+        $prompt .= "perfect exposure and color grading, ";
+        
+        // AGGRESSIVE NEGATIVE PROMPTS - CRITICAL
+        $prompt .= "ABSOLUTELY NOT anime style, ";
+        $prompt .= "ABSOLUTELY NOT cartoon character, ";
+        $prompt .= "ABSOLUTELY NOT digital art, ";
+        $prompt .= "ABSOLUTELY NOT illustration, ";
+        $prompt .= "ABSOLUTELY NOT painting, ";
+        $prompt .= "ABSOLUTELY NOT stylized art, ";
+        $prompt .= "ABSOLUTELY NOT 3D render, ";
+        $prompt .= "ABSOLUTELY NOT CGI character, ";
+        $prompt .= "ABSOLUTELY NOT fantasy art, ";
+        $prompt .= "ABSOLUTELY NOT artistic interpretation, ";
+        $prompt .= "NO artistic style NO filters NO effects, ";
+        $prompt .= "ONLY REAL PHOTOGRAPHY OF REAL HUMAN PERSON, ";
+        $prompt .= "REAL FLESH AND BLOOD HUMAN BEING PORTRAIT";
         
         return $prompt;
     }
