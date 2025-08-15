@@ -248,34 +248,50 @@ $page_title = match($page) {
 
             // Touch events for mobile
             document.addEventListener('touchstart', function(e) {
-                console.log('Touch start', window.scrollY);
-                
-                // Check if we're at the very top OR if we're in chat and scrolled to top
-                const isAtTop = window.scrollY <= 5;
+                // Check if we're touching within the messages container in chat
                 const isInChat = window.location.pathname.includes('/chat/');
                 const chatContainer = document.getElementById('messages-container');
-                const isChatAtTop = isInChat && chatContainer && chatContainer.scrollTop <= 5;
                 
-                if ((isAtTop || isChatAtTop) && !isRefreshing) {
-                    startY = e.touches[0].clientY;
-                    pullStarted = true;
-                    console.log('Pull started', isInChat ? 'in chat at top' : 'at page top');
+                if (isInChat && chatContainer) {
+                    // Only allow pull-to-refresh if chat container is at the very top
+                    const isChatAtTop = chatContainer.scrollTop <= 5;
+                    if (isChatAtTop && !isRefreshing) {
+                        startY = e.touches[0].clientY;
+                        pullStarted = true;
+                        console.log('Pull started in chat at top');
+                    }
+                } else {
+                    // For other pages, check if window is at top
+                    const isAtTop = window.scrollY <= 5;
+                    if (isAtTop && !isRefreshing) {
+                        startY = e.touches[0].clientY;
+                        pullStarted = true;
+                        console.log('Pull started at page top');
+                    }
                 }
             }, { passive: true });
 
             document.addEventListener('touchmove', function(e) {
                 if (!pullStarted || isRefreshing) return;
                 
-                // Additional check during move
+                // Check if we should continue pull-to-refresh
                 const isInChat = window.location.pathname.includes('/chat/');
                 const chatContainer = document.getElementById('messages-container');
-                const isChatAtTop = isInChat && chatContainer && chatContainer.scrollTop <= 5;
-                const isPageAtTop = window.scrollY <= 5;
                 
-                if (!isPageAtTop && !isChatAtTop) {
-                    pullStarted = false;
-                    hideRefreshIndicator();
-                    return;
+                if (isInChat && chatContainer) {
+                    // In chat: only continue if chat container is still at top
+                    if (chatContainer.scrollTop > 5) {
+                        pullStarted = false;
+                        hideRefreshIndicator();
+                        return;
+                    }
+                } else {
+                    // Other pages: only continue if window is still at top
+                    if (window.scrollY > 5) {
+                        pullStarted = false;
+                        hideRefreshIndicator();
+                        return;
+                    }
                 }
 
                 const currentY = e.touches[0].clientY;
