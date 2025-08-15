@@ -173,6 +173,65 @@ $avatars = [
             </div>
         </div>
     </div>
+
+    <!-- AEI Finalization Loading Screen -->
+    <div id="finalization-loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl">
+            <!-- Pulsing Logo -->
+            <div class="mb-6">
+                <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-20 w-auto mx-auto pulse-animation dark:hidden">
+                <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-20 w-auto mx-auto pulse-animation hidden dark:block">
+            </div>
+            
+            <!-- Loading Title -->
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Finalizing Your AEI</h3>
+            
+            <!-- Progress Steps -->
+            <div class="space-y-4 mb-6">
+                <div class="flex items-center justify-center space-x-3">
+                    <div class="step-indicator active" data-step="1">
+                        <i class="fas fa-save"></i>
+                    </div>
+                    <span class="step-text text-sm font-medium text-gray-700 dark:text-gray-300">Saving Avatar Selection</span>
+                </div>
+                
+                <div class="flex items-center justify-center space-x-3 opacity-50">
+                    <div class="step-indicator" data-step="2">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <span class="step-text text-sm font-medium text-gray-700 dark:text-gray-300">Creating AEI Personality</span>
+                </div>
+                
+                <div class="flex items-center justify-center space-x-3 opacity-50">
+                    <div class="step-indicator" data-step="3">
+                        <i class="fas fa-sparkles"></i>
+                    </div>
+                    <span class="step-text text-sm font-medium text-gray-700 dark:text-gray-300">Activating Your Companion</span>
+                </div>
+            </div>
+            
+            <!-- Loading Bar -->
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-4">
+                <div id="finalization-progress" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+            </div>
+            
+            <!-- Status Text -->
+            <p id="finalization-status" class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Processing your avatar selection...
+            </p>
+            
+            <!-- Completion Facts -->
+            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <h4 class="text-sm font-semibold text-green-800 dark:text-green-300 mb-2 flex items-center justify-center">
+                    <i class="fas fa-heart mr-2"></i>
+                    Your AEI is Almost Ready!
+                </h4>
+                <p id="completion-message" class="text-xs text-green-700 dark:text-green-400">
+                    We're finalizing <?= htmlspecialchars($tempOptions['aei_name']) ?>'s personality and preparing them to meet you.
+                </p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -188,12 +247,83 @@ $avatars = [
 .avatar-radio:checked + label .selection-dot {
     opacity: 1;
 }
+
+/* Loading Screen Styles */
+.pulse-animation {
+    animation: pulse-logo 2s ease-in-out infinite;
+}
+
+@keyframes pulse-logo {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.step-indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.step-indicator.active {
+    background: linear-gradient(135deg, #39D2DF, #546BEC);
+    color: white;
+    animation: pulse-step 2s ease-in-out infinite;
+}
+
+.step-indicator.completed {
+    background: #10b981;
+    color: white;
+}
+
+@keyframes pulse-step {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(57, 210, 223, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 8px rgba(57, 210, 223, 0);
+    }
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const radios = document.querySelectorAll('.avatar-radio');
     const submitBtn = document.getElementById('submit-btn');
+    const form = document.querySelector('form');
+    const loadingOverlay = document.getElementById('finalization-loading-overlay');
+    const progressBar = document.getElementById('finalization-progress');
+    const statusText = document.getElementById('finalization-status');
+    
+    // Status messages for finalization
+    const statusMessages = [
+        "Processing your avatar selection...",
+        "Copying selected avatar to permanent storage...",
+        "Building your AEI's personality profile...",
+        "Initializing emotional intelligence system...",
+        "Creating social environment connections...",
+        "Finalizing AEI configuration...",
+        "Preparing your companion for first meeting..."
+    ];
+    
+    let currentStep = 1;
+    let progressInterval;
+    let statusInterval;
+    let currentStatusIndex = 0;
     
     function updateSubmitButton() {
         const selected = document.querySelector('.avatar-radio:checked');
@@ -203,6 +333,80 @@ document.addEventListener('DOMContentLoaded', function() {
     radios.forEach(radio => {
         radio.addEventListener('change', updateSubmitButton);
     });
+    
+    // Handle form submission with loading screen
+    form.addEventListener('submit', function(e) {
+        const selected = document.querySelector('.avatar-radio:checked');
+        if (selected) {
+            showFinalizationScreen();
+        }
+    });
+    
+    function showFinalizationScreen() {
+        loadingOverlay.classList.remove('hidden');
+        submitBtn.disabled = true;
+        
+        // Start progress animation
+        animateProgress();
+        
+        // Start status updates
+        updateStatus();
+        
+        // Simulate step progression
+        progressSteps();
+    }
+    
+    function animateProgress() {
+        let progress = 0;
+        progressInterval = setInterval(() => {
+            progress += Math.random() * 8; // Faster progress for finalization
+            if (progress > 90) progress = 90; // Don't complete until actual completion
+            
+            progressBar.style.width = progress + '%';
+            
+            if (progress >= 90) {
+                clearInterval(progressInterval);
+            }
+        }, 150);
+    }
+    
+    function updateStatus() {
+        statusInterval = setInterval(() => {
+            if (currentStatusIndex < statusMessages.length - 1) {
+                currentStatusIndex++;
+                statusText.textContent = statusMessages[currentStatusIndex];
+            }
+        }, 2000); // Change status every 2 seconds
+    }
+    
+    function progressSteps() {
+        setTimeout(() => {
+            activateStep(2);
+        }, 4000); // Step 2 after 4 seconds
+        
+        setTimeout(() => {
+            activateStep(3);
+        }, 8000); // Step 3 after 8 seconds
+    }
+    
+    function activateStep(stepNumber) {
+        // Deactivate current step and mark as completed
+        const currentStepEl = document.querySelector('.step-indicator.active');
+        if (currentStepEl && currentStep < stepNumber) {
+            currentStepEl.classList.remove('active');
+            currentStepEl.classList.add('completed');
+            currentStepEl.innerHTML = '<i class="fas fa-check"></i>';
+        }
+        
+        // Activate new step
+        const newStepEl = document.querySelector(`[data-step="${stepNumber}"]`);
+        if (newStepEl) {
+            newStepEl.classList.add('active');
+            newStepEl.parentElement.classList.remove('opacity-50');
+        }
+        
+        currentStep = stepNumber;
+    }
     
     // Initial check
     updateSubmitButton();
