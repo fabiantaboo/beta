@@ -416,6 +416,67 @@ class MemoryManagerInference {
     /**
      * Time-based memory retrieval with smart scoring
      */
+    /**
+     * PERFORMANCE OPTIMIZED: Single query instead of 3 separate calls
+     */
+    private function getOptimizedMemories($aeiId, $query, $limit) {
+        $collectionName = $this->collectionPrefix . $aeiId;
+        
+        try {
+            // Single search with higher limit for smart filtering
+            $filter = [
+                'must' => [
+                    ['key' => 'aei_id', 'match' => ['value' => $aeiId]]
+                ]
+            ];
+            
+            // Always use quality model for best results
+            $modelToUse = $this->qualityModel;
+            
+            $results = $this->qdrantClient->searchWithText(
+                $collectionName,
+                $query,
+                $modelToUse,
+                $limit,
+                $filter
+            );
+            
+            $memories = [];
+            if (isset($results['result']['points']) && is_array($results['result']['points'])) {
+                foreach ($results['result']['points'] as $result) {
+                    $similarity = $result['score'];
+                    $payload = $result['payload'];
+                    
+                    // Skip very low similarity matches early
+                    if ($similarity < 0.3) continue;
+                    
+                    $timestamp = $payload['timestamp'] ?? 
+                                 ($payload['created_at'] ? strtotime($payload['created_at']) : null) ??
+                                 time();
+                    
+                    $memories[] = [
+                        'text' => $payload['text'] ?? '',
+                        'importance' => $payload['importance'] ?? 0.5,
+                        'memory_type' => $payload['memory_type'] ?? 'conversation',
+                        'timestamp' => $timestamp,
+                        'score' => $similarity,
+                        'is_qa_pair' => $payload['is_qa_pair'] ?? false,
+                        'model_used' => $payload['model_used'] ?? $modelToUse
+                    ];
+                }
+            }
+            
+            return $memories;
+            
+        } catch (Exception $e) {
+            if ($this->debugCallback) {
+                call_user_func($this->debugCallback, "❌ Memory search failed: " . $e->getMessage(), 'error');
+            }
+            error_log("Memory search failed for AEI $aeiId: " . $e->getMessage());
+            return [];
+        }
+    }
+    
     private function getTimeBasedMemories($aeiId, $query, $maxDays, $minSimilarity, $limit) {
         $collectionName = $this->collectionPrefix . $aeiId;
         $currentTime = time();
@@ -643,6 +704,17 @@ $conversationText";
      * Get smart memory context with time-decay and multi-window retrieval
      */
     public function getSmartMemoryContext($aeiId, $currentMessage, $limit = 6) {
+        // Simple cache key based on message hash and AEI ID
+        $cacheKey = 'memory_' . $aeiId . '_' . md5($currentMessage . $limit);
+        
+        // Try to get from static cache first (valid for 30 seconds)
+        static $memoryCache = [];
+        if (isset($memoryCache[$cacheKey]) && (time() - $memoryCache[$cacheKey]['timestamp']) < 30) {
+            if ($this->debugCallback) {
+                call_user_func($this->debugCallback, "🚀 Using cached memory context", 'info');
+            }
+            return $memoryCache[$cacheKey]['data'];
+        }
         // AUTO-CREATE COLLECTION IF NOT EXISTS
         try {
             $collectionName = $this->initializeAEICollection($aeiId);
@@ -660,22 +732,31 @@ $conversationText";
         // Multi-window smart retrieval
         $allMemories = [];
         
-        // Window 1: Recent messages (1 day) - lower similarity threshold
-        $recent = $this->getTimeBasedMemories($aeiId, $currentMessage, 1, 0.4, 8);
+        // PERFORMANCE OPTIMIZED: Single search with tiered scoring
+        $allResults = $this->getOptimizedMemories($aeiId, $currentMessage, $limit * 2);
+        
         if ($this->debugCallback) {
-            call_user_func($this->debugCallback, "📅 Found " . count($recent) . " recent memories (1 day)", 'info');
+            call_user_func($this->debugCallback, "⚡ Found " . count($allResults) . " memories (optimized single query)", 'info');
         }
         
-        // Window 2: Medium term (7 days) - medium similarity  
-        $medium = $this->getTimeBasedMemories($aeiId, $currentMessage, 7, 0.6, 8);
-        if ($this->debugCallback) {
-            call_user_func($this->debugCallback, "📆 Found " . count($medium) . " medium-term memories (7 days)", 'info');
-        }
+        // Apply time-based and similarity-based scoring
+        $recent = [];
+        $medium = [];
+        $longterm = [];
         
-        // Window 3: Long term (any time) - high similarity only
-        $longterm = $this->getTimeBasedMemories($aeiId, $currentMessage, 999, 0.8, 8);
-        if ($this->debugCallback) {
-            call_user_func($this->debugCallback, "🗄️ Found " . count($longterm) . " long-term memories (high similarity)", 'info');
+        $currentTime = time();
+        foreach ($allResults as $memory) {
+            $timestamp = $memory['timestamp'] ?? $currentTime;
+            $daysSince = ($currentTime - $timestamp) / (24 * 60 * 60);
+            $similarity = $memory['score'];
+            
+            if ($daysSince <= 1 && $similarity >= 0.4) {
+                $recent[] = $memory;
+            } elseif ($daysSince <= 7 && $similarity >= 0.6) {
+                $medium[] = $memory;
+            } elseif ($similarity >= 0.8) {
+                $longterm[] = $memory;
+            }
         }
         
         // Combine and deduplicate
@@ -716,6 +797,12 @@ $conversationText";
         }
         
         $context .= "=== END OF MEMORIES ===\n";
+        
+        // Cache the result for 30 seconds
+        $memoryCache[$cacheKey] = [
+            'data' => $context,
+            'timestamp' => time()
+        ];
         
         return $context;
     }
