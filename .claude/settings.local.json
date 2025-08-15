@@ -21,7 +21,8 @@
       "WebFetch(domain:qdrant.tech)",
       "WebFetch(domain:huggingface.co)",
       "WebFetch(domain:api.qdrant.tech)",
-      "WebFetch(domain:qdrant.github.io)"
+      "WebFetch(domain:qdrant.github.io)",
+      "WebFetch(domain:replicate.com)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",

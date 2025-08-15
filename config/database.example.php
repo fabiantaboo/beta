@@ -915,7 +915,8 @@ try {
                     'occupation' => "ALTER TABLE aeis ADD COLUMN occupation VARCHAR(200) NULL AFTER quirks",
                     'goals' => "ALTER TABLE aeis ADD COLUMN goals VARCHAR(200) NULL AFTER occupation",
                     'relationship_context' => "ALTER TABLE aeis ADD COLUMN relationship_context TEXT NULL AFTER goals",
-                    'system_prompt' => "ALTER TABLE aeis ADD COLUMN system_prompt TEXT NULL AFTER relationship_context"
+                    'avatar_url' => "ALTER TABLE aeis ADD COLUMN avatar_url VARCHAR(500) NULL AFTER relationship_context",
+                    'system_prompt' => "ALTER TABLE aeis ADD COLUMN system_prompt TEXT NULL AFTER avatar_url"
                 ];
                 
                 foreach ($newColumns as $columnName => $alterSQL) {

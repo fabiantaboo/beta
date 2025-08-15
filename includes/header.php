@@ -110,9 +110,20 @@ function renderChatHeader($aei, $isCurrentUserAdmin = false, $formattedEmotions 
                             <div class="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg p-2 -m-2 transition-colors" onclick="openAEIInfoModal()">
                         <!-- AEI Avatar with emotion indicator -->
                         <div class="relative">
-                            <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
-                                <span class="text-lg text-white font-bold"><?= strtoupper(substr($aei['name'], 0, 1)) ?></span>
-                            </div>
+                            <?php if (!empty($aei['avatar_url']) && file_exists($_SERVER['DOCUMENT_ROOT'] . $aei['avatar_url'])): ?>
+                                <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-ayuni-blue/20">
+                                    <img 
+                                        src="<?= htmlspecialchars($aei['avatar_url']) ?>" 
+                                        alt="<?= htmlspecialchars($aei['name']) ?>" 
+                                        class="w-full h-full object-cover"
+                                        onerror="this.parentElement.innerHTML='<div class=\'w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center\'><span class=\'text-lg text-white font-bold\'><?= strtoupper(substr($aei['name'], 0, 1)) ?></span></div>'"
+                                    />
+                                </div>
+                            <?php else: ?>
+                                <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
+                                    <span class="text-lg text-white font-bold"><?= strtoupper(substr($aei['name'], 0, 1)) ?></span>
+                                </div>
+                            <?php endif; ?>
                             
                             <!-- Emotion indicator for admins -->
                             <?php if ($isCurrentUserAdmin && !empty($formattedEmotions['strong'])): 

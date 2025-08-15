@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM aeis WHERE user_id = ? AND is_active = TRUE ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("SELECT id, name, personality, appearance_description, avatar_url, created_at FROM aeis WHERE user_id = ? AND is_active = TRUE ORDER BY created_at DESC");
     $stmt->execute([$userId]);
     $aeis = $stmt->fetchAll();
 } catch (PDOException $e) {
@@ -114,11 +114,22 @@ try {
                     <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-ayuni-blue/50 dark:hover:border-ayuni-aqua/50 transition-all duration-300">
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex items-center">
-                                <div class="w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center mr-4">
-                                    <span class="text-xl text-white font-bold">
-                                        <?= strtoupper(substr($aei['name'], 0, 1)) ?>
-                                    </span>
-                                </div>
+                                <?php if (!empty($aei['avatar_url']) && file_exists($_SERVER['DOCUMENT_ROOT'] . $aei['avatar_url'])): ?>
+                                    <div class="w-12 h-12 rounded-full overflow-hidden mr-4 border-2 border-gradient-to-br from-ayuni-aqua to-ayuni-blue">
+                                        <img 
+                                            src="<?= htmlspecialchars($aei['avatar_url']) ?>" 
+                                            alt="<?= htmlspecialchars($aei['name']) ?>" 
+                                            class="w-full h-full object-cover"
+                                            onerror="this.parentElement.innerHTML='<div class=\'w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center\'><span class=\'text-xl text-white font-bold\'><?= strtoupper(substr($aei['name'], 0, 1)) ?></span></div>'"
+                                        />
+                                    </div>
+                                <?php else: ?>
+                                    <div class="w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center mr-4">
+                                        <span class="text-xl text-white font-bold">
+                                            <?= strtoupper(substr($aei['name'], 0, 1)) ?>
+                                        </span>
+                                    </div>
+                                <?php endif; ?>
                                 <div>
                                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></h3>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Created <?= date('M j, Y', strtotime($aei['created_at'])) ?></p>

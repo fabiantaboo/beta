@@ -1,6 +1,7 @@
 <?php
 requireOnboarding();
 require_once __DIR__ . '/../includes/background_social_processor.php';
+require_once __DIR__ . '/../includes/replicate_api.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -67,8 +68,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $aeiId = generateId();
-                $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$aeiId, getUserSession(), $name, $age, $gender, $personality, $appearance, $background, $interests, $communication, $quirks, $occupation, $goals, $relationship]);
+                
+                // Generate avatar if Replicate API is configured
+                $avatarUrl = null;
+                try {
+                    $replicateAPI = new ReplicateAPI();
+                    
+                    // Build prompt from appearance
+                    $prompt = $replicateAPI->buildPromptFromAppearance($appearance, $name, $gender);
+                    error_log("Avatar generation prompt: " . $prompt);
+                    
+                    // Generate and save avatar
+                    $avatarDir = $_SERVER['DOCUMENT_ROOT'] . '/assets/avatars/';
+                    $avatarFilename = $aeiId . '.png';
+                    $avatarPath = $avatarDir . $avatarFilename;
+                    
+                    $savedPath = $replicateAPI->generateAndDownloadAvatar($prompt, $avatarPath);
+                    $avatarUrl = '/assets/avatars/' . $avatarFilename;
+                    
+                    error_log("Avatar generated successfully for AEI $name: $avatarUrl");
+                } catch (Exception $e) {
+                    error_log("Avatar generation failed for AEI $name: " . $e->getMessage());
+                    // Continue without avatar - it's not a blocking error
+                }
+                
+                $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$aeiId, getUserSession(), $name, $age, $gender, $personality, $appearance, $background, $interests, $communication, $quirks, $occupation, $goals, $relationship, $avatarUrl]);
                 
                 // Initialize social environment for new AEI
                 try {
