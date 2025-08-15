@@ -1,15 +1,23 @@
 <?php
-// Configure session for VERY long lifetime
+// Configure session for VERY long lifetime (30 days)
 ini_set('session.gc_maxlifetime', 2592000); // 30 days
 ini_set('session.cookie_lifetime', 2592000); // 30 days
+ini_set('session.gc_probability', 1);
+ini_set('session.gc_divisor', 100);
+
+// Force session storage method that doesn't rely on server cleanup
+ini_set('session.save_handler', 'files');
+
+// Set session cookie parameters BEFORE starting session
 session_set_cookie_params([
     'lifetime' => 2592000, // 30 days
     'path' => '/',
     'domain' => '',
-    'secure' => false,
+    'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
     'httponly' => true,
-    'samesite' => 'Lax'
+    'samesite' => 'Lax'  // Lax is better for login flows
 ]);
+
 session_start();
 
 include_once 'config/database.php';
@@ -328,12 +336,22 @@ $page_title = match($page) {
     </script>
 </head>
 <?php
-// Set secure session cookies
-if (session_status() === PHP_SESSION_NONE) {
-    ini_set('session.cookie_httponly', 1);
-    ini_set('session.cookie_secure', isset($_SERVER['HTTPS']) ? 1 : 0);
-    ini_set('session.cookie_samesite', 'Strict');
+// Additional session security (don't override lifetime settings)
+if (session_status() === PHP_SESSION_ACTIVE) {
+    // Only set security options, don't change lifetime
     ini_set('session.use_strict_mode', 1);
+    ini_set('session.use_only_cookies', 1);
+    
+    // Regenerate session ID periodically for security (but not too often to allow multi-device)
+    if (!isset($_SESSION['last_regeneration'])) {
+        $_SESSION['last_regeneration'] = time();
+    } elseif (time() - $_SESSION['last_regeneration'] > 604800) { // 7 days instead of 24 hours
+        // Only regenerate if user is logged in and it's been a week
+        if (isset($_SESSION['user_id'])) {
+            session_regenerate_id(true);
+            $_SESSION['last_regeneration'] = time();
+        }
+    }
 }
 ?>
 <body class="min-h-screen bg-white dark:bg-ayuni-dark text-gray-900 dark:text-white font-sans antialiased">

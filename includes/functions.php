@@ -12,8 +12,28 @@ function getUserSession() {
 }
 
 function setUserSession($userId) {
-    session_regenerate_id(true);
+    // Don't regenerate session ID on every login to allow multi-device sessions
+    // Only regenerate if this is a new session or security risk
+    if (!isset($_SESSION['user_id']) || $_SESSION['user_id'] !== $userId) {
+        session_regenerate_id(true);
+    }
+    
     $_SESSION['user_id'] = $userId;
+    $_SESSION['login_time'] = time();
+    $_SESSION['last_activity'] = time();
+    $_SESSION['device_fingerprint'] = generateDeviceFingerprint();
+    
+    // Extend session lifetime when user logs in
+    setcookie(session_name(), session_id(), time() + 2592000, '/'); // 30 days
+}
+
+function generateDeviceFingerprint() {
+    // Simple device fingerprint to detect suspicious activity
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+    $acceptLanguage = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+    
+    return hash('sha256', $userAgent . $ip . $acceptLanguage);
 }
 
 function clearUserSession() {
@@ -21,7 +41,27 @@ function clearUserSession() {
 }
 
 function isLoggedIn() {
-    return getUserSession() !== null;
+    $userId = getUserSession();
+    if (!$userId) return false;
+    
+    // Basic device fingerprint validation for security
+    $currentFingerprint = generateDeviceFingerprint();
+    $sessionFingerprint = $_SESSION['device_fingerprint'] ?? null;
+    
+    // If fingerprint changed significantly, require re-login (optional security)
+    // For now, we'll just log it but allow the session to continue
+    if ($sessionFingerprint && $sessionFingerprint !== $currentFingerprint) {
+        error_log("Device fingerprint changed for user $userId. Session: $sessionFingerprint, Current: $currentFingerprint");
+        // Could invalidate session here for extra security: return false;
+    }
+    
+    // Update last activity
+    $_SESSION['last_activity'] = time();
+    
+    // Refresh cookie on each request to maintain 30-day sliding window
+    setcookie(session_name(), session_id(), time() + 2592000, '/');
+    
+    return true;
 }
 
 function isAdmin() {
