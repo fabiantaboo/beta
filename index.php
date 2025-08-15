@@ -1,9 +1,11 @@
 <?php
-// Configure session for VERY long lifetime (30 days)
+// Configure session for VERY long lifetime (30 days) - MUST be before session_start()
 ini_set('session.gc_maxlifetime', 2592000); // 30 days
 ini_set('session.cookie_lifetime', 2592000); // 30 days
 ini_set('session.gc_probability', 1);
 ini_set('session.gc_divisor', 100);
+ini_set('session.use_strict_mode', 1);
+ini_set('session.use_only_cookies', 1);
 
 // Force session storage method that doesn't rely on server cleanup
 ini_set('session.save_handler', 'files');
@@ -336,12 +338,8 @@ $page_title = match($page) {
     </script>
 </head>
 <?php
-// Additional session security (don't override lifetime settings)
+// Session maintenance (after session is active)
 if (session_status() === PHP_SESSION_ACTIVE) {
-    // Only set security options, don't change lifetime
-    ini_set('session.use_strict_mode', 1);
-    ini_set('session.use_only_cookies', 1);
-    
     // Regenerate session ID periodically for security (but not too often to allow multi-device)
     if (!isset($_SESSION['last_regeneration'])) {
         $_SESSION['last_regeneration'] = time();
