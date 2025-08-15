@@ -164,7 +164,20 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         if (isset($message['timestamp']) && isset($message['sent_at'])) {
             $timestamp = $message['timestamp'];
             $relativeTime = $message['sent_at'];
-            $content = "[$timestamp - $relativeTime] $content";
+            
+            // Handle array content (multimodal messages with images)
+            if (is_array($content)) {
+                // Find the first text content and prepend timestamp
+                foreach ($content as $index => $contentItem) {
+                    if ($contentItem['type'] === 'text') {
+                        $content[$index]['text'] = "[$timestamp - $relativeTime] " . $contentItem['text'];
+                        break;
+                    }
+                }
+            } else {
+                // Handle string content (regular text messages)
+                $content = "[$timestamp - $relativeTime] $content";
+            }
         }
         
         $cleanMessages[] = [
