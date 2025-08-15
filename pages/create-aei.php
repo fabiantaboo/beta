@@ -855,12 +855,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a href="/dashboard" class="flex-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-4 px-6 rounded-lg text-center hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors">
                         Cancel
                     </a>
-                    <button type="submit" class="flex-1 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-4 px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <button type="submit" id="submit-btn" class="flex-1 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-4 px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
                         <i class="fas fa-heart mr-2"></i>
                         Begin Birth
                     </button>
                 </div>
             </form>
+        </div>
+
+        <!-- Avatar Generation Loading Screen -->
+        <div id="avatar-loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl">
+                <!-- Pulsing Logo -->
+                <div class="mb-6">
+                    <img src="/assets/ayuni.png" alt="Ayuni Logo" class="h-20 w-auto mx-auto pulse-animation dark:hidden">
+                    <img src="/assets/ayuni-white.png" alt="Ayuni Logo" class="h-20 w-auto mx-auto pulse-animation hidden dark:block">
+                </div>
+                
+                <!-- Loading Title -->
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Creating Your AEI</h3>
+                
+                <!-- Progress Steps -->
+                <div class="space-y-4 mb-6">
+                    <div class="flex items-center justify-center space-x-3">
+                        <div class="step-indicator active" data-step="1">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <span class="step-text text-sm font-medium text-gray-700 dark:text-gray-300">Generating Avatar Options</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-center space-x-3 opacity-50">
+                        <div class="step-indicator" data-step="2">
+                            <i class="fas fa-palette"></i>
+                        </div>
+                        <span class="step-text text-sm font-medium text-gray-700 dark:text-gray-300">Creating Photorealistic Portraits</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-center space-x-3 opacity-50">
+                        <div class="step-indicator" data-step="3">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <span class="step-text text-sm font-medium text-gray-700 dark:text-gray-300">Preparing Avatar Selection</span>
+                    </div>
+                </div>
+                
+                <!-- Loading Bar -->
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-4">
+                    <div id="loading-progress" class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+                
+                <!-- Status Text -->
+                <p id="loading-status" class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Initializing AI avatar generation...
+                </p>
+                
+                <!-- Fun Facts -->
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2 flex items-center justify-center">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        Did you know?
+                    </h4>
+                    <p id="fun-fact" class="text-xs text-blue-700 dark:text-blue-400">
+                        We generate 3 unique avatar options so you can choose the perfect look for your AEI companion.
+                    </p>
+                </div>
+                
+                <!-- Cancel Button -->
+                <button type="button" id="cancel-generation" class="mt-6 px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                    Cancel Generation
+                </button>
+            </div>
         </div>
 
         <!-- Tips Section -->
@@ -949,6 +1013,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .dynamics-button:has(input:checked) {
     border-color: #2196F3;
     background: rgba(33, 150, 243, 0.1);
+}
+
+/* Loading Screen Styles */
+.pulse-animation {
+    animation: pulse-logo 2s ease-in-out infinite;
+}
+
+@keyframes pulse-logo {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.step-indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.step-indicator.active {
+    background: linear-gradient(135deg, #39D2DF, #546BEC);
+    color: white;
+    animation: pulse-step 2s ease-in-out infinite;
+}
+
+.step-indicator.completed {
+    background: #10b981;
+    color: white;
+}
+
+@keyframes pulse-step {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(57, 210, 223, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 8px rgba(57, 210, 223, 0);
+    }
 }
 </style>
 
@@ -1335,5 +1450,187 @@ document.addEventListener('DOMContentLoaded', function() {
             updateHiddenInput(type);
         }
     };
+});
+
+// Avatar Generation Loading Screen
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('aei-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const loadingOverlay = document.getElementById('avatar-loading-overlay');
+    const loadingProgress = document.getElementById('loading-progress');
+    const loadingStatus = document.getElementById('loading-status');
+    const funFact = document.getElementById('fun-fact');
+    const cancelBtn = document.getElementById('cancel-generation');
+    
+    // Fun facts about avatar generation
+    const funFacts = [
+        "We generate 3 unique avatar options so you can choose the perfect look for your AEI companion.",
+        "Our AI uses advanced photorealistic prompting to create human-like portraits that aren't cartoonish.",
+        "Each avatar generation takes about 30-60 seconds depending on complexity and server load.",
+        "The Flux-Dev model we use is specifically trained for high-quality portrait photography.",
+        "Your AEI's appearance is generated based on the detailed characteristics you provided.",
+        "We use professional camera settings simulation (85mm lens, f/1.4) for realistic depth of field.",
+        "The AI considers lighting, skin texture, and natural expressions for maximum realism."
+    ];
+    
+    // Status messages for different steps
+    const statusMessages = [
+        "Initializing AI avatar generation...",
+        "Analyzing your AEI's appearance description...",
+        "Building photorealistic prompts...",
+        "Sending generation request to Flux-Dev AI...",
+        "Generating first avatar option...",
+        "Generating second avatar option...",
+        "Generating third avatar option...",
+        "Processing and optimizing images...",
+        "Preparing avatar selection interface...",
+        "Almost ready! Finalizing your options..."
+    ];
+    
+    let currentStep = 1;
+    let progressInterval;
+    let statusInterval;
+    let factInterval;
+    let currentFactIndex = 0;
+    let currentStatusIndex = 0;
+    
+    form.addEventListener('submit', function(e) {
+        // Check if the form has a name (required field) to avoid showing loading for invalid submissions
+        const nameField = document.getElementById('name');
+        if (!nameField.value.trim()) {
+            return; // Let the form handle validation normally
+        }
+        
+        // Show loading screen
+        showLoadingScreen();
+    });
+    
+    cancelBtn.addEventListener('click', function() {
+        hideLoadingScreen();
+    });
+    
+    function showLoadingScreen() {
+        loadingOverlay.classList.remove('hidden');
+        submitBtn.disabled = true;
+        
+        // Start progress animation
+        animateProgress();
+        
+        // Start status updates
+        updateStatus();
+        
+        // Rotate fun facts
+        rotateFunFacts();
+        
+        // Simulate step progression
+        progressSteps();
+    }
+    
+    function hideLoadingScreen() {
+        loadingOverlay.classList.add('hidden');
+        submitBtn.disabled = false;
+        clearIntervals();
+        resetProgress();
+    }
+    
+    function animateProgress() {
+        let progress = 0;
+        progressInterval = setInterval(() => {
+            progress += Math.random() * 3; // Variable progress speed
+            if (progress > 85) progress = 85; // Don't complete until actual completion
+            
+            loadingProgress.style.width = progress + '%';
+            
+            if (progress >= 85) {
+                clearInterval(progressInterval);
+            }
+        }, 200);
+    }
+    
+    function updateStatus() {
+        statusInterval = setInterval(() => {
+            if (currentStatusIndex < statusMessages.length - 1) {
+                currentStatusIndex++;
+                loadingStatus.textContent = statusMessages[currentStatusIndex];
+            }
+        }, 3000); // Change status every 3 seconds
+    }
+    
+    function rotateFunFacts() {
+        factInterval = setInterval(() => {
+            currentFactIndex = (currentFactIndex + 1) % funFacts.length;
+            funFact.style.opacity = '0';
+            
+            setTimeout(() => {
+                funFact.textContent = funFacts[currentFactIndex];
+                funFact.style.opacity = '1';
+            }, 300);
+        }, 8000); // Change fact every 8 seconds
+    }
+    
+    function progressSteps() {
+        setTimeout(() => {
+            activateStep(2);
+        }, 10000); // Step 2 after 10 seconds
+        
+        setTimeout(() => {
+            activateStep(3);
+        }, 20000); // Step 3 after 20 seconds
+    }
+    
+    function activateStep(stepNumber) {
+        // Deactivate current step and mark as completed
+        const currentStepEl = document.querySelector('.step-indicator.active');
+        if (currentStepEl && currentStep < stepNumber) {
+            currentStepEl.classList.remove('active');
+            currentStepEl.classList.add('completed');
+            currentStepEl.innerHTML = '<i class="fas fa-check"></i>';
+        }
+        
+        // Activate new step
+        const newStepEl = document.querySelector(`[data-step="${stepNumber}"]`);
+        if (newStepEl) {
+            newStepEl.classList.add('active');
+            newStepEl.parentElement.classList.remove('opacity-50');
+        }
+        
+        currentStep = stepNumber;
+    }
+    
+    function clearIntervals() {
+        if (progressInterval) clearInterval(progressInterval);
+        if (statusInterval) clearInterval(statusInterval);
+        if (factInterval) clearInterval(factInterval);
+    }
+    
+    function resetProgress() {
+        loadingProgress.style.width = '0%';
+        currentStep = 1;
+        currentStatusIndex = 0;
+        currentFactIndex = 0;
+        
+        // Reset steps
+        document.querySelectorAll('.step-indicator').forEach((el, index) => {
+            el.classList.remove('active', 'completed');
+            el.parentElement.classList.toggle('opacity-50', index > 0);
+            
+            if (index === 0) {
+                el.classList.add('active');
+                el.innerHTML = '<i class="fas fa-magic"></i>';
+            } else if (index === 1) {
+                el.innerHTML = '<i class="fas fa-palette"></i>';
+            } else if (index === 2) {
+                el.innerHTML = '<i class="fas fa-heart"></i>';
+            }
+        });
+        
+        // Reset status and fact
+        loadingStatus.textContent = statusMessages[0];
+        funFact.textContent = funFacts[0];
+        funFact.style.opacity = '1';
+    }
+    
+    // Add smooth opacity transition for fun facts
+    funFact.style.transition = 'opacity 0.3s ease';
 });
 </script>
