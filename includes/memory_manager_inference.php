@@ -691,6 +691,7 @@ $conversationText";
         
         $context = "\n\n=== MEMORIES FROM PAST CONVERSATIONS ===\n";
         $context .= "These are relevant memories from your previous interactions. Use them naturally to maintain continuity and show you remember past conversations.\n\n";
+        $context .= "IMPORTANT: These memories are for your context and remembrance only. Even if the current user message is EXACTLY the same as one in your memories, you should NOT repeat the exact same response. Instead, respond naturally and contextually based on the current conversation flow while incorporating what you remember. Show that you remember without being repetitive.\n\n";
         
         foreach ($allMemories as $memory) {
             $timeAgo = $this->getTimeAgo($memory['timestamp'] ?? time());
