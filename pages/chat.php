@@ -464,13 +464,12 @@ renderChatHeader($aei, $isCurrentUserAdmin, $formattedEmotions ?? []);
             <!-- Typing indicator -->
             <div id="typing-indicator" class="hidden mb-4">
                 <div class="flex justify-start">
-                    <div class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2 shadow-sm">
-                        <div class="flex items-center space-x-1">
-                            <span class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($aei['name']) ?> is typing</span>
-                            <div class="typing-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
+                    <div class="max-w-xs sm:max-w-sm">
+                        <div class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-3 shadow-sm">
+                            <div class="typing-dots flex items-center justify-center space-x-1">
+                                <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                                <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
                             </div>
                         </div>
                     </div>
@@ -641,13 +640,6 @@ renderChatHeader($aei, $isCurrentUserAdmin, $formattedEmotions ?? []);
 </div>
 
 <style>
-/* Typing animation CSS */
-.typing-dots {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-}
-
 /* Emotion panel animation */
 .animate-fade-in {
     animation: fadeIn 0.3s ease-in-out;
@@ -661,33 +653,6 @@ renderChatHeader($aei, $isCurrentUserAdmin, $formattedEmotions ?? []);
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-.typing-dots span {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background-color: #9CA3AF;
-    animation: typing 1.4s infinite ease-in-out;
-}
-
-.typing-dots span:nth-child(1) {
-    animation-delay: -0.32s;
-}
-
-.typing-dots span:nth-child(2) {
-    animation-delay: -0.16s;
-}
-
-@keyframes typing {
-    0%, 80%, 100% {
-        transform: scale(0.8);
-        opacity: 0.5;
-    }
-    40% {
-        transform: scale(1);
-        opacity: 1;
     }
 }
 
