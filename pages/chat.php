@@ -30,6 +30,32 @@ if (!$aei) {
     redirectTo('dashboard');
 }
 
+// Get user timezone for proper time display
+$stmt = $pdo->prepare("SELECT timezone FROM users WHERE id = ?");
+$stmt->execute([getUserSession()]);
+$userData = $stmt->fetch();
+$userTimezone = $userData['timezone'] ?? 'UTC';
+
+// Determine time format based on timezone/region
+function getTimeFormatForTimezone($timezone) {
+    // 12-hour format timezones (US, Canada, Philippines, etc.)
+    $twelveHourTimezones = [
+        'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+        'America/Anchorage', 'Pacific/Honolulu', 'America/Toronto', 'America/Vancouver', 
+        'America/Montreal', 'Asia/Manila', 'Pacific/Guam'
+    ];
+    
+    // Check if timezone uses 12-hour format
+    if (in_array($timezone, $twelveHourTimezones) || strpos($timezone, 'America/') === 0) {
+        return ['format' => 'g:i A', 'js_format' => true]; // 12-hour with AM/PM
+    }
+    
+    // Default to 24-hour format for Europe, Asia, etc.
+    return ['format' => 'H:i', 'js_format' => false]; // 24-hour
+}
+
+$timeFormat = getTimeFormatForTimezone($userTimezone);
+
 $stmt = $pdo->prepare("SELECT id FROM chat_sessions WHERE user_id = ? AND aei_id = ? ORDER BY created_at DESC LIMIT 1");
 $stmt->execute([getUserSession(), $aeiId]);
 $session = $stmt->fetch();
@@ -386,7 +412,11 @@ if ($isCurrentUserAdmin) {
                                 <?php endif; ?>
                                 <div class="flex items-center justify-between mt-2">
                                     <p class="text-xs opacity-70">
-                                        <?= date('H:i', strtotime($message['created_at'])) ?>
+                                        <?php
+                                        $date = new DateTime($message['created_at'], new DateTimeZone('UTC'));
+                                        $date->setTimezone(new DateTimeZone($userTimezone));
+                                        echo $date->format($timeFormat['format']);
+                                        ?>
                                     </p>
                                     <?php if ($message['sender_type'] === 'aei'): ?>
                                         <div class="flex items-center space-x-2 ml-2">
@@ -768,6 +798,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const aeiId = '<?= htmlspecialchars($aeiId) ?>';
     const sessionId = '<?= htmlspecialchars($sessionId) ?>';
     const aeiName = '<?= htmlspecialchars($aei['name']) ?>';
+    const userTimezone = '<?= htmlspecialchars($userTimezone) ?>';
+    const use12HourFormat = <?= $timeFormat['js_format'] ? 'true' : 'false' ?>;
     const imageInput = document.getElementById('image-input');
     const imagePreview = document.getElementById('image-preview');
     const previewImage = document.getElementById('preview-image');
@@ -922,10 +954,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageDiv = document.createElement('div');
         messageDiv.className = `flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'} message-fade-in`;
         
+        // Format time in user's timezone with appropriate format
         const time = new Date().toLocaleTimeString('en-US', { 
             hour: '2-digit', 
             minute: '2-digit',
-            hour12: false 
+            hour12: use12HourFormat,
+            timeZone: userTimezone
         });
         
         let imageHtml = '';
@@ -1854,7 +1888,12 @@ function createMessageElement(message) {
                     ${message.message_text ? `<p class="text-sm">${message.message_text.replace(/\n/g, '<br>')}</p>` : ''}
                     <div class="flex items-center justify-between mt-2">
                         <p class="text-xs opacity-70">
-                            ${new Date(message.created_at).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})}
+                            ${new Date(message.created_at).toLocaleTimeString('en-US', {
+                                hour: '2-digit', 
+                                minute: '2-digit',
+                                hour12: use12HourFormat,
+                                timeZone: userTimezone
+                            })}
                         </p>
                         ${!isUser ? getFeedbackButtons(message) : ''}
                     </div>
