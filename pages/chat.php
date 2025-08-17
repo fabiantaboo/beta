@@ -74,7 +74,7 @@ if ($isCurrentUserAdmin) {
 }
 ?>
 
-<div class="h-screen bg-gray-50 dark:bg-ayuni-dark flex flex-col">
+<div class="h-screen bg-gray-50 dark:bg-ayuni-dark flex flex-col pt-16">
     <?php 
     include_once __DIR__ . '/../includes/header.php';
     renderChatHeader($aei, $isCurrentUserAdmin, $formattedEmotions ?? []);
