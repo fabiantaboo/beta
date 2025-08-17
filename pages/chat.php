@@ -368,12 +368,7 @@ if ($isCurrentUserAdmin) {
             <?php else: ?>
                 <?php foreach ($messages as $message): ?>
                     <div class="flex <?= $message['sender_type'] === 'user' ? 'justify-end' : 'justify-start' ?>">
-                        <div class="flex <?= $message['sender_type'] === 'user' ? 'flex-row-reverse' : 'flex-row' ?> items-end space-x-2 max-w-sm sm:max-w-md lg:max-w-lg">
-                            <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center <?= $message['sender_type'] === 'user' ? 'bg-gray-500 dark:bg-gray-600 ml-2' : 'bg-gradient-to-br from-ayuni-aqua to-ayuni-blue mr-2' ?>">
-                                <span class="text-xs font-bold <?= $message['sender_type'] === 'user' ? 'text-white' : 'text-white' ?>">
-                                    <?= $message['sender_type'] === 'user' ? 'U' : strtoupper(substr($aei['name'], 0, 1)) ?>
-                                </span>
-                            </div>
+                        <div class="max-w-sm sm:max-w-md lg:max-w-lg">
                             <div class="<?= $message['sender_type'] === 'user' ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600' ?> rounded-2xl px-4 py-2 shadow-sm">
                                 <?php if ($message['has_image'] && !empty($message['image_filename'])): ?>
                                     <div class="mb-2">
@@ -467,12 +462,7 @@ if ($isCurrentUserAdmin) {
             
             <!-- Typing indicator -->
             <div id="typing-indicator" class="hidden mb-4">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
-                        <span class="text-xs font-bold text-white">
-                            <?= strtoupper(substr($aei['name'], 0, 1)) ?>
-                        </span>
-                    </div>
+                <div class="flex justify-start">
                     <div class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-2 shadow-sm">
                         <div class="flex items-center space-x-1">
                             <span class="text-sm text-gray-600 dark:text-gray-400"><?= htmlspecialchars($aei['name']) ?> is typing</span>
@@ -1018,12 +1008,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         messageDiv.innerHTML = `
-            <div class="flex ${message.sender_type === 'user' ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-xs lg:max-w-md">
-                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${message.sender_type === 'user' ? 'bg-gray-500 dark:bg-gray-600 ml-2' : 'bg-gradient-to-br from-ayuni-aqua to-ayuni-blue mr-2'}">
-                    <span class="text-xs font-bold text-white">
-                        ${message.sender_type === 'user' ? 'U' : aeiName.charAt(0).toUpperCase()}
-                    </span>
-                </div>
+            <div class="max-w-xs lg:max-w-md">
                 <div class="${message.sender_type === 'user' ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'} rounded-2xl px-4 py-2 shadow-sm">
                     ${imageHtml}
                     ${textHtml}
@@ -1876,14 +1861,10 @@ const aeiName = '<?= htmlspecialchars($aei['name']) ?>';
 
 function createMessageElement(message) {
     const isUser = message.sender_type === 'user';
-    const avatarLetter = isUser ? 'U' : aeiName.charAt(0).toUpperCase();
     
     return `
         <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
-            <div class="flex ${isUser ? 'flex-row-reverse' : 'flex-row'} items-end space-x-2 max-w-sm sm:max-w-md lg:max-w-lg">
-                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${isUser ? 'bg-gray-500 dark:bg-gray-600 ml-2' : 'bg-gradient-to-br from-ayuni-aqua to-ayuni-blue mr-2'}">
-                    <span class="text-xs font-bold text-white">${avatarLetter}</span>
-                </div>
+            <div class="max-w-sm sm:max-w-md lg:max-w-lg">
                 <div class="${isUser ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'} rounded-2xl px-4 py-2 shadow-sm">
                     ${message.has_image && message.image_filename ? `
                         <div class="mb-2">
