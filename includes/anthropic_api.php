@@ -110,16 +110,25 @@ function generateSystemPrompt($aei, $user, $sessionId = null) {
     }
 }
 
-function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageData = null) {
+function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageData = null, $userTimezone = 'UTC') {
     $apiKey = getAnthropicApiKey();
     
     if (!$apiKey) {
         throw new Exception("Anthropic API key not configured");
     }
     
+    // Add current time and timezone context
+    $currentTime = new DateTime('now', new DateTimeZone($userTimezone));
+    $timeInfo = "\n\nCURRENT TIME CONTEXT:\n";
+    $timeInfo .= "Current time: " . $currentTime->format('Y-m-d H:i:s') . " (" . $userTimezone . ")\n";
+    $timeInfo .= "Day of week: " . $currentTime->format('l') . "\n";
+    $timeInfo .= "Date: " . $currentTime->format('F j, Y') . "\n\n";
+    
     // Add timestamp awareness instruction to system prompt
     if (!empty($messages) && isset($messages[0]['timestamp'])) {
-        $systemPrompt .= "\n\nIMPORTANT: Each message in the conversation includes a timestamp prefix showing when it was sent. Pay attention to these timestamps and respond naturally to the time context (e.g., if there was a long pause between messages, or if messages were sent in quick succession).\n\nCRITICAL: DO NOT include any timestamp prefixes in your responses. Never start your responses with timestamps like [2024-01-15 14:23:15] or similar. Only respond with your natural message content - the timestamp information is for your awareness only, not to be repeated in your responses.";
+        $systemPrompt .= $timeInfo . "IMPORTANT: Each message in the conversation includes a timestamp prefix showing when it was sent in your user's timezone (" . $userTimezone . "). Pay attention to these timestamps and respond naturally to the time context (e.g., if there was a long pause between messages, or if messages were sent in quick succession). Consider the current time when responding appropriately.\n\nCRITICAL: DO NOT include any timestamp prefixes in your responses. Never start your responses with timestamps like [2024-01-15 14:23:15] or similar. Only respond with your natural message content - the timestamp information is for your awareness only, not to be repeated in your responses.";
+    } else {
+        $systemPrompt .= $timeInfo . "Use this time context to respond appropriately to time-sensitive topics.";
     }
     
     // If image data is provided, modify the last user message to include the image
@@ -237,7 +246,7 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
     return $responseText;
 }
 
-function getChatHistory($sessionId, $limit = 40) {
+function getChatHistory($sessionId, $limit = 40, $userTimezone = 'UTC') {
     global $pdo;
     
     try {
@@ -255,8 +264,10 @@ function getChatHistory($sessionId, $limit = 40) {
         foreach ($messages as $message) {
             $role = $message['sender_type'] === 'user' ? 'user' : 'assistant';
             
-            // Format timestamp for AEI understanding
-            $timestamp = date('Y-m-d H:i:s', strtotime($message['created_at']));
+            // Format timestamp for AEI understanding in user's timezone
+            $date = new DateTime($message['created_at'], new DateTimeZone('UTC'));
+            $date->setTimezone(new DateTimeZone($userTimezone));
+            $timestamp = $date->format('Y-m-d H:i:s');
             $relativeTime = getRelativeTimeDescription($message['created_at']);
             
             // Handle messages with images - keep as string for context, image already processed
@@ -293,7 +304,7 @@ function getChatHistory($sessionId, $limit = 40) {
     }
 }
 
-function analyzeEmotionalState($conversationHistory, $aeiName, $topic = null) {
+function analyzeEmotionalState($conversationHistory, $aeiName, $topic = null, $userTimezone = 'UTC') {
     $apiKey = getAnthropicApiKey();
     
     if (!$apiKey) {
@@ -304,8 +315,15 @@ function analyzeEmotionalState($conversationHistory, $aeiName, $topic = null) {
     $conversationContext = "";
     foreach ($conversationHistory as $message) {
         $sender = $message['sender_type'] === 'user' ? 'Human' : $aeiName;
-        $timestamp = isset($message['created_at']) ? date('Y-m-d H:i:s', strtotime($message['created_at'])) : '';
-        $relativeTime = isset($message['created_at']) ? getRelativeTimeDescription($message['created_at']) : '';
+        if (isset($message['created_at'])) {
+            $date = new DateTime($message['created_at'], new DateTimeZone('UTC'));
+            $date->setTimezone(new DateTimeZone($userTimezone));
+            $timestamp = $date->format('Y-m-d H:i:s');
+            $relativeTime = getRelativeTimeDescription($message['created_at']);
+        } else {
+            $timestamp = '';
+            $relativeTime = '';
+        }
         
         if ($timestamp) {
             $conversationContext .= "[$timestamp - $relativeTime] $sender: " . $message['message_text'] . "\n";
@@ -389,6 +407,9 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
     $debugData = [];
     
     try {
+        // Get user timezone
+        $userTimezone = $user['timezone'] ?? 'UTC';
+        
         // Initialize emotions instance
         $emotions = new Emotions($pdo);
         
@@ -473,7 +494,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
         error_log("MEMORY_DEBUG: Memory Context Length: " . strlen($memoryContext) . " chars");
         
         // Get recent chat history (including the current message that was just saved)
-        $chatHistory = getChatHistory($sessionId, 40);
+        $chatHistory = getChatHistory($sessionId, 40, $userTimezone);
         if ($includeDebugData) {
             $debugData['chat_history'] = $chatHistory;
         }
@@ -546,7 +567,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
         }
 
         // Call Anthropic API with optional image data
-        $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData);
+        $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData, $userTimezone);
         
         if ($includeDebugData) {
             $debugData['api_response'] = $response;
@@ -556,7 +577,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
         // Analyze emotional state after the conversation
         try {
             $conversationHistory = $emotions->getConversationHistory($sessionId, 10);
-            $newEmotions = analyzeEmotionalState($conversationHistory, $aei['name']);
+            $newEmotions = analyzeEmotionalState($conversationHistory, $aei['name'], null, $userTimezone);
             
             if ($includeDebugData) {
                 $debugData['analyzed_emotions'] = $newEmotions;
