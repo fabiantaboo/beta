@@ -368,7 +368,7 @@ if ($isCurrentUserAdmin) {
             <?php else: ?>
                 <?php foreach ($messages as $message): ?>
                     <div class="flex <?= $message['sender_type'] === 'user' ? 'justify-end' : 'justify-start' ?>">
-                        <div class="max-w-sm sm:max-w-md lg:max-w-lg">
+                        <div class="max-w-xs sm:max-w-sm">
                             <div class="<?= $message['sender_type'] === 'user' ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600' ?> rounded-2xl px-4 py-2 shadow-sm">
                                 <?php if ($message['has_image'] && !empty($message['image_filename'])): ?>
                                     <div class="mb-2">
@@ -1008,7 +1008,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         messageDiv.innerHTML = `
-            <div class="max-w-xs lg:max-w-md">
+            <div class="max-w-xs sm:max-w-sm">
                 <div class="${message.sender_type === 'user' ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'} rounded-2xl px-4 py-2 shadow-sm">
                     ${imageHtml}
                     ${textHtml}
@@ -1864,7 +1864,7 @@ function createMessageElement(message) {
     
     return `
         <div class="flex ${isUser ? 'justify-end' : 'justify-start'}">
-            <div class="max-w-sm sm:max-w-md lg:max-w-lg">
+            <div class="max-w-xs sm:max-w-sm">
                 <div class="${isUser ? 'bg-ayuni-blue text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600'} rounded-2xl px-4 py-2 shadow-sm">
                     ${message.has_image && message.image_filename ? `
                         <div class="mb-2">
