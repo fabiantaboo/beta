@@ -261,26 +261,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <!-- Timezone -->
                         <div class="md:col-span-2">
-                            <label for="timezone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            <label for="timezone_select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Timezone
                             </label>
-                            <select 
-                                id="timezone" 
-                                name="timezone"
-                                class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent text-base sm:text-sm min-h-[44px]"
-                            >
-                                <option value="UTC" <?= $user['timezone'] === 'UTC' ? 'selected' : '' ?>>UTC (Coordinated Universal Time)</option>
-                                <option value="America/New_York" <?= $user['timezone'] === 'America/New_York' ? 'selected' : '' ?>>Eastern Time (US & Canada)</option>
-                                <option value="America/Chicago" <?= $user['timezone'] === 'America/Chicago' ? 'selected' : '' ?>>Central Time (US & Canada)</option>
-                                <option value="America/Denver" <?= $user['timezone'] === 'America/Denver' ? 'selected' : '' ?>>Mountain Time (US & Canada)</option>
-                                <option value="America/Los_Angeles" <?= $user['timezone'] === 'America/Los_Angeles' ? 'selected' : '' ?>>Pacific Time (US & Canada)</option>
-                                <option value="Europe/London" <?= $user['timezone'] === 'Europe/London' ? 'selected' : '' ?>>London (GMT/BST)</option>
-                                <option value="Europe/Berlin" <?= $user['timezone'] === 'Europe/Berlin' ? 'selected' : '' ?>>Central European Time</option>
-                                <option value="Europe/Paris" <?= $user['timezone'] === 'Europe/Paris' ? 'selected' : '' ?>>Central European Time (Paris)</option>
-                                <option value="Asia/Tokyo" <?= $user['timezone'] === 'Asia/Tokyo' ? 'selected' : '' ?>>Japan Standard Time</option>
-                                <option value="Asia/Shanghai" <?= $user['timezone'] === 'Asia/Shanghai' ? 'selected' : '' ?>>China Standard Time</option>
-                                <option value="Australia/Sydney" <?= $user['timezone'] === 'Australia/Sydney' ? 'selected' : '' ?>>Australian Eastern Time</option>
-                            </select>
+                            <?php renderTimezoneSelect('timezone', $user['timezone'] ?? 'UTC', false, true); ?>
                         </div>
                     </div>
                 </div>

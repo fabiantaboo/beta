@@ -525,5 +525,139 @@ if (session_status() === PHP_SESSION_ACTIVE) {
             }, 5000);
         }
     </script>
+    
+    <!-- Timezone Search JavaScript -->
+    <script>
+    function setupTimezoneSearch(selectId) {
+        const searchInput = document.getElementById(selectId + '_search');
+        const hiddenSelect = document.getElementById(selectId);
+        const dropdown = document.getElementById(selectId + '_dropdown');
+        const options = dropdown.querySelectorAll('.timezone-option');
+        
+        let isOpen = false;
+        let selectedValue = hiddenSelect.value;
+        
+        // Set initial display value
+        if (selectedValue) {
+            const selectedOption = Array.from(hiddenSelect.options).find(opt => opt.value === selectedValue);
+            if (selectedOption) {
+                searchInput.value = selectedOption.textContent;
+            }
+        }
+        
+        // Auto-detect timezone
+        if (!selectedValue || selectedValue === '') {
+            try {
+                const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const matchingOption = Array.from(hiddenSelect.options).find(opt => opt.value === detectedTz);
+                if (matchingOption) {
+                    hiddenSelect.value = detectedTz;
+                    searchInput.value = matchingOption.textContent;
+                    searchInput.style.fontStyle = 'italic';
+                    searchInput.style.color = '#059669';
+                    setTimeout(() => {
+                        searchInput.style.fontStyle = '';
+                        searchInput.style.color = '';
+                    }, 2000);
+                }
+            } catch (e) {
+                // Fallback if timezone detection fails
+                console.log('Timezone auto-detection not supported');
+            }
+        }
+        
+        // Show/hide dropdown
+        function toggleDropdown() {
+            isOpen = !isOpen;
+            dropdown.classList.toggle('hidden', !isOpen);
+            if (isOpen) {
+                filterOptions('');
+                dropdown.scrollTop = 0;
+            }
+        }
+        
+        // Filter options based on search
+        function filterOptions(searchTerm) {
+            const lowerSearch = searchTerm.toLowerCase();
+            options.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                const matches = text.includes(lowerSearch);
+                option.style.display = matches ? 'block' : 'none';
+            });
+        }
+        
+        // Handle search input
+        searchInput.addEventListener('input', function() {
+            if (!isOpen) toggleDropdown();
+            filterOptions(this.value);
+        });
+        
+        searchInput.addEventListener('focus', function() {
+            if (!isOpen) toggleDropdown();
+        });
+        
+        // Handle option selection
+        options.forEach(option => {
+            option.addEventListener('click', function() {
+                const value = this.dataset.value;
+                const text = this.textContent;
+                
+                searchInput.value = text;
+                hiddenSelect.value = value;
+                selectedValue = value;
+                toggleDropdown();
+                
+                // Trigger change event
+                hiddenSelect.dispatchEvent(new Event('change'));
+            });
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                if (isOpen) toggleDropdown();
+            }
+        });
+        
+        // Handle keyboard navigation
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!isOpen) toggleDropdown();
+                const visibleOptions = Array.from(options).filter(opt => opt.style.display !== 'none');
+                if (visibleOptions.length > 0) {
+                    visibleOptions[0].focus();
+                }
+            } else if (e.key === 'Escape') {
+                if (isOpen) toggleDropdown();
+            }
+        });
+        
+        // Keyboard navigation for options
+        options.forEach((option, index) => {
+            option.setAttribute('tabindex', '0');
+            option.addEventListener('keydown', function(e) {
+                const visibleOptions = Array.from(options).filter(opt => opt.style.display !== 'none');
+                const currentIndex = visibleOptions.indexOf(this);
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const nextIndex = (currentIndex + 1) % visibleOptions.length;
+                    visibleOptions[nextIndex].focus();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prevIndex = currentIndex === 0 ? visibleOptions.length - 1 : currentIndex - 1;
+                    visibleOptions[prevIndex].focus();
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                } else if (e.key === 'Escape') {
+                    toggleDropdown();
+                    searchInput.focus();
+                }
+            });
+        });
+    }
+    </script>
 </body>
 </html>
