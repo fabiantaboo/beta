@@ -72,9 +72,9 @@ function renderHeader($config = []) {
                     <?php endif; ?>
                     
                     <?php if ($config['show_user_menu']): ?>
-                        <a href="/profile" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors hidden sm:flex items-center">
-                            <i class="fas fa-user mr-2"></i>
-                            Profile
+                        <a href="/profile" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors flex items-center">
+                            <i class="fas fa-user sm:mr-2"></i>
+                            <span class="hidden sm:inline">Profile</span>
                         </a>
                         
                         <a href="/logout" class="text-gray-700 dark:text-gray-300 hover:text-ayuni-blue font-medium transition-colors flex items-center">
