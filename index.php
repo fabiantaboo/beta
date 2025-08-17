@@ -204,8 +204,8 @@ $page_title = match($page) {
             let startY = 0;
             let isRefreshing = false;
             let pullDistance = 0;
-            const maxPullDistance = 150;
-            const refreshThreshold = 120; // Increased from 80 to 120
+            const maxPullDistance = 220;
+            const refreshThreshold = 180; // Increased from 120 to 180 for later trigger
             let pullStarted = false;
 
             function createRefreshIndicator() {
