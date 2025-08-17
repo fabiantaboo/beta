@@ -338,29 +338,6 @@ $page_title = match($page) {
             }, { passive: true });
         });
     </script>
-    
-    <!-- iOS Fixed Header CSS -->
-    <style>
-        /* Fix for iOS viewport behavior with keyboard */
-        @supports (-webkit-touch-callout: none) {
-            /* iOS-specific styles */
-            .chat-header-fixed {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                z-index: 1000 !important;
-                transform: translateZ(0); /* Force hardware acceleration */
-                -webkit-transform: translateZ(0);
-            }
-            
-            .chat-container-ios {
-                padding-top: 64px !important;
-                height: 100vh !important;
-                height: 100dvh !important; /* Dynamic viewport height for iOS */
-            }
-        }
-    </style>
 </head>
 <?php
 // Session maintenance (after session is active)

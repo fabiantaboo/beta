@@ -74,12 +74,11 @@ if ($isCurrentUserAdmin) {
 }
 ?>
 
-<?php 
-include_once __DIR__ . '/../includes/header.php';
-renderChatHeader($aei, $isCurrentUserAdmin, $formattedEmotions ?? []);
-?>
-
-<div class="bg-gray-50 dark:bg-ayuni-dark flex flex-col chat-container-ios" style="height: 100vh; height: 100dvh; padding-top: 64px;">
+<div class="h-screen bg-gray-50 dark:bg-ayuni-dark flex flex-col">
+    <?php 
+    include_once __DIR__ . '/../includes/header.php';
+    renderChatHeader($aei, $isCurrentUserAdmin, $formattedEmotions ?? []);
+    ?>
 
     <!-- Emotion Panel (Hidden by default, Admin only) -->
     <?php if ($isCurrentUserAdmin): ?>
