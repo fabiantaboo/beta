@@ -42,11 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Basic Demographics
                 $gender = sanitizeInput($_POST['gender'] ?? '');
                 $birthDate = $_POST['birth_date'] ?? '';
-                $timezone = sanitizeInput($_POST['timezone'] ?? 'UTC');
+                $timezone = sanitizeInput($_POST['timezone'] ?? '');
                 
                 if (empty($gender) || empty($birthDate) || empty($timezone)) {
                     $error = "Please fill in all required fields.";
                 } else {
+                    // Safety fallback: ensure timezone is valid, default to UTC if somehow empty
+                    if (empty($timezone)) {
+                        $timezone = 'UTC';
+                    }
                     $updates[] = "gender = ?";
                     $updates[] = "birth_date = ?";
                     $updates[] = "timezone = ?";
