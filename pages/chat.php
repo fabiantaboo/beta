@@ -454,21 +454,6 @@ renderChatHeader($aei, $isCurrentUserAdmin, $formattedEmotions ?? []);
                 <?php endforeach; ?>
             <?php endif; ?>
             </div> <!-- End messages-list -->
-            
-            <!-- Typing indicator -->
-            <div id="typing-indicator" class="hidden">
-                <div class="flex justify-start">
-                    <div class="max-w-xs sm:max-w-sm">
-                        <div class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-3 shadow-sm">
-                            <div class="typing-dots flex items-center justify-center space-x-1">
-                                <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
-                                <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Message Input -->
@@ -779,7 +764,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const sendText = document.getElementById('send-text');
-    const typingIndicator = document.getElementById('typing-indicator');
     const chatAlerts = document.getElementById('chat-alerts');
     const csrfToken = document.getElementById('csrf-token').value;
     const aeiId = '<?= htmlspecialchars($aeiId) ?>';
@@ -1021,13 +1005,37 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show typing indicator
     function showTyping() {
-        typingIndicator.classList.remove('hidden');
+        // Remove existing typing indicator if any
+        hideTyping();
+        
+        // Create typing indicator element
+        const typingDiv = document.createElement('div');
+        typingDiv.id = 'typing-indicator';
+        typingDiv.innerHTML = `
+            <div class="flex justify-start mb-4">
+                <div class="max-w-xs sm:max-w-sm">
+                    <div class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-3 shadow-sm">
+                        <div class="typing-dots flex items-center justify-center space-x-1">
+                            <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                            <div class="typing-dot w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Append to messages container (after all messages)
+        container.appendChild(typingDiv);
         scrollToBottomWithImages();
     }
     
     // Hide typing indicator
     function hideTyping() {
-        typingIndicator.classList.add('hidden');
+        const existingTyping = document.getElementById('typing-indicator');
+        if (existingTyping) {
+            existingTyping.remove();
+        }
     }
     
     // Send AI message with optional image
