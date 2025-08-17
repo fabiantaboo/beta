@@ -1236,8 +1236,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle Enter key
     messageInput.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            form.dispatchEvent(new Event('submit'));
+            // Check if device is mobile - prevent Enter submission on mobile
+            const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (!isMobile) {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
         }
     });
     
