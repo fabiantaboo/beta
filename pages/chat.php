@@ -454,15 +454,9 @@ renderChatHeader($aei, $isCurrentUserAdmin, $formattedEmotions ?? []);
                 <?php endforeach; ?>
             <?php endif; ?>
             </div> <!-- End messages-list -->
-        </div>
-
-        <!-- Message Input -->
-        <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-t-2xl">
-            <!-- Error/Success Messages -->
-            <div id="chat-alerts" class="hidden mb-4"></div>
             
             <!-- Typing indicator -->
-            <div id="typing-indicator" class="hidden mb-4">
+            <div id="typing-indicator" class="hidden">
                 <div class="flex justify-start">
                     <div class="max-w-xs sm:max-w-sm">
                         <div class="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-3 shadow-sm">
@@ -475,6 +469,13 @@ renderChatHeader($aei, $isCurrentUserAdmin, $formattedEmotions ?? []);
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Message Input -->
+        <div class="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-t-2xl">
+            <!-- Error/Success Messages -->
+            <div id="chat-alerts" class="hidden mb-4"></div>
+            
             
             <form id="chat-form" class="space-y-3">
                 <input type="hidden" id="csrf-token" value="<?= generateCSRFToken() ?>">
