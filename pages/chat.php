@@ -368,7 +368,7 @@ if ($isCurrentUserAdmin) {
                 <span>Visible: <span id="visibility-status" class="font-bold">unknown</span></span>
                 <span>Hidden: <span id="hidden-status" class="font-bold">unknown</span></span>
                 <span>State: <span id="visibility-state" class="font-bold">unknown</span></span>
-                <span>Pending: <span id="pending-count" class="font-bold">0</span></span>
+                <span>Pending: <span id="pending-count" class="font-bold cursor-pointer hover:bg-blue-700 px-2 py-1 rounded" onclick="manualPendingCheck()" title="Click to manually process pending messages">0</span></span>
             </div>
             <div id="visibility-log" class="text-xs opacity-75 max-w-sm truncate">Ready</div>
         </div>
@@ -2481,7 +2481,7 @@ document.addEventListener('keydown', function(e) {
 let isPageVisible = !document.hidden;
 let pendingMessages = [];
 
-// Update debug panel
+// Update debug panel and store in localStorage for persistence
 function updateVisibilityDebug(message = null) {
     const statusEl = document.getElementById('visibility-status');
     const hiddenEl = document.getElementById('hidden-status');
@@ -2489,19 +2489,80 @@ function updateVisibilityDebug(message = null) {
     const pendingEl = document.getElementById('pending-count');
     const logEl = document.getElementById('visibility-log');
     
-    if (statusEl) statusEl.textContent = isPageVisible ? 'YES' : 'NO';
-    if (hiddenEl) hiddenEl.textContent = document.hidden ? 'YES' : 'NO';
-    if (stateEl) stateEl.textContent = document.visibilityState || 'unknown';
-    if (pendingEl) pendingEl.textContent = pendingMessages.length;
+    const debugData = {
+        visible: isPageVisible ? 'YES' : 'NO',
+        hidden: document.hidden ? 'YES' : 'NO', 
+        state: document.visibilityState || 'unknown',
+        pending: pendingMessages.length,
+        timestamp: new Date().toLocaleTimeString()
+    };
     
-    if (message && logEl) {
-        const timestamp = new Date().toLocaleTimeString();
-        logEl.textContent = `${timestamp}: ${message}`;
+    if (message) {
+        debugData.lastMessage = `${debugData.timestamp}: ${message}`;
+    }
+    
+    // Store in localStorage for persistence
+    localStorage.setItem('pwa_debug', JSON.stringify(debugData));
+    
+    // Update UI elements if they exist
+    if (statusEl) statusEl.textContent = debugData.visible;
+    if (hiddenEl) hiddenEl.textContent = debugData.hidden;
+    if (stateEl) stateEl.textContent = debugData.state;
+    if (pendingEl) pendingEl.textContent = debugData.pending;
+    
+    if (debugData.lastMessage && logEl) {
+        logEl.textContent = debugData.lastMessage;
+    }
+    
+    // Update document title to show debug info when minimized
+    if (!isPageVisible && pendingMessages.length > 0) {
+        document.title = `(${pendingMessages.length}) Ayuni - New Message`;
+    } else if (isPageVisible) {
+        document.title = 'Ayuni - AI Companion Chat';
+    }
+}
+
+// Load debug data on return
+function loadDebugHistory() {
+    const stored = localStorage.getItem('pwa_debug');
+    if (stored) {
+        try {
+            const debugData = JSON.parse(stored);
+            updateVisibilityDebug(`Restored: Last was ${debugData.state}, pending: ${debugData.pending}`);
+        } catch (e) {
+            // Ignore parse errors
+        }
     }
 }
 
 // Initialize debug panel
 updateVisibilityDebug('Initialized');
+
+// Manual check function for when visibility events fail
+function manualPendingCheck() {
+    if (pendingMessages.length > 0 && !document.hidden) {
+        updateVisibilityDebug(`Manual check: Processing ${pendingMessages.length} pending messages`);
+        
+        pendingMessages.forEach((messageData, index) => {
+            const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
+            if (!existingMessage) {
+                addMessage(messageData);
+                updateVisibilityDebug(`Manual: Added pending message ${index + 1}`);
+            }
+        });
+        
+        pendingMessages = [];
+        hideTyping();
+        updateVisibilityDebug('Manual check: All pending messages processed');
+    }
+}
+
+// Check for pending messages periodically when page is visible
+setInterval(() => {
+    if (!document.hidden && pendingMessages.length > 0) {
+        manualPendingCheck();
+    }
+}, 2000); // Check every 2 seconds
 
 function handleVisibilityChange() {
     const wasVisible = isPageVisible;
@@ -2511,6 +2572,7 @@ function handleVisibilityChange() {
     
     // When page becomes visible again, check for any missed updates
     if (!wasVisible && isPageVisible) {
+        loadDebugHistory(); // Load what happened while away
         updateVisibilityDebug('Became visible, checking updates...');
         
         // Force refresh of message container if there are pending updates
