@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 try {
                     // Get AEI details
-                    $stmt = $pdo->prepare("SELECT id, name, gender, appearance_description, avatar_url FROM aeis WHERE id = ? AND is_active = 1");
+                    $stmt = $pdo->prepare("SELECT id, name, gender, appearance_description, avatar_url FROM aeis WHERE id = ? AND is_active = TRUE");
                     $stmt->execute([$aeiId]);
                     $aei = $stmt->fetch();
                     
@@ -78,54 +78,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// EMERGENCY DEBUG: Test if we can even reach this code
-error_log("EMERGENCY: Reached AEI loading section");
-
-// Test PDO connection
-if (!$pdo) {
-    error_log("EMERGENCY: PDO is null!");
-    $allAeis = [];
-} else {
-    error_log("EMERGENCY: PDO is OK, trying query");
-    
-    try {
-        // Simplest possible query first
-        $testStmt = $pdo->query("SELECT COUNT(*) as count FROM aeis");
-        $testCount = $testStmt->fetch()['count'];
-        error_log("EMERGENCY: Basic query works, found $testCount AEIs");
-        
-        // Now try the real query with different variable name
-        $aeiSelectionStmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at, is_active FROM aeis ORDER BY name ASC");
-        $aeiSelectionStmt->execute();
-        $availableAeis = $aeiSelectionStmt->fetchAll();
-        
-        error_log("EMERGENCY: Real query found " . count($availableAeis) . " AEIs");
-        
-        // Copy to original variable for compatibility
-        $allAeis = $availableAeis;
-        
-    } catch (Exception $e) {
-        error_log("EMERGENCY: Exception - " . $e->getMessage());
-        $allAeis = [];
-    }
-}
-
-// Debug info only if needed
-$totalCount = 0;
-$debugAeis = [];
-if (count($allAeis) === 0) {
-    try {
-        $debugStmt = $pdo->prepare("SELECT COUNT(*) as total FROM aeis");
-        $debugStmt->execute();
-        $totalCount = $debugStmt->fetch()['total'];
-        
-        $debugStmt2 = $pdo->prepare("SELECT name, is_active, user_id FROM aeis WHERE is_active = 1 LIMIT 5");
-        $debugStmt2->execute();
-        $debugAeis = $debugStmt2->fetchAll();
-    } catch (PDOException $e) {
-        $totalCount = 'Error';
-        error_log("Debug query error: " . $e->getMessage());
-    }
+// Get all active AEIs for selection - EXACT COPY from admin-avatar-batch.php pattern
+try {
+    $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at FROM aeis WHERE is_active = TRUE ORDER BY name ASC");
+    $stmt->execute();
+    $availableAeis = $stmt->fetchAll();
+} catch (PDOException $e) {
+    $availableAeis = [];
 }
 
 // Get statistics
@@ -134,7 +93,7 @@ try {
         COUNT(*) as total_aeis,
         COUNT(avatar_url) as aeis_with_avatars,
         COUNT(*) - COUNT(avatar_url) as aeis_without_avatars
-        FROM aeis WHERE is_active = 1");
+        FROM aeis WHERE is_active = TRUE");
     $stmt->execute();
     $stats = $stmt->fetch();
 } catch (PDOException $e) {
@@ -149,44 +108,6 @@ try {
         <?php renderAdminPageHeader('Avatar Regeneration', 'Regenerate profile images for existing AEIs based on their appearance data'); ?>
         
         <?php renderAdminAlerts($error, $success); ?>
-
-        <?php if (isAdmin() && count($allAeis) === 0): ?>
-        <!-- Debug Information -->
-        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 mb-8">
-            <div class="flex items-center mb-4">
-                <i class="fas fa-bug text-red-600 dark:text-red-400 mr-2"></i>
-                <h3 class="text-lg font-semibold text-red-800 dark:text-red-300">Debug Information - No AEIs Found</h3>
-            </div>
-            <div class="space-y-2 text-sm">
-                <p class="text-red-700 dark:text-red-300">
-                    <strong>Total AEIs in database:</strong> <?= isset($totalCount) ? $totalCount : 'Unknown' ?>
-                </p>
-                <p class="text-red-700 dark:text-red-300">
-                    <strong>Active AEIs found:</strong> <?= count($allAeis) ?>
-                </p>
-                <p class="text-red-700 dark:text-red-300">
-                    <strong>allAeis variable type:</strong> <?= gettype($allAeis) ?>
-                </p>
-                <p class="text-red-700 dark:text-red-300">
-                    <strong>PDO connection:</strong> <?= $pdo ? 'OK' : 'NULL' ?>
-                </p>
-                <p class="text-red-700 dark:text-red-300">
-                    <strong>Statistics show:</strong> <?= $stats['total_aeis'] ?> total AEIs, <?= $stats['aeis_with_avatars'] ?> with avatars
-                </p>
-                <?php if (isset($debugAeis) && !empty($debugAeis)): ?>
-                    <p class="text-red-700 dark:text-red-300"><strong>Sample AEIs and their status:</strong></p>
-                    <ul class="list-disc list-inside ml-4 text-red-600 dark:text-red-400">
-                        <?php foreach ($debugAeis as $debugAei): ?>
-                            <li><?= htmlspecialchars($debugAei['name']) ?> - is_active: <?= var_export($debugAei['is_active'], true) ?> (<?= gettype($debugAei['is_active']) ?>) - user_id: <?= $debugAei['user_id'] ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-                <p class="text-red-600 dark:text-red-400 mt-4">
-                    <strong>Problem:</strong> Statistics show <?= $stats['total_aeis'] ?> AEIs exist but none are marked as is_active = TRUE. Check the database.
-                </p>
-            </div>
-        </div>
-        <?php endif; ?>
 
         <!-- Statistics -->
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
@@ -235,25 +156,19 @@ try {
                             onchange="showAeiPreview(this.value)"
                             required
                         >
-                            <?php if (count($allAeis) === 0): ?>
-                                <option value="">No AEIs found - Create some AEIs first</option>
-                            <?php else: ?>
-                                <option value="">Choose an AEI...</option>
-                                <?php foreach ($allAeis as $aei): ?>
-                                    <option value="<?= htmlspecialchars($aei['id']) ?>" 
-                                            data-name="<?= htmlspecialchars($aei['name']) ?>"
-                                            data-gender="<?= htmlspecialchars($aei['gender']) ?>"
-                                            data-avatar="<?= htmlspecialchars($aei['avatar_url'] ?? '') ?>"
-                                            data-appearance="<?= htmlspecialchars($aei['appearance_description'] ?? '') ?>"
-                                            data-created="<?= htmlspecialchars($aei['created_at']) ?>"
-                                            data-updated="<?= htmlspecialchars($aei['updated_at']) ?>"
-                                            <?= (isset($_POST['aei_id']) && $_POST['aei_id'] === $aei['id']) ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($aei['name']) ?> (<?= ucfirst($aei['gender']) ?>) 
-                                        <?= !empty($aei['avatar_url']) ? '• Has Avatar' : '• No Avatar' ?>
-                                        <?= $aei['is_active'] ? '• Active' : '• INACTIVE' ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                            <option value="">Choose an AEI...</option>
+                            <?php foreach ($availableAeis as $aei): ?>
+                                <option value="<?= htmlspecialchars($aei['id']) ?>" 
+                                        data-name="<?= htmlspecialchars($aei['name']) ?>"
+                                        data-gender="<?= htmlspecialchars($aei['gender']) ?>"
+                                        data-avatar="<?= htmlspecialchars($aei['avatar_url'] ?? '') ?>"
+                                        data-appearance="<?= htmlspecialchars($aei['appearance_description'] ?? '') ?>"
+                                        data-created="<?= htmlspecialchars($aei['created_at']) ?>"
+                                        <?= (isset($_POST['aei_id']) && $_POST['aei_id'] === $aei['id']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($aei['name']) ?> (<?= ucfirst($aei['gender']) ?>) 
+                                    <?= !empty($aei['avatar_url']) ? '• Has Avatar' : '• No Avatar' ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     
@@ -283,10 +198,6 @@ try {
                                     <div>
                                         <p class="text-sm text-gray-600 dark:text-gray-400">Created</p>
                                         <p id="preview-created" class="font-medium text-gray-900 dark:text-white"></p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">Last Updated</p>
-                                        <p id="preview-updated" class="font-medium text-gray-900 dark:text-white"></p>
                                     </div>
                                 </div>
                                 
@@ -400,13 +311,11 @@ function showAeiPreview(aeiId) {
     const avatar = selectedOption.getAttribute('data-avatar');
     const appearance = selectedOption.getAttribute('data-appearance');
     const created = selectedOption.getAttribute('data-created');
-    const updated = selectedOption.getAttribute('data-updated');
     
     // Update preview content
     document.getElementById('preview-name').textContent = name || 'N/A';
     document.getElementById('preview-gender').textContent = (gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : 'N/A');
     document.getElementById('preview-created').textContent = created ? new Date(created).toLocaleDateString() : 'N/A';
-    document.getElementById('preview-updated').textContent = updated ? new Date(updated).toLocaleDateString() : 'N/A';
     
     // Update avatar display
     const avatarContainer = document.getElementById('current-avatar-container');
