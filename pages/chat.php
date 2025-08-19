@@ -1116,11 +1116,31 @@ document.addEventListener('DOMContentLoaded', function() {
         updateVisibilityDebug(`messages-container found: ${!!messagesContainer}`);
         
         if (messagesContainer) {
-            updateVisibilityDebug(`Attempting appendChild...`);
+            updateVisibilityDebug(`Container innerHTML length: ${messagesContainer.innerHTML.length}`);
+            updateVisibilityDebug(`Container scrollHeight: ${messagesContainer.scrollHeight}`);
+            
+            // TEST: Add simple test element first
+            const testDiv = document.createElement('div');
+            testDiv.textContent = 'TEST MESSAGE - If you see this, appendChild works!';
+            testDiv.style.background = 'red';
+            testDiv.style.color = 'white';
+            testDiv.style.padding = '10px';
+            messagesContainer.appendChild(testDiv);
+            updateVisibilityDebug(`Test element added: ${document.contains(testDiv)}`);
+            
+            updateVisibilityDebug(`Attempting real appendChild...`);
             messagesContainer.appendChild(messageDiv);
             updateVisibilityDebug(`appendChild completed`);
             updateVisibilityDebug(`Container children count: ${messagesContainer.children.length}`);
             updateVisibilityDebug(`New element in DOM: ${document.contains(messageDiv)}`);
+            updateVisibilityDebug(`MessageDiv innerHTML: ${messageDiv.innerHTML.length} chars`);
+            
+            // Remove test element after 3 seconds
+            setTimeout(() => {
+                if (document.contains(testDiv)) {
+                    testDiv.remove();
+                }
+            }, 3000);
         } else {
             updateVisibilityDebug('ERROR: messages-container not found!');
             updateVisibilityDebug(`Available elements: ${Array.from(document.querySelectorAll('[id]')).map(el => el.id).join(', ')}`);
