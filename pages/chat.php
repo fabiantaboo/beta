@@ -1354,9 +1354,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 hideTyping();
                 
                 // Handle message display with visibility awareness
-                if (!isPageVisible) {
+                updateVisibilityDebug(`Message received. isPageVisible: ${isPageVisible}, document.hidden: ${document.hidden}`);
+                
+                if (!isPageVisible || document.hidden) {
                     pendingMessages.push(data);
-                    updateVisibilityDebug(`Message stored for later: ${data.id.substring(0, 8)}`);
+                    updateVisibilityDebug(`Message stored for later: ${data.id.substring(0, 8)} (total pending: ${pendingMessages.length})`);
                 } else {
                     // Check if message already exists to prevent duplicates
                     const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
@@ -2540,20 +2542,28 @@ updateVisibilityDebug('Initialized');
 
 // Manual check function for when visibility events fail
 function manualPendingCheck() {
-    if (pendingMessages.length > 0 && !document.hidden) {
-        updateVisibilityDebug(`Manual check: Processing ${pendingMessages.length} pending messages`);
+    updateVisibilityDebug(`Manual check: ${pendingMessages.length} pending, hidden: ${document.hidden}, visible: ${isPageVisible}`);
+    
+    // Force process regardless of visibility status for debugging
+    if (pendingMessages.length > 0) {
+        updateVisibilityDebug(`Force processing ${pendingMessages.length} pending messages`);
         
         pendingMessages.forEach((messageData, index) => {
+            updateVisibilityDebug(`Processing message ${index + 1}: ${messageData.id.substring(0, 8)}`);
             const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
             if (!existingMessage) {
                 addMessage(messageData);
-                updateVisibilityDebug(`Manual: Added pending message ${index + 1}`);
+                updateVisibilityDebug(`Added message ${index + 1}`);
+            } else {
+                updateVisibilityDebug(`Message ${index + 1} already exists`);
             }
         });
         
         pendingMessages = [];
         hideTyping();
-        updateVisibilityDebug('Manual check: All pending messages processed');
+        updateVisibilityDebug('All pending messages processed');
+    } else {
+        updateVisibilityDebug('No pending messages found in array');
     }
 }
 
