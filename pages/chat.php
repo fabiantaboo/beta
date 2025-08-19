@@ -1441,7 +1441,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
                     if (!existingMessage) {
-                        addMessage(data);
+                        // Add a small delay to let typing indicator fade out smoothly
+                        setTimeout(() => {
+                            addMessage(data);
+                        }, 300); // 300ms delay for smooth transition
                     }
                 }
                 break;
