@@ -1337,12 +1337,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             case 'aei_message':
                 console.log(`[${requestId}] AEI message received`);
+                console.log('Page visibility status:', { 
+                    isPageVisible, 
+                    documentHidden: document.hidden, 
+                    visibilityState: document.visibilityState,
+                    messageId: data.id
+                });
                 hideTyping();
                 
                 // Handle message display with visibility awareness
                 if (!isPageVisible) {
                     console.log('Page hidden, storing message for later:', data.id);
                     pendingMessages.push(data);
+                    console.log('Pending messages count:', pendingMessages.length);
                 } else {
                     // Check if message already exists to prevent duplicates
                     const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
@@ -2471,7 +2478,9 @@ function handleVisibilityChange() {
     const wasVisible = isPageVisible;
     isPageVisible = !document.hidden;
     
-    console.log(`Page visibility changed: ${isPageVisible ? 'visible' : 'hidden'}`);
+    console.log(`Page visibility changed: ${isPageVisible ? 'visible' : 'hidden'} (was: ${wasVisible ? 'visible' : 'hidden'})`);
+    console.log('Document.hidden:', document.hidden);
+    console.log('Document.visibilityState:', document.visibilityState);
     
     // When page becomes visible again, check for any missed updates
     if (!wasVisible && isPageVisible) {
@@ -2481,21 +2490,32 @@ function handleVisibilityChange() {
         if (pendingMessages.length > 0) {
             console.log(`Processing ${pendingMessages.length} pending messages`);
             
-            pendingMessages.forEach(messageData => {
+            pendingMessages.forEach((messageData, index) => {
+                console.log(`Processing pending message ${index + 1}:`, messageData.id);
                 const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
                 if (!existingMessage) {
+                    console.log(`Adding pending message ${messageData.id} to UI`);
                     addMessage(messageData);
+                } else {
+                    console.log(`Pending message ${messageData.id} already exists in UI`);
                 }
             });
             
             pendingMessages = [];
             hideTyping(); // Make sure typing indicator is cleared
+            console.log('All pending messages processed');
+        } else {
+            console.log('No pending messages to process');
         }
     }
 }
 
-// Listen for visibility changes
+// Listen for visibility changes (multiple events for better PWA support)
 document.addEventListener('visibilitychange', handleVisibilityChange);
+document.addEventListener('focus', handleVisibilityChange);
+document.addEventListener('blur', handleVisibilityChange);
+window.addEventListener('focus', handleVisibilityChange);
+window.addEventListener('blur', handleVisibilityChange);
 
 // Messages are now handled directly in the SSE event handler with visibility awareness
 
