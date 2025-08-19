@@ -1075,7 +1075,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        container.appendChild(messageDiv);
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+            messagesContainer.appendChild(messageDiv);
+        } else {
+            updateVisibilityDebug('ERROR: messages-container not found!');
+        }
         
         // Apply current font size to new message
         applyFontSizeToNewMessage(messageDiv);
