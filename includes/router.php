@@ -32,6 +32,7 @@ class Router {
             'admin/migration' => ['page' => 'admin-migration'],
             'admin/replicate' => ['page' => 'admin-replicate'],
             'admin/avatar-batch' => ['page' => 'admin-avatar-batch'],
+            'admin/avatar-regenerate' => ['page' => 'admin-avatar-regenerate'],
             'admin/memory-setup' => ['page' => 'memory-setup'],
             'dashboard' => ['page' => 'dashboard'],
             'create-aei' => ['page' => 'create-aei'],

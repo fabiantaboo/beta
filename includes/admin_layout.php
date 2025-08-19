@@ -12,6 +12,7 @@ function renderAdminNavigation($currentPage = '') {
         'admin-feedback' => ['name' => 'User Feedback', 'icon' => 'fas fa-comment-dots', 'url' => '/admin/feedback'],
         'admin-decay' => ['name' => 'Emotional Decay', 'icon' => 'fas fa-heart-broken', 'url' => '/admin/decay'],
         'admin-replicate' => ['name' => 'Replicate AI', 'icon' => 'fas fa-robot', 'url' => '/admin/replicate'],
+        'admin-avatar-regenerate' => ['name' => 'Regenerate Avatars', 'icon' => 'fas fa-redo-alt', 'url' => '/admin/avatar-regenerate'],
         'memory-setup' => ['name' => 'Memory Setup', 'icon' => 'fas fa-brain', 'url' => '/admin/memory-setup'],
         'admin-logs' => ['name' => 'Error Logs', 'icon' => 'fas fa-file-alt', 'url' => '/admin/logs'],
     ];

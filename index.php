@@ -18,7 +18,7 @@ if (isset($_GET['action'])) {
     }
 }
 
-$allowed_pages = ['home', 'onboarding', 'create-aei', 'choose-avatar', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-feedback', 'admin-logs', 'admin-decay', 'admin-migration', 'admin-replicate', 'admin-avatar-batch', 'memory-setup'];
+$allowed_pages = ['home', 'onboarding', 'create-aei', 'choose-avatar', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-feedback', 'admin-logs', 'admin-decay', 'admin-migration', 'admin-replicate', 'admin-avatar-batch', 'admin-avatar-regenerate', 'memory-setup'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
@@ -49,6 +49,7 @@ $page_title = match($page) {
     'admin-migration' => 'Admin - Migration Tools',
     'admin-replicate' => 'Admin - Replicate AI',
     'admin-avatar-batch' => 'Admin - Avatar Batch Generation',
+    'admin-avatar-regenerate' => 'Admin - Avatar Regeneration',
     'memory-setup' => 'Admin - Memory System Setup',
     default => 'Ayuni Beta'
 };
