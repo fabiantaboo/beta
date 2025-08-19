@@ -80,27 +80,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get all active AEIs for selection
 try {
-    // Use the same query pattern as statistics which works - try both TRUE and 1
-    $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = 1 ORDER BY name ASC");
+    // For admin panel, we want ALL AEIs from ALL users
+    $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = TRUE ORDER BY name ASC");
     $stmt->execute();
     $allAeis = $stmt->fetchAll();
     
-    // Debug info - get total count for debugging
+    // Debug info - get total count and sample data
     $debugStmt = $pdo->prepare("SELECT COUNT(*) as total FROM aeis");
     $debugStmt->execute();
     $totalCount = $debugStmt->fetch()['total'];
     
-    // If no active AEIs found, log debug info
+    // Get sample of all AEIs to see their status
+    $debugStmt2 = $pdo->prepare("SELECT name, is_active, user_id FROM aeis LIMIT 5");
+    $debugStmt2->execute();
+    $debugAeis = $debugStmt2->fetchAll();
+    
+    // More debug info if needed
     if (empty($allAeis)) {
         error_log("DEBUG: No active AEIs found. Total AEIs in database: " . $totalCount);
-        
-        // Get sample of all AEIs to see their is_active status
-        $debugStmt2 = $pdo->prepare("SELECT name, is_active FROM aeis LIMIT 5");
-        $debugStmt2->execute();
-        $debugAeis = $debugStmt2->fetchAll();
-        
         foreach ($debugAeis as $debugAei) {
-            error_log("DEBUG: AEI {$debugAei['name']} - is_active: " . var_export($debugAei['is_active'], true));
+            error_log("DEBUG: AEI {$debugAei['name']} - is_active: " . var_export($debugAei['is_active'], true) . " - user_id: {$debugAei['user_id']}");
         }
     }
     
@@ -116,7 +115,7 @@ try {
         COUNT(*) as total_aeis,
         COUNT(avatar_url) as aeis_with_avatars,
         COUNT(*) - COUNT(avatar_url) as aeis_without_avatars
-        FROM aeis WHERE is_active = 1");
+        FROM aeis WHERE is_active = TRUE");
     $stmt->execute();
     $stats = $stmt->fetch();
 } catch (PDOException $e) {
@@ -150,10 +149,10 @@ try {
                     <strong>Statistics show:</strong> <?= $stats['total_aeis'] ?> total AEIs, <?= $stats['aeis_with_avatars'] ?> with avatars
                 </p>
                 <?php if (isset($debugAeis) && !empty($debugAeis)): ?>
-                    <p class="text-red-700 dark:text-red-300"><strong>Sample AEIs and their is_active status:</strong></p>
+                    <p class="text-red-700 dark:text-red-300"><strong>Sample AEIs and their status:</strong></p>
                     <ul class="list-disc list-inside ml-4 text-red-600 dark:text-red-400">
                         <?php foreach ($debugAeis as $debugAei): ?>
-                            <li><?= htmlspecialchars($debugAei['name']) ?> - is_active: <?= var_export($debugAei['is_active'], true) ?> (<?= gettype($debugAei['is_active']) ?>)</li>
+                            <li><?= htmlspecialchars($debugAei['name']) ?> - is_active: <?= var_export($debugAei['is_active'], true) ?> (<?= gettype($debugAei['is_active']) ?>) - user_id: <?= $debugAei['user_id'] ?></li>
                         <?php endforeach; ?>
                     </ul>
                 <?php endif; ?>
