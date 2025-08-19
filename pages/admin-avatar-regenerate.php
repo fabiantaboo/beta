@@ -94,12 +94,15 @@ if (!$pdo) {
         $testCount = $testStmt->fetch()['count'];
         error_log("EMERGENCY: Basic query works, found $testCount AEIs");
         
-        // Now try the real query
+        // Now try the real query with different variable name
         $aeiSelectionStmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at, is_active FROM aeis ORDER BY name ASC");
         $aeiSelectionStmt->execute();
-        $allAeis = $aeiSelectionStmt->fetchAll();
+        $availableAeis = $aeiSelectionStmt->fetchAll();
         
-        error_log("EMERGENCY: Real query found " . count($allAeis) . " AEIs");
+        error_log("EMERGENCY: Real query found " . count($availableAeis) . " AEIs");
+        
+        // Copy to original variable for compatibility
+        $allAeis = $availableAeis;
         
     } catch (Exception $e) {
         error_log("EMERGENCY: Exception - " . $e->getMessage());
@@ -110,7 +113,7 @@ if (!$pdo) {
 // Debug info only if needed
 $totalCount = 0;
 $debugAeis = [];
-if (empty($allAeis)) {
+if (count($allAeis) === 0) {
     try {
         $debugStmt = $pdo->prepare("SELECT COUNT(*) as total FROM aeis");
         $debugStmt->execute();
@@ -147,7 +150,7 @@ try {
         
         <?php renderAdminAlerts($error, $success); ?>
 
-        <?php if (isAdmin() && empty($allAeis)): ?>
+        <?php if (isAdmin() && count($allAeis) === 0): ?>
         <!-- Debug Information -->
         <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 mb-8">
             <div class="flex items-center mb-4">
@@ -232,7 +235,7 @@ try {
                             onchange="showAeiPreview(this.value)"
                             required
                         >
-                            <?php if (empty($allAeis)): ?>
+                            <?php if (count($allAeis) === 0): ?>
                                 <option value="">No AEIs found - Create some AEIs first</option>
                             <?php else: ?>
                                 <option value="">Choose an AEI...</option>
