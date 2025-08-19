@@ -253,9 +253,17 @@ if ($isCurrentUserAdmin) {
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
-                        <span class="text-xl text-white font-bold"><?= strtoupper(substr($aei['name'], 0, 1)) ?></span>
-                    </div>
+                    <?php if (!empty($aei['profile_image']) && file_exists(__DIR__ . '/../uploads/profile_images/' . $aei['profile_image'])): ?>
+                        <img 
+                            src="/uploads/profile_images/<?= htmlspecialchars($aei['profile_image']) ?>" 
+                            alt="<?= htmlspecialchars($aei['name']) ?>"
+                            class="w-12 h-12 rounded-full object-cover border-2 border-ayuni-aqua"
+                        >
+                    <?php else: ?>
+                        <div class="w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
+                            <span class="text-xl text-white font-bold"><?= strtoupper(substr($aei['name'], 0, 1)) ?></span>
+                        </div>
+                    <?php endif; ?>
                     <div>
                         <h3 class="text-xl font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></h3>
                         <div class="flex items-center space-x-1">
@@ -1347,7 +1355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     // Silent fail - polling is best effort
                                 }
                             }
-                        }, 2000); // Check every 2 seconds when visible
+                        }, 1000); // Check every 1 second when visible
                         
                         // Clean up poller after 5 minutes
                         setTimeout(() => clearInterval(pollInterval), 300000);
