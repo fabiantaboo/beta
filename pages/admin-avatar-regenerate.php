@@ -78,28 +78,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get all AEIs for selection (check both active and inactive for debugging)
+// Get all active AEIs for selection
 try {
-    // First, try to get all AEIs regardless of active status to debug
-    $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at, is_active FROM aeis ORDER BY name ASC");
+    // Use the same query pattern as statistics which works - try both TRUE and 1
+    $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = 1 ORDER BY name ASC");
     $stmt->execute();
-    $allAeisDebug = $stmt->fetchAll();
+    $allAeis = $stmt->fetchAll();
     
-    // Filter for active AEIs
-    $allAeis = array_filter($allAeisDebug, function($aei) {
-        return $aei['is_active'] == 1 || $aei['is_active'] === true;
-    });
+    // Debug info - get total count for debugging
+    $debugStmt = $pdo->prepare("SELECT COUNT(*) as total FROM aeis");
+    $debugStmt->execute();
+    $totalCount = $debugStmt->fetch()['total'];
     
     // If no active AEIs found, log debug info
     if (empty($allAeis)) {
-        error_log("DEBUG: No active AEIs found. Total AEIs in database: " . count($allAeisDebug));
-        foreach ($allAeisDebug as $aei) {
-            error_log("DEBUG: AEI {$aei['name']} - is_active: " . var_export($aei['is_active'], true));
+        error_log("DEBUG: No active AEIs found. Total AEIs in database: " . $totalCount);
+        
+        // Get sample of all AEIs to see their is_active status
+        $debugStmt2 = $pdo->prepare("SELECT name, is_active FROM aeis LIMIT 5");
+        $debugStmt2->execute();
+        $debugAeis = $debugStmt2->fetchAll();
+        
+        foreach ($debugAeis as $debugAei) {
+            error_log("DEBUG: AEI {$debugAei['name']} - is_active: " . var_export($debugAei['is_active'], true));
         }
     }
     
 } catch (PDOException $e) {
     $allAeis = [];
+    $totalCount = 'Error';
     error_log("Error fetching AEIs: " . $e->getMessage());
 }
 
@@ -109,7 +116,7 @@ try {
         COUNT(*) as total_aeis,
         COUNT(avatar_url) as aeis_with_avatars,
         COUNT(*) - COUNT(avatar_url) as aeis_without_avatars
-        FROM aeis WHERE is_active = TRUE");
+        FROM aeis WHERE is_active = 1");
     $stmt->execute();
     $stats = $stmt->fetch();
 } catch (PDOException $e) {
@@ -134,20 +141,24 @@ try {
             </div>
             <div class="space-y-2 text-sm">
                 <p class="text-red-700 dark:text-red-300">
-                    <strong>Total AEIs in database:</strong> <?= isset($allAeisDebug) ? count($allAeisDebug) : 'Unknown' ?>
+                    <strong>Total AEIs in database:</strong> <?= isset($totalCount) ? $totalCount : 'Unknown' ?>
                 </p>
-                <?php if (isset($allAeisDebug) && !empty($allAeisDebug)): ?>
-                    <p class="text-red-700 dark:text-red-300"><strong>Sample AEIs found:</strong></p>
+                <p class="text-red-700 dark:text-red-300">
+                    <strong>Active AEIs found:</strong> <?= count($allAeis) ?>
+                </p>
+                <p class="text-red-700 dark:text-red-300">
+                    <strong>Statistics show:</strong> <?= $stats['total_aeis'] ?> total AEIs, <?= $stats['aeis_with_avatars'] ?> with avatars
+                </p>
+                <?php if (isset($debugAeis) && !empty($debugAeis)): ?>
+                    <p class="text-red-700 dark:text-red-300"><strong>Sample AEIs and their is_active status:</strong></p>
                     <ul class="list-disc list-inside ml-4 text-red-600 dark:text-red-400">
-                        <?php foreach (array_slice($allAeisDebug, 0, 5) as $debugAei): ?>
+                        <?php foreach ($debugAeis as $debugAei): ?>
                             <li><?= htmlspecialchars($debugAei['name']) ?> - is_active: <?= var_export($debugAei['is_active'], true) ?> (<?= gettype($debugAei['is_active']) ?>)</li>
                         <?php endforeach; ?>
                     </ul>
-                <?php else: ?>
-                    <p class="text-red-700 dark:text-red-300">No AEIs found in the aeis table. You may need to create some AEIs first.</p>
                 <?php endif; ?>
                 <p class="text-red-600 dark:text-red-400 mt-4">
-                    <strong>Next steps:</strong> Check the error log for more details or create AEIs via the dashboard.
+                    <strong>Problem:</strong> Statistics show <?= $stats['total_aeis'] ?> AEIs exist but none are marked as is_active = TRUE. Check the database.
                 </p>
             </div>
         </div>
