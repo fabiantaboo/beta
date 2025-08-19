@@ -1339,8 +1339,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log(`[${requestId}] AEI message received`);
                 hideTyping();
                 
-                // Use visibility-aware message display
-                storeOrDisplayMessage(data);
+                // Handle message display with visibility awareness
+                if (!isPageVisible) {
+                    console.log('Page hidden, storing message for later:', data.id);
+                    pendingMessages.push(data);
+                } else {
+                    // Check if message already exists to prevent duplicates
+                    const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
+                    if (!existingMessage) {
+                        console.log('Adding message to UI immediately:', data.id);
+                        addMessage(data);
+                    } else {
+                        console.log(`Message ${data.id} already exists, skipping duplicate`);
+                    }
+                }
                 break;
                 
             case 'system_overload':
@@ -2485,17 +2497,6 @@ function handleVisibilityChange() {
 // Listen for visibility changes
 document.addEventListener('visibilitychange', handleVisibilityChange);
 
-// Store messages when page is hidden
-function storeOrDisplayMessage(messageData) {
-    if (!isPageVisible) {
-        console.log('Page hidden, storing message for later:', messageData.id);
-        pendingMessages.push(messageData);
-    } else {
-        const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
-        if (!existingMessage) {
-            addMessage(messageData);
-        }
-    }
-}
+// Messages are now handled directly in the SSE event handler with visibility awareness
 
 </script>
