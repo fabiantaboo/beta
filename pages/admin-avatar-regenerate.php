@@ -78,23 +78,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get all active AEIs for selection (copied pattern from admin-avatar-batch.php which works)
+// Get all active AEIs for selection - NUCLEAR APPROACH: Copy exact working statistics pattern
 try {
-    $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = TRUE ORDER BY name ASC");
-    $stmt->execute();
-    $allAeis = $stmt->fetchAll();
+    // Step 1: Use the EXACT same WHERE clause as statistics (that works)
+    $aeiSelectionStmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = TRUE ORDER BY name ASC");
+    $aeiSelectionStmt->execute();
+    $allAeis = $aeiSelectionStmt->fetchAll();
     
-    // Fallback: If no active AEIs found, try without is_active filter for admin debugging
-    if (empty($allAeis)) {
-        $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis ORDER BY name ASC");
-        $stmt->execute();
-        $allAeisDebug = $stmt->fetchAll();
-        error_log("DEBUG: Found " . count($allAeisDebug) . " total AEIs (ignoring is_active)");
-    }
+    error_log("DEBUG: AEI Selection Query found " . count($allAeis) . " AEIs");
     
 } catch (PDOException $e) {
     $allAeis = [];
-    error_log("Error fetching AEIs: " . $e->getMessage());
+    error_log("Error in AEI selection query: " . $e->getMessage());
+    error_log("SQL Error Info: " . print_r($e->errorInfo, true));
 }
 
 // Debug info only if needed
@@ -106,7 +102,7 @@ if (empty($allAeis)) {
         $debugStmt->execute();
         $totalCount = $debugStmt->fetch()['total'];
         
-        $debugStmt2 = $pdo->prepare("SELECT name, is_active, user_id FROM aeis LIMIT 5");
+        $debugStmt2 = $pdo->prepare("SELECT name, is_active, user_id FROM aeis WHERE is_active = TRUE LIMIT 5");
         $debugStmt2->execute();
         $debugAeis = $debugStmt2->fetchAll();
     } catch (PDOException $e) {
