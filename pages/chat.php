@@ -1339,13 +1339,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log(`[${requestId}] AEI message received`);
                 hideTyping();
                 
-                // Check if message already exists to prevent duplicates
-                const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
-                if (!existingMessage) {
-                    addMessage(data);
-                } else {
-                    console.log(`[${requestId}] Message ${data.id} already exists, skipping duplicate`);
-                }
+                // Use visibility-aware message display
+                storeOrDisplayMessage(data);
                 break;
                 
             case 'system_overload':
@@ -2455,5 +2450,52 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// Page Visibility API - Handle tab focus/blur for background processing
+let isPageVisible = !document.hidden;
+let pendingMessages = [];
+
+function handleVisibilityChange() {
+    const wasVisible = isPageVisible;
+    isPageVisible = !document.hidden;
+    
+    console.log(`Page visibility changed: ${isPageVisible ? 'visible' : 'hidden'}`);
+    
+    // When page becomes visible again, check for any missed updates
+    if (!wasVisible && isPageVisible) {
+        console.log('Page became visible, checking for updates...');
+        
+        // Force refresh of message container if there are pending updates
+        if (pendingMessages.length > 0) {
+            console.log(`Processing ${pendingMessages.length} pending messages`);
+            
+            pendingMessages.forEach(messageData => {
+                const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
+                if (!existingMessage) {
+                    addMessage(messageData);
+                }
+            });
+            
+            pendingMessages = [];
+            hideTyping(); // Make sure typing indicator is cleared
+        }
+    }
+}
+
+// Listen for visibility changes
+document.addEventListener('visibilitychange', handleVisibilityChange);
+
+// Store messages when page is hidden
+function storeOrDisplayMessage(messageData) {
+    if (!isPageVisible) {
+        console.log('Page hidden, storing message for later:', messageData.id);
+        pendingMessages.push(messageData);
+    } else {
+        const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
+        if (!existingMessage) {
+            addMessage(messageData);
+        }
+    }
+}
 
 </script>
