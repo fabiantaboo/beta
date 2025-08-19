@@ -27,17 +27,30 @@ function setUserSession($userId) {
     $_SESSION['last_activity'] = time();
     $_SESSION['device_fingerprint'] = generateDeviceFingerprint();
     
-    // Extend session lifetime when user logs in
-    setcookie(session_name(), session_id(), time() + 2592000, '/'); // 30 days
+    // Extend session lifetime when user logs in with secure cookie settings
+    $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+    setcookie(
+        session_name(), 
+        session_id(), 
+        [
+            'expires' => time() + 2592000, // 30 days from now
+            'path' => '/',
+            'domain' => '',
+            'secure' => $secure,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]
+    );
 }
 
 function generateDeviceFingerprint() {
-    // Simple device fingerprint to detect suspicious activity
+    // More stable device fingerprint - remove IP to prevent DSL reconnect issues
     $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
     $acceptLanguage = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '';
+    $acceptEncoding = $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '';
     
-    return hash('sha256', $userAgent . $ip . $acceptLanguage);
+    // Don't include IP address as it can change frequently with DSL providers
+    return hash('sha256', $userAgent . $acceptLanguage . $acceptEncoding);
 }
 
 function clearUserSession() {
@@ -62,8 +75,21 @@ function isLoggedIn() {
     // Update last activity
     $_SESSION['last_activity'] = time();
     
-    // Refresh cookie on each request to maintain 30-day sliding window
-    setcookie(session_name(), session_id(), time() + 2592000, '/');
+    // CRITICAL: Always refresh cookie on each request to maintain 30-day sliding window
+    // Use secure settings matching session_set_cookie_params
+    $secure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+    setcookie(
+        session_name(), 
+        session_id(), 
+        [
+            'expires' => time() + 2592000, // 30 days from now
+            'path' => '/',
+            'domain' => '',
+            'secure' => $secure,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]
+    );
     
     return true;
 }
