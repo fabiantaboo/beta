@@ -1355,7 +1355,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         const processStream = async () => {
                             try {
+                                let readAttempts = 0;
                                 while (true) {
+                                    readAttempts++;
+                                    updateVisibilityDebug(`Stream read attempt ${readAttempts}, page visible: ${!document.hidden}`);
+                                    
+                                    // Force keep connection alive even when hidden
                                     const { done, value } = await reader.read();
                                     
                                     if (done) {
@@ -1411,6 +1416,87 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Start the async request
                 sendRequest();
+                
+                // BACKUP SYSTEM: Poll for completed messages when page becomes visible
+                const pollForCompletion = () => {
+                    if (document.hidden) {
+                        updateVisibilityDebug(`Setting up completion poller...`);
+                        
+                        const pollInterval = setInterval(async () => {
+                            if (!document.hidden) {
+                                updateVisibilityDebug(`Page visible - checking for completion...`);
+                                
+                                try {
+                                    const pollResponse = await fetch('/api/chat-poll.php', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ 
+                                            request_id: requestId,
+                                            csrf_token: csrfToken 
+                                        })
+                                    });
+                                    
+                                    if (pollResponse.ok) {
+                                        const pollData = await pollResponse.json();
+                                        updateVisibilityDebug(`Poll result: ${pollData.status}`);
+                                        
+                                        if (pollData.status === 'completed' && pollData.message) {
+                                            updateVisibilityDebug(`Found completed message via polling!`);
+                                            clearInterval(pollInterval);
+                                            hideTyping();
+                                            
+                                            // Add the message that was missed
+                                            handleSSEEvent('aei_message', pollData.message, requestId, resolve, reject);
+                                            handleSSEEvent('complete', { success: true }, requestId, resolve, reject);
+                                        } else if (pollData.status === 'error') {
+                                            clearInterval(pollInterval);
+                                            reject(new Error(pollData.error || 'Polling failed'));
+                                        }
+                                    }
+                                } catch (pollError) {
+                                    updateVisibilityDebug(`Poll error: ${pollError.message}`);
+                                }
+                            }
+                        }, 2000); // Check every 2 seconds when visible
+                        
+                        // Clean up poller after 5 minutes
+                        setTimeout(() => clearInterval(pollInterval), 300000);
+                    }
+                };
+                
+                // Start polling if page is already hidden
+                if (document.hidden) {
+                    pollForCompletion();
+                }
+                
+                // Start polling when page becomes hidden
+                const visibilityHandler = () => {
+                    if (document.hidden) {
+                        updateVisibilityDebug(`Page became hidden - starting poller`);
+                        pollForCompletion();
+                    }
+                };
+                
+                document.addEventListener('visibilitychange', visibilityHandler);
+                
+                // Clean up event listener
+                const cleanup = () => {
+                    document.removeEventListener('visibilitychange', visibilityHandler);
+                };
+                
+                // Override resolve/reject to cleanup
+                const originalResolve = resolve;
+                const originalReject = reject;
+                
+                resolve = (value) => {
+                    cleanup();
+                    originalResolve(value);
+                };
+                
+                reject = (error) => {
+                    cleanup();
+                    originalReject(error);
+                };
                 
             } catch (error) {
                 console.error('Chat setup error:', error);
