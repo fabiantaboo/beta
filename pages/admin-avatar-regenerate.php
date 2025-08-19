@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $oldAvatarUrl = $aei['avatar_url'];
                         
                         // Update AEI in database with new avatar
-                        $updateStmt = $pdo->prepare("UPDATE aeis SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                        $updateStmt = $pdo->prepare("UPDATE aeis SET avatar_url = ? WHERE id = ?");
                         $updateStmt->execute([$avatarUrl, $aei['id']]);
                         
                         // Optionally clean up old avatar file (if it exists and is not default)
