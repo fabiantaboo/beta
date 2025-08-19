@@ -985,6 +985,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageDiv = document.createElement('div');
         messageDiv.className = `flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'} message-fade-in`;
         
+        // Add message ID as data attribute for duplicate detection
+        if (message.id) {
+            messageDiv.setAttribute('data-message-id', message.id);
+        }
+        
         // Format time in user's timezone with appropriate format
         const time = new Date().toLocaleTimeString('en-US', { 
             hour: '2-digit', 
@@ -1333,7 +1338,14 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'aei_message':
                 console.log(`[${requestId}] AEI message received`);
                 hideTyping();
-                addMessage(data);
+                
+                // Check if message already exists to prevent duplicates
+                const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
+                if (!existingMessage) {
+                    addMessage(data);
+                } else {
+                    console.log(`[${requestId}] Message ${data.id} already exists, skipping duplicate`);
+                }
                 break;
                 
             case 'system_overload':
@@ -1346,6 +1358,8 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'complete':
                 console.log(`[${requestId}] Chat complete`);
                 hideTyping();
+                // Double-check typing indicator is really gone
+                setTimeout(() => hideTyping(), 100);
                 resolve(data);
                 break;
                 
@@ -1442,10 +1456,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 
-                // Add AI response
-                if (serverAiMessage) {
-                    addMessage(serverAiMessage);
-                }
+                // AI response is already added via SSE events, don't add it again
+                // if (serverAiMessage) {
+                //     addMessage(serverAiMessage);
+                // }
             }
             
             // Handle debug data for admins
@@ -1469,7 +1483,7 @@ document.addEventListener('DOMContentLoaded', function() {
         messageInput.disabled = false;
         messageInput.focus();
         
-        // Hide typing indicator
+        // Hide typing indicator (backup - should already be hidden by SSE)
         hideTyping();
     });
     
