@@ -1195,7 +1195,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide typing indicator with smooth fade-out
     function hideTyping() {
         const existingTyping = document.getElementById('typing-indicator');
-        if (existingTyping) {
+        if (existingTyping && !existingTyping.classList.contains('hiding')) {
+            // Mark as hiding to prevent multiple fade-out calls
+            existingTyping.classList.add('hiding');
+            
             // Add fade-out animation
             existingTyping.style.transition = 'all 0.2s ease-in';
             existingTyping.style.opacity = '0';
@@ -1459,8 +1462,6 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'complete':
                 console.log(`[${requestId}] Chat complete`);
                 hideTyping();
-                // Double-check typing indicator is really gone
-                setTimeout(() => hideTyping(), 100);
                 resolve(data);
                 break;
                 
