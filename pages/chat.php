@@ -1121,7 +1121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Update text content with typewriter effect
                 setTimeout(() => {
-                    textDiv.innerHTML = `<span class="font-medium">${aeiName}</span> is thinking a bit longer...`;
+                    textDiv.innerHTML = `<span class="font-medium">${aeiName}</span> is typing a bit longer...`;
                 }, 150);
                 
                 return;
@@ -1150,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             </div>
                             <div class="text-sm">
-                                <span class="font-medium">${aeiName}</span> is thinking a bit longer...
+                                <span class="font-medium">${aeiName}</span> is typing a bit longer...
                             </div>
                         </div>
                     </div>
@@ -1222,13 +1222,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const startTime = Date.now();
                 let thinkingLongerShown = false;
                 
-                // Show "thinking longer" after 8 seconds (covers fast retries)
+                // Show "typing longer" after 20 seconds (covers more retries)
                 const thinkingLongerTimer = setTimeout(() => {
                     if (!thinkingLongerShown) {
                         thinkingLongerShown = true;
                         showThinkingLonger(aeiName);
                     }
-                }, 8000);
+                }, 20000);
                 
                 try {
                     const response = await fetch('/api/chat.php', {
