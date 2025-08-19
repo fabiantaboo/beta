@@ -253,17 +253,22 @@ if ($isCurrentUserAdmin) {
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center space-x-4">
-                    <?php if (!empty($aei['profile_image']) && file_exists(__DIR__ . '/../uploads/profile_images/' . $aei['profile_image'])): ?>
-                        <img 
-                            src="/uploads/profile_images/<?= htmlspecialchars($aei['profile_image']) ?>" 
-                            alt="<?= htmlspecialchars($aei['name']) ?>"
-                            class="w-12 h-12 rounded-full object-cover border-2 border-ayuni-aqua"
-                        >
-                    <?php else: ?>
-                        <div class="w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
-                            <span class="text-xl text-white font-bold"><?= strtoupper(substr($aei['name'], 0, 1)) ?></span>
-                        </div>
-                    <?php endif; ?>
+                    <div class="relative">
+                        <?php if (!empty($aei['avatar_url']) && file_exists($_SERVER['DOCUMENT_ROOT'] . $aei['avatar_url'])): ?>
+                            <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-ayuni-blue/20">
+                                <img 
+                                    src="<?= htmlspecialchars($aei['avatar_url']) ?>" 
+                                    alt="<?= htmlspecialchars($aei['name']) ?>" 
+                                    class="w-full h-full object-cover"
+                                    onerror="this.parentElement.innerHTML='<div class=\'w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center\'><span class=\'text-xl text-white font-bold\'><?= strtoupper(substr($aei['name'], 0, 1)) ?></span></div>'"
+                                />
+                            </div>
+                        <?php else: ?>
+                            <div class="w-12 h-12 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center">
+                                <span class="text-xl text-white font-bold"><?= strtoupper(substr($aei['name'], 0, 1)) ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                     <div>
                         <h3 class="text-xl font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></h3>
                         <div class="flex items-center space-x-1">
