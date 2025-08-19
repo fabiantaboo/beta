@@ -360,6 +360,20 @@ if ($isCurrentUserAdmin) {
         </div>
     </div>
 
+    <!-- Visibility Debug Panel (always visible) -->
+    <div id="visibility-debug" class="bg-blue-900/20 border-b border-blue-700 text-blue-200 text-xs px-4 py-2">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <span>🔍 PWA Debug:</span>
+                <span>Visible: <span id="visibility-status" class="font-bold">unknown</span></span>
+                <span>Hidden: <span id="hidden-status" class="font-bold">unknown</span></span>
+                <span>State: <span id="visibility-state" class="font-bold">unknown</span></span>
+                <span>Pending: <span id="pending-count" class="font-bold">0</span></span>
+            </div>
+            <div id="visibility-log" class="text-xs opacity-75 max-w-sm truncate">Ready</div>
+        </div>
+    </div>
+
     <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0">
         <!-- Messages Area -->
         <div class="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" id="messages-container">
@@ -1337,27 +1351,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             case 'aei_message':
                 console.log(`[${requestId}] AEI message received`);
-                console.log('Page visibility status:', { 
-                    isPageVisible, 
-                    documentHidden: document.hidden, 
-                    visibilityState: document.visibilityState,
-                    messageId: data.id
-                });
                 hideTyping();
                 
                 // Handle message display with visibility awareness
                 if (!isPageVisible) {
-                    console.log('Page hidden, storing message for later:', data.id);
                     pendingMessages.push(data);
-                    console.log('Pending messages count:', pendingMessages.length);
+                    updateVisibilityDebug(`Message stored for later: ${data.id.substring(0, 8)}`);
                 } else {
                     // Check if message already exists to prevent duplicates
                     const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
                     if (!existingMessage) {
-                        console.log('Adding message to UI immediately:', data.id);
                         addMessage(data);
+                        updateVisibilityDebug(`Message added immediately: ${data.id.substring(0, 8)}`);
                     } else {
-                        console.log(`Message ${data.id} already exists, skipping duplicate`);
+                        updateVisibilityDebug(`Duplicate message skipped: ${data.id.substring(0, 8)}`);
                     }
                 }
                 break;
@@ -2474,39 +2481,59 @@ document.addEventListener('keydown', function(e) {
 let isPageVisible = !document.hidden;
 let pendingMessages = [];
 
+// Update debug panel
+function updateVisibilityDebug(message = null) {
+    const statusEl = document.getElementById('visibility-status');
+    const hiddenEl = document.getElementById('hidden-status');
+    const stateEl = document.getElementById('visibility-state');
+    const pendingEl = document.getElementById('pending-count');
+    const logEl = document.getElementById('visibility-log');
+    
+    if (statusEl) statusEl.textContent = isPageVisible ? 'YES' : 'NO';
+    if (hiddenEl) hiddenEl.textContent = document.hidden ? 'YES' : 'NO';
+    if (stateEl) stateEl.textContent = document.visibilityState || 'unknown';
+    if (pendingEl) pendingEl.textContent = pendingMessages.length;
+    
+    if (message && logEl) {
+        const timestamp = new Date().toLocaleTimeString();
+        logEl.textContent = `${timestamp}: ${message}`;
+    }
+}
+
+// Initialize debug panel
+updateVisibilityDebug('Initialized');
+
 function handleVisibilityChange() {
     const wasVisible = isPageVisible;
     isPageVisible = !document.hidden;
     
-    console.log(`Page visibility changed: ${isPageVisible ? 'visible' : 'hidden'} (was: ${wasVisible ? 'visible' : 'hidden'})`);
-    console.log('Document.hidden:', document.hidden);
-    console.log('Document.visibilityState:', document.visibilityState);
+    updateVisibilityDebug(`Changed: ${isPageVisible ? 'visible' : 'hidden'} (was: ${wasVisible ? 'visible' : 'hidden'})`);
     
     // When page becomes visible again, check for any missed updates
     if (!wasVisible && isPageVisible) {
-        console.log('Page became visible, checking for updates...');
+        updateVisibilityDebug('Became visible, checking updates...');
         
         // Force refresh of message container if there are pending updates
         if (pendingMessages.length > 0) {
-            console.log(`Processing ${pendingMessages.length} pending messages`);
+            updateVisibilityDebug(`Processing ${pendingMessages.length} pending messages`);
             
             pendingMessages.forEach((messageData, index) => {
-                console.log(`Processing pending message ${index + 1}:`, messageData.id);
                 const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
                 if (!existingMessage) {
-                    console.log(`Adding pending message ${messageData.id} to UI`);
                     addMessage(messageData);
-                } else {
-                    console.log(`Pending message ${messageData.id} already exists in UI`);
+                    updateVisibilityDebug(`Added pending message ${index + 1}`);
                 }
             });
             
             pendingMessages = [];
             hideTyping(); // Make sure typing indicator is cleared
-            console.log('All pending messages processed');
+            updateVisibilityDebug('All pending messages processed');
         } else {
-            console.log('No pending messages to process');
+            updateVisibilityDebug('No pending messages to process');
         }
+        updateVisibilityDebug(); // Final update to show current state
+    } else {
+        updateVisibilityDebug(); // Update current state display
     }
 }
 
