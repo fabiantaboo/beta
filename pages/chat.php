@@ -1188,26 +1188,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Enhanced AI message with progressive retry feedback
+    // Asynchronous AI message with Server-Sent Events (background processing)
     async function sendAIMessage(message, imageFile = null) {
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
             try {
                 let requestData;
-                let headers = {};
                 
+                // Prepare request data
                 if (imageFile) {
                     // Use FormData for file upload
-                    const formData = new FormData();
-                    formData.append('message', message);
-                    formData.append('aei_id', aeiId);
-                    formData.append('csrf_token', csrfToken);
-                    formData.append('image', imageFile);
-                    
-                    requestData = formData;
-                    // Don't set Content-Type header - let browser set it with boundary
+                    requestData = new FormData();
+                    requestData.append('message', message);
+                    requestData.append('aei_id', aeiId);
+                    requestData.append('csrf_token', csrfToken);
+                    requestData.append('image', imageFile);
                 } else {
                     // Use JSON for text-only messages
-                    headers['Content-Type'] = 'application/json';
                     requestData = JSON.stringify({
                         message: message,
                         aei_id: aeiId,
@@ -1215,64 +1211,163 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // Start with normal thinking indicator
-                showTyping();
+                // Create unique request ID for this message
+                const requestId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 
-                // Track timing for progressive UI updates
-                const startTime = Date.now();
-                let thinkingLongerShown = false;
+                console.log(`[${requestId}] Starting async chat request`);
                 
-                // Show "typing longer" after 20 seconds (covers more retries)
-                const thinkingLongerTimer = setTimeout(() => {
-                    if (!thinkingLongerShown) {
-                        thinkingLongerShown = true;
-                        showThinkingLonger(aeiName);
-                    }
-                }, 20000);
-                
-                try {
-                    const response = await fetch('/api/chat.php', {
-                        method: 'POST',
-                        headers: headers,
-                        body: requestData
-                    });
-                    
-                    clearTimeout(thinkingLongerTimer);
-                    
-                    const data = await response.json();
-                    
-                    if (!response.ok) {
-                        // Handle API overload specially
-                        if (response.status === 503 && data.error_type === 'api_overload') {
-                            hideTyping();
-                            showSystemDownModal(data.aei_name, data.message);
-                            reject(new Error('API_OVERLOAD_MAX_RETRIES'));
-                            return;
+                // Start request immediately - no waiting for connection
+                const sendRequest = async () => {
+                    try {
+                        const headers = imageFile ? {} : { 'Content-Type': 'application/json' };
+                        
+                        const response = await fetch('/api/chat-async.php', {
+                            method: 'POST',
+                            headers: headers,
+                            body: requestData
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                         }
-                        throw new Error(data.error || 'Failed to send message');
+                        
+                        console.log(`[${requestId}] Request sent successfully`);
+                        
+                        // Process the Server-Sent Events stream
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+                        let currentEventType = null;
+                        
+                        const processStream = async () => {
+                            try {
+                                while (true) {
+                                    const { done, value } = await reader.read();
+                                    
+                                    if (done) {
+                                        console.log(`[${requestId}] Stream ended`);
+                                        break;
+                                    }
+                                    
+                                    buffer += decoder.decode(value, { stream: true });
+                                    const events = buffer.split('\n\n');
+                                    buffer = events.pop() || ''; // Keep incomplete event in buffer
+                                    
+                                    for (const eventBlock of events) {
+                                        if (eventBlock.trim() === '') continue;
+                                        
+                                        const lines = eventBlock.split('\n');
+                                        let eventType = 'message';
+                                        let eventData = null;
+                                        
+                                        for (const line of lines) {
+                                            if (line.startsWith('event: ')) {
+                                                eventType = line.substring(7).trim();
+                                            } else if (line.startsWith('data: ')) {
+                                                try {
+                                                    eventData = JSON.parse(line.substring(6).trim());
+                                                } catch (parseError) {
+                                                    console.warn(`[${requestId}] Failed to parse SSE data:`, line);
+                                                }
+                                            }
+                                        }
+                                        
+                                        if (eventData) {
+                                            handleSSEEvent(eventType, eventData, requestId, resolve, reject);
+                                        }
+                                    }
+                                }
+                            } catch (streamError) {
+                                console.error(`[${requestId}] Stream processing error:`, streamError);
+                                hideTyping();
+                                reject(new Error('Connection interrupted'));
+                            } finally {
+                                reader.releaseLock();
+                            }
+                        };
+                        
+                        await processStream();
+                        
+                    } catch (fetchError) {
+                        console.error(`[${requestId}] Request failed:`, fetchError);
+                        hideTyping();
+                        reject(fetchError);
                     }
-                    
-                    // Success - hide any thinking indicators
-                    hideTyping();
-                    resolve(data);
-                    
-                } catch (fetchError) {
-                    clearTimeout(thinkingLongerTimer);
-                    throw fetchError;
-                }
+                };
+                
+                // Start the async request
+                sendRequest();
                 
             } catch (error) {
-                console.error('Chat error:', error);
+                console.error('Chat setup error:', error);
                 hideTyping();
-                
-                // Don't show generic error for API overload
-                if (error.message !== 'API_OVERLOAD_MAX_RETRIES') {
-                    showAlert(error.message || 'Failed to send message. Please try again.');
-                }
-                
                 reject(error);
             }
         });
+    }
+    
+    // Handle Server-Sent Events
+    function handleSSEEvent(eventType, data, requestId, resolve, reject) {
+        console.log(`[${requestId}] SSE Event: ${eventType}`, data);
+        
+        switch (eventType) {
+            case 'status':
+                console.log(`[${requestId}] Status: ${data.message}`);
+                break;
+                
+            case 'user_message':
+                console.log(`[${requestId}] User message confirmed`);
+                // User message already added to UI, but we could update it here if needed
+                break;
+                
+            case 'typing':
+                console.log(`[${requestId}] AEI typing`);
+                showTyping();
+                break;
+                
+            case 'typing_longer':
+                console.log(`[${requestId}] AEI typing longer`);
+                showThinkingLonger(data.aei_name);
+                break;
+                
+            case 'aei_message':
+                console.log(`[${requestId}] AEI message received`);
+                hideTyping();
+                addMessage(data);
+                break;
+                
+            case 'system_overload':
+                console.log(`[${requestId}] System overload`);
+                hideTyping();
+                showSystemDownModal(data.aei_name, data.message);
+                reject(new Error('API_OVERLOAD_MAX_RETRIES'));
+                break;
+                
+            case 'complete':
+                console.log(`[${requestId}] Chat complete`);
+                hideTyping();
+                resolve(data);
+                break;
+                
+            case 'error':
+                console.error(`[${requestId}] Chat error:`, data.message);
+                hideTyping();
+                showAlert(data.message || 'Failed to send message. Please try again.');
+                reject(new Error(data.message));
+                break;
+                
+            case 'debug_data':
+                // Handle debug data for admins
+                <?php if ($isCurrentUserAdmin): ?>
+                if (data) {
+                    updateDebugPanel(data);
+                }
+                <?php endif; ?>
+                break;
+                
+            default:
+                console.log(`[${requestId}] Unknown event type: ${eventType}`, data);
+        }
     }
     
     // Handle form submission
