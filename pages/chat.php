@@ -1091,8 +1091,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show typing indicator
     function showTyping() {
-        // Remove existing typing indicator if any
-        hideTyping();
+        // IMMEDIATELY remove any existing indicators without animation
+        const existingIndicators = document.querySelectorAll('#typing-indicator, [id*="typing"]');
+        existingIndicators.forEach(indicator => indicator.remove());
         
         // Create typing indicator element
         const typingDiv = document.createElement('div');
@@ -1150,8 +1151,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // If no existing indicator, create new one
-        hideTyping();
+        // If no existing indicator, create new one - IMMEDIATE removal
+        const existingIndicators = document.querySelectorAll('#typing-indicator, [id*="typing"]');
+        existingIndicators.forEach(indicator => indicator.remove());
         
         // Create extended thinking indicator element with fade-in
         const thinkingDiv = document.createElement('div');
@@ -1192,25 +1194,29 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollToBottomWithImages();
     }
     
-    // Hide typing indicator with smooth fade-out
+    // Hide typing indicator with smooth fade-out - NUCLEAR VERSION
     function hideTyping() {
-        const existingTyping = document.getElementById('typing-indicator');
-        if (existingTyping && !existingTyping.classList.contains('hiding')) {
-            // Mark as hiding to prevent multiple fade-out calls
-            existingTyping.classList.add('hiding');
-            
-            // Add fade-out animation
-            existingTyping.style.transition = 'all 0.2s ease-in';
-            existingTyping.style.opacity = '0';
-            existingTyping.style.transform = 'translateY(-5px)';
-            
-            // Remove element after animation
-            setTimeout(() => {
-                if (existingTyping.parentNode) {
-                    existingTyping.remove();
-                }
-            }, 200);
-        }
+        // Find ALL typing indicators (in case there are duplicates with same ID)
+        const allTypingIndicators = document.querySelectorAll('#typing-indicator, [id*="typing"]');
+        
+        allTypingIndicators.forEach(indicator => {
+            if (indicator && !indicator.classList.contains('hiding')) {
+                // Mark as hiding to prevent multiple fade-out calls
+                indicator.classList.add('hiding');
+                
+                // Add fade-out animation
+                indicator.style.transition = 'all 0.2s ease-in';
+                indicator.style.opacity = '0';
+                indicator.style.transform = 'translateY(-5px)';
+                
+                // Remove element after animation
+                setTimeout(() => {
+                    if (indicator.parentNode) {
+                        indicator.remove();
+                    }
+                }, 200);
+            }
+        });
     }
     
     // Asynchronous AI message with Server-Sent Events (background processing)
