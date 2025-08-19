@@ -1,6 +1,7 @@
 <?php
 // Debug-Seite für Avatar-Generierung
-session_start();
+// Use centralized session configuration
+include_once 'includes/session_config.php';
 
 if (!isset($_SESSION['user_id'])) {
     die("Not logged in");

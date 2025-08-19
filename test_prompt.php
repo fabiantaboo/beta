@@ -1,6 +1,7 @@
 <?php
 // Test-Seite um Prompts zu testen ohne komplette AEI-Erstellung
-session_start();
+// Use centralized session configuration
+include_once 'includes/session_config.php';
 require_once __DIR__ . '/includes/replicate_api.php';
 
 if (!isset($_SESSION['user_id'])) {

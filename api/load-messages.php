@@ -5,7 +5,8 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-session_start();
+// Use centralized session configuration
+include_once '../includes/session_config.php';
 
 // Debug logging
 error_log("LOAD_MESSAGES_DEBUG: API called at " . date('Y-m-d H:i:s'));

@@ -1,6 +1,7 @@
 <?php
 // Manually trigger database migration for social dialog features
-session_start();
+// Use centralized session configuration
+include_once '../includes/session_config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 

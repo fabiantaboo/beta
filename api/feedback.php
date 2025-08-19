@@ -15,10 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Start session if not already started for CSRF token verification
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+// Use centralized session configuration
+include_once '../includes/session_config.php';
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';

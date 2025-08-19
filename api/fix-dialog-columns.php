@@ -1,6 +1,7 @@
 <?php
 // Fix missing dialog_history column in aei_contact_interactions
-session_start();
+// Use centralized session configuration
+include_once '../includes/session_config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 

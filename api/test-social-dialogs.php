@@ -1,6 +1,7 @@
 <?php
 // Test API for enhanced social dialog system
-session_start();
+// Use centralized session configuration
+include_once '../includes/session_config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/social_contact_manager.php';

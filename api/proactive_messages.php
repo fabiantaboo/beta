@@ -5,7 +5,8 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0); // Don't display errors in output
 ini_set('log_errors', 1);     // Log errors instead
 
-session_start();
+// Use centralized session configuration
+include_once '../includes/session_config.php';
 
 include_once '../config/database.php';
 include_once '../includes/functions.php';

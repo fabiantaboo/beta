@@ -1,6 +1,7 @@
 <?php
 // Debug-Seite für Session-Informationen
-session_start();
+// Use centralized session configuration
+include_once 'includes/session_config.php';
 
 // Aktuelle PHP Session Konfiguration
 $sessionConfig = [
