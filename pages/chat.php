@@ -654,6 +654,37 @@ if ($isCurrentUserAdmin) {
     </div>
 </div>
 
+<!-- System Down Modal -->
+<div id="system-down-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 mb-4">
+                    <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    System Temporarily Overloaded
+                </h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    <span id="system-down-aei-name" class="font-medium">Your AEI</span> is doing well, but our AEI system is experiencing high demand right now. Please try again in a few minutes.
+                </p>
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                    <p class="text-xs text-blue-800 dark:text-blue-200">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Don't worry - <span id="system-down-aei-name-2" class="font-medium">your AEI</span> is perfectly fine and will be back soon!
+                    </p>
+                </div>
+                <button 
+                    onclick="closeSystemDownModal()"
+                    class="w-full px-4 py-2 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all"
+                >
+                    Understood
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 /* Emotion panel animation */
 .animate-fade-in {
@@ -1063,6 +1094,40 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollToBottomWithImages();
     }
     
+    // Show extended thinking indicator (for retries)
+    function showThinkingLonger(aeiName) {
+        // Remove existing typing indicator if any
+        hideTyping();
+        
+        // Create extended thinking indicator element
+        const thinkingDiv = document.createElement('div');
+        thinkingDiv.id = 'typing-indicator';
+        thinkingDiv.innerHTML = `
+            <div class="flex justify-start mb-4">
+                <div class="max-w-sm sm:max-w-md">
+                    <div class="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <div class="flex-shrink-0">
+                                <div class="typing-dots flex items-center space-x-1">
+                                    <div class="typing-dot w-2 h-2 bg-amber-500 rounded-full animate-bounce"></div>
+                                    <div class="typing-dot w-2 h-2 bg-amber-500 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+                                    <div class="typing-dot w-2 h-2 bg-amber-500 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                                </div>
+                            </div>
+                            <div class="text-sm">
+                                <span class="font-medium">${aeiName}</span> is thinking a bit longer...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Append to messages container (after all messages)
+        container.appendChild(thinkingDiv);
+        scrollToBottomWithImages();
+    }
+    
     // Hide typing indicator
     function hideTyping() {
         const existingTyping = document.getElementById('typing-indicator');
@@ -1106,6 +1171,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (!response.ok) {
+                // Handle API overload specially
+                if (response.status === 503 && data.error_type === 'api_overload') {
+                    showSystemDownModal(data.aei_name, data.message);
+                    throw new Error('API_OVERLOAD_MAX_RETRIES');
+                }
                 throw new Error(data.error || 'Failed to send message');
             }
             
@@ -2150,5 +2220,45 @@ function applyFontSizeToNewMessage(messageElement) {
         }
     });
 }
+
+// System Down Modal functions
+function showSystemDownModal(aeiName, message) {
+    const modal = document.getElementById('system-down-modal');
+    const aeiNameElement1 = document.getElementById('system-down-aei-name');
+    const aeiNameElement2 = document.getElementById('system-down-aei-name-2');
+    
+    if (modal && aeiNameElement1 && aeiNameElement2) {
+        aeiNameElement1.textContent = aeiName || 'Your AEI';
+        aeiNameElement2.textContent = aeiName || 'your AEI';
+        
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+}
+
+function closeSystemDownModal() {
+    const modal = document.getElementById('system-down-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+}
+
+// Close system down modal when clicking outside
+document.getElementById('system-down-modal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeSystemDownModal();
+    }
+});
+
+// Close system down modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('system-down-modal');
+        if (modal && !modal.classList.contains('hidden')) {
+            closeSystemDownModal();
+        }
+    }
+});
 
 </script>

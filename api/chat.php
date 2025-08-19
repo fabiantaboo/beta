@@ -258,8 +258,19 @@ try {
     // Clear any output buffer to ensure clean JSON
     ob_clean();
     
-    http_response_code(500);
-    echo json_encode(['error' => 'Failed to send message. Please try again.'], JSON_UNESCAPED_UNICODE);
+    // Handle API overload (max retries exceeded) specially
+    if ($e->getMessage() === "API_OVERLOAD_MAX_RETRIES") {
+        http_response_code(503); // Service Unavailable
+        echo json_encode([
+            'error' => 'API_OVERLOAD_MAX_RETRIES',
+            'error_type' => 'api_overload',
+            'aei_name' => htmlspecialchars($aei['name'] ?? 'your AEI'),
+            'message' => htmlspecialchars($aei['name'] ?? 'Your AEI') . ' is experiencing high demand right now. Please try again in a few minutes.'
+        ], JSON_UNESCAPED_UNICODE);
+    } else {
+        http_response_code(500);
+        echo json_encode(['error' => 'Failed to send message. Please try again.'], JSON_UNESCAPED_UNICODE);
+    }
 }
 
 // Ensure we end output buffering and send response

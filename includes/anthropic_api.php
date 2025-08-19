@@ -110,7 +110,7 @@ function generateSystemPrompt($aei, $user, $sessionId = null) {
     }
 }
 
-function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageData = null, $userTimezone = 'UTC') {
+function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageData = null, $userTimezone = 'UTC', $retryCallback = null) {
     $apiKey = getAnthropicApiKey();
     
     if (!$apiKey) {
@@ -202,48 +202,77 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         'messages' => $cleanMessages
     ];
     
-    $ch = curl_init('https://api.anthropic.com/v1/messages');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($payload),
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'x-api-key: ' . $apiKey,
-            'anthropic-version: 2023-06-01'
-        ],
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_SSL_VERIFYPEER => true,
-        CURLOPT_USERAGENT => 'Ayuni-Beta/1.0'
-    ]);
+    // Retry logic for 529 errors (overloaded)
+    $maxRetries = 10;
+    $retryCount = 0;
     
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
-    
-    if ($curlError) {
-        throw new Exception("CURL Error: " . $curlError);
+    while ($retryCount <= $maxRetries) {
+        $ch = curl_init('https://api.anthropic.com/v1/messages');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'x-api-key: ' . $apiKey,
+                'anthropic-version: 2023-06-01'
+            ],
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_USERAGENT => 'Ayuni-Beta/1.0'
+        ]);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+        
+        if ($curlError) {
+            throw new Exception("CURL Error: " . $curlError);
+        }
+        
+        // Handle HTTP 529 (overloaded) with retries
+        if ($httpCode === 529) {
+            $retryCount++;
+            
+            if ($retryCount <= $maxRetries) {
+                // Call retry callback if provided
+                if ($retryCallback && is_callable($retryCallback)) {
+                    $retryCallback($retryCount, $maxRetries);
+                }
+                
+                // Exponential backoff: 2^(retry-1) seconds, max 30 seconds
+                $delay = min(pow(2, $retryCount - 1), 30);
+                error_log("API overloaded (529), retry $retryCount/$maxRetries in {$delay}s");
+                sleep($delay);
+                continue;
+            } else {
+                // Max retries exceeded
+                throw new Exception("API_OVERLOAD_MAX_RETRIES");
+            }
+        }
+        
+        // Handle other HTTP errors
+        if ($httpCode !== 200) {
+            $errorData = json_decode($response, true);
+            $errorMessage = isset($errorData['error']['message']) ? $errorData['error']['message'] : 'Unknown API error';
+            throw new Exception("API Error (HTTP $httpCode): " . $errorMessage);
+        }
+        
+        // Success - parse response
+        $data = json_decode($response, true, 512, JSON_INVALID_UTF8_IGNORE);
+        
+        if (!$data || !isset($data['content'][0]['text'])) {
+            throw new Exception("Invalid API response format");
+        }
+        
+        $responseText = $data['content'][0]['text'];
+        
+        // Remove any accidental timestamps from AI response
+        $responseText = removeTimestampsFromResponse($responseText);
+        
+        return $responseText;
     }
-    
-    if ($httpCode !== 200) {
-        $errorData = json_decode($response, true);
-        $errorMessage = isset($errorData['error']['message']) ? $errorData['error']['message'] : 'Unknown API error';
-        throw new Exception("API Error (HTTP $httpCode): " . $errorMessage);
-    }
-    
-    $data = json_decode($response, true, 512, JSON_INVALID_UTF8_IGNORE);
-    
-    if (!$data || !isset($data['content'][0]['text'])) {
-        throw new Exception("Invalid API response format");
-    }
-    
-    $responseText = $data['content'][0]['text'];
-    
-    // Remove any accidental timestamps from AI response
-    $responseText = removeTimestampsFromResponse($responseText);
-    
-    return $responseText;
 }
 
 function getChatHistory($sessionId, $limit = 40, $userTimezone = 'UTC') {
@@ -652,6 +681,23 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
         
     } catch (Exception $e) {
         error_log("AI Response Error: " . $e->getMessage());
+        
+        // Handle API overload (max retries exceeded) specially
+        if ($e->getMessage() === "API_OVERLOAD_MAX_RETRIES") {
+            if ($includeDebugData) {
+                $debugData['error'] = $e->getMessage();
+                $debugData['error_type'] = 'api_overload_max_retries';
+                $debugData['trace'] = $e->getTraceAsString();
+                
+                return [
+                    'response' => "API_OVERLOAD_MAX_RETRIES",
+                    'debug_data' => $debugData
+                ];
+            }
+            
+            // Special response for max retries exceeded
+            throw new Exception("API_OVERLOAD_MAX_RETRIES");
+        }
         
         if ($includeDebugData) {
             $debugData['error'] = $e->getMessage();
