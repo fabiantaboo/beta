@@ -78,11 +78,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get all active AEIs for selection
+// Get all AEIs for selection (check both active and inactive for debugging)
 try {
-    $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = TRUE ORDER BY name ASC");
+    // First, try to get all AEIs regardless of active status to debug
+    $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at, is_active FROM aeis ORDER BY name ASC");
     $stmt->execute();
-    $allAeis = $stmt->fetchAll();
+    $allAeisDebug = $stmt->fetchAll();
+    
+    // Filter for active AEIs
+    $allAeis = array_filter($allAeisDebug, function($aei) {
+        return $aei['is_active'] == 1 || $aei['is_active'] === true;
+    });
+    
+    // If no active AEIs found, log debug info
+    if (empty($allAeis)) {
+        error_log("DEBUG: No active AEIs found. Total AEIs in database: " . count($allAeisDebug));
+        foreach ($allAeisDebug as $aei) {
+            error_log("DEBUG: AEI {$aei['name']} - is_active: " . var_export($aei['is_active'], true));
+        }
+    }
+    
 } catch (PDOException $e) {
     $allAeis = [];
     error_log("Error fetching AEIs: " . $e->getMessage());
@@ -109,6 +124,34 @@ try {
         <?php renderAdminPageHeader('Avatar Regeneration', 'Regenerate profile images for existing AEIs based on their appearance data'); ?>
         
         <?php renderAdminAlerts($error, $success); ?>
+
+        <?php if (isAdmin() && empty($allAeis)): ?>
+        <!-- Debug Information -->
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 mb-8">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-bug text-red-600 dark:text-red-400 mr-2"></i>
+                <h3 class="text-lg font-semibold text-red-800 dark:text-red-300">Debug Information - No AEIs Found</h3>
+            </div>
+            <div class="space-y-2 text-sm">
+                <p class="text-red-700 dark:text-red-300">
+                    <strong>Total AEIs in database:</strong> <?= isset($allAeisDebug) ? count($allAeisDebug) : 'Unknown' ?>
+                </p>
+                <?php if (isset($allAeisDebug) && !empty($allAeisDebug)): ?>
+                    <p class="text-red-700 dark:text-red-300"><strong>Sample AEIs found:</strong></p>
+                    <ul class="list-disc list-inside ml-4 text-red-600 dark:text-red-400">
+                        <?php foreach (array_slice($allAeisDebug, 0, 5) as $debugAei): ?>
+                            <li><?= htmlspecialchars($debugAei['name']) ?> - is_active: <?= var_export($debugAei['is_active'], true) ?> (<?= gettype($debugAei['is_active']) ?>)</li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <p class="text-red-700 dark:text-red-300">No AEIs found in the aeis table. You may need to create some AEIs first.</p>
+                <?php endif; ?>
+                <p class="text-red-600 dark:text-red-400 mt-4">
+                    <strong>Next steps:</strong> Check the error log for more details or create AEIs via the dashboard.
+                </p>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Statistics -->
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
@@ -157,20 +200,24 @@ try {
                             onchange="showAeiPreview(this.value)"
                             required
                         >
-                            <option value="">Choose an AEI...</option>
-                            <?php foreach ($allAeis as $aei): ?>
-                                <option value="<?= htmlspecialchars($aei['id']) ?>" 
-                                        data-name="<?= htmlspecialchars($aei['name']) ?>"
-                                        data-gender="<?= htmlspecialchars($aei['gender']) ?>"
-                                        data-avatar="<?= htmlspecialchars($aei['avatar_url'] ?? '') ?>"
-                                        data-appearance="<?= htmlspecialchars($aei['appearance_description'] ?? '') ?>"
-                                        data-created="<?= htmlspecialchars($aei['created_at']) ?>"
-                                        data-updated="<?= htmlspecialchars($aei['updated_at']) ?>"
-                                        <?= (isset($_POST['aei_id']) && $_POST['aei_id'] === $aei['id']) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($aei['name']) ?> (<?= ucfirst($aei['gender']) ?>) 
-                                    <?= !empty($aei['avatar_url']) ? '• Has Avatar' : '• No Avatar' ?>
-                                </option>
-                            <?php endforeach; ?>
+                            <?php if (empty($allAeis)): ?>
+                                <option value="">No AEIs found - Create some AEIs first</option>
+                            <?php else: ?>
+                                <option value="">Choose an AEI...</option>
+                                <?php foreach ($allAeis as $aei): ?>
+                                    <option value="<?= htmlspecialchars($aei['id']) ?>" 
+                                            data-name="<?= htmlspecialchars($aei['name']) ?>"
+                                            data-gender="<?= htmlspecialchars($aei['gender']) ?>"
+                                            data-avatar="<?= htmlspecialchars($aei['avatar_url'] ?? '') ?>"
+                                            data-appearance="<?= htmlspecialchars($aei['appearance_description'] ?? '') ?>"
+                                            data-created="<?= htmlspecialchars($aei['created_at']) ?>"
+                                            data-updated="<?= htmlspecialchars($aei['updated_at']) ?>"
+                                            <?= (isset($_POST['aei_id']) && $_POST['aei_id'] === $aei['id']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($aei['name']) ?> (<?= ucfirst($aei['gender']) ?>) 
+                                        <?= !empty($aei['avatar_url']) ? '• Has Avatar' : '• No Avatar' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </select>
                     </div>
                     
