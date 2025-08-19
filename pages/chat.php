@@ -1135,6 +1135,21 @@ document.addEventListener('DOMContentLoaded', function() {
             updateVisibilityDebug(`New element in DOM: ${document.contains(messageDiv)}`);
             updateVisibilityDebug(`MessageDiv innerHTML: ${messageDiv.innerHTML.length} chars`);
             
+            // Check if message is actually visible
+            const rect = messageDiv.getBoundingClientRect();
+            updateVisibilityDebug(`MessageDiv position: top=${rect.top}, height=${rect.height}, visible=${rect.height > 0 && rect.top >= 0}`);
+            updateVisibilityDebug(`Container scroll: scrollTop=${messagesContainer.scrollTop}, scrollHeight=${messagesContainer.scrollHeight}`);
+            updateVisibilityDebug(`Viewport height: ${window.innerHeight}`);
+            
+            // Check if input is focused
+            const activeElement = document.activeElement;
+            updateVisibilityDebug(`Active element: ${activeElement ? activeElement.tagName + (activeElement.id ? '#' + activeElement.id : '') : 'none'}`);
+            updateVisibilityDebug(`Input focused: ${activeElement && activeElement.id === 'message-input'}`);
+            
+            // Force scroll to show new message
+            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            updateVisibilityDebug(`Forced scroll to new message`);
+            
             // Remove test element after 3 seconds
             setTimeout(() => {
                 if (document.contains(testDiv)) {
@@ -2699,25 +2714,44 @@ function handleVisibilityChange() {
         loadDebugHistory(); // Load what happened while away
         updateVisibilityDebug('Became visible, checking updates...');
         
-        // Force refresh of message container if there are pending updates
-        if (pendingMessages.length > 0) {
-            updateVisibilityDebug(`Processing ${pendingMessages.length} pending messages`);
+        // Check focus state when becoming visible
+        const activeElement = document.activeElement;
+        updateVisibilityDebug(`On visible - Active element: ${activeElement ? activeElement.tagName + (activeElement.id ? '#' + activeElement.id : '') : 'none'}`);
+        
+        // Blur input to prevent keyboard interference with message display
+        if (activeElement && activeElement.id === 'message-input') {
+            updateVisibilityDebug('Blurring input to prevent scroll issues...');
+            activeElement.blur();
             
-            pendingMessages.forEach((messageData, index) => {
-                const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
-                if (!existingMessage) {
-                    addMessage(messageData);
-                    updateVisibilityDebug(`Added pending message ${index + 1}`);
-                }
-            });
-            
-            pendingMessages = [];
-            hideTyping(); // Make sure typing indicator is cleared
-            updateVisibilityDebug('All pending messages processed');
+            // Wait a bit for blur to take effect before processing messages
+            setTimeout(() => {
+                processAllPendingMessages();
+            }, 100);
         } else {
-            updateVisibilityDebug('No pending messages to process');
+            processAllPendingMessages();
         }
-        updateVisibilityDebug(); // Final update to show current state
+        
+        function processAllPendingMessages() {
+            // Force refresh of message container if there are pending updates
+            if (pendingMessages.length > 0) {
+                updateVisibilityDebug(`Processing ${pendingMessages.length} pending messages`);
+                
+                pendingMessages.forEach((messageData, index) => {
+                    const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
+                    if (!existingMessage) {
+                        addMessage(messageData);
+                        updateVisibilityDebug(`Added pending message ${index + 1}`);
+                    }
+                });
+                
+                pendingMessages = [];
+                hideTyping(); // Make sure typing indicator is cleared
+                updateVisibilityDebug('All pending messages processed');
+            } else {
+                updateVisibilityDebug('No pending messages to process');
+            }
+            updateVisibilityDebug(); // Final update to show current state
+        }
     } else {
         updateVisibilityDebug(); // Update current state display
     }
