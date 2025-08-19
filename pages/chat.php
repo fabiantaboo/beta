@@ -1372,6 +1372,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             case 'debug_data':
                 // Handle debug data for admins
+                console.log(`[${requestId}] Debug data received:`, data);
                 <?php if ($isCurrentUserAdmin): ?>
                 if (data) {
                     updateDebugPanel(data);

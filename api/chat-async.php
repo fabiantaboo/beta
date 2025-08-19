@@ -275,7 +275,10 @@ try {
     
     // Add debug data for admins
     if ($isAdmin && $debugData) {
+        error_log("Sending debug data to admin: " . json_encode(array_keys($debugData)));
         sendSSE('debug_data', $debugData);
+    } else if ($isAdmin) {
+        error_log("Admin detected but no debug data available");
     }
     
     // Send completion
@@ -355,7 +358,84 @@ function generateAIResponseWithSSECallback($userMessage, $aei, $user, $sessionId
         // Generate system prompt with emotional context
         $baseSystemPrompt = generateSystemPrompt($aei, $user, $sessionId);
         $emotionContext = $emotions->generateEmotionContext($currentEmotions);
+        
+        // Initialize memory context
+        $memoryContext = '';
+        
+        // Smart Memory System Integration (Qdrant)
+        if (file_exists(__DIR__ . '/../config/memory_config.php')) {
+            error_log("MEMORY_DEBUG: memory_config.php found, loading...");
+            require_once __DIR__ . '/../config/memory_config.php';
+            error_log("MEMORY_DEBUG: Config loaded, checking constants...");
+            require_once __DIR__ . '/../includes/memory_manager_inference.php';
+            error_log("MEMORY_DEBUG: MemoryManagerInference class loaded");
+            
+            if (defined('QDRANT_URL') && defined('QDRANT_API_KEY')) {
+                error_log("MEMORY_DEBUG: QDRANT_URL and QDRANT_API_KEY are defined, initializing MemoryManager...");
+                try {
+                    $memoryOptions = [
+                        'default_model' => defined('MEMORY_DEFAULT_MODEL') ? MEMORY_DEFAULT_MODEL : 'sentence-transformers/all-MiniLM-L6-v2',
+                        'quality_model' => defined('MEMORY_QUALITY_MODEL') ? MEMORY_QUALITY_MODEL : 'mixedbread-ai/mxbai-embed-large-v1',
+                        'collection_prefix' => defined('MEMORY_COLLECTION_PREFIX') ? MEMORY_COLLECTION_PREFIX : 'aei_memories_'
+                    ];
+                    
+                    $memoryManager = new MemoryManagerInference(
+                        QDRANT_URL, 
+                        QDRANT_API_KEY, 
+                        $pdo,
+                        $memoryOptions
+                    );
+                    error_log("MEMORY_DEBUG: MemoryManager created successfully");
+                    
+                    // Get relevant memories with smart context retrieval
+                    $memoryLimit = defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 20;
+                    $memoryContext = $memoryManager->getSmartMemoryContext(
+                        $aei['id'], 
+                        $userMessage, 
+                        $memoryLimit
+                    );
+                    error_log("MEMORY_DEBUG: Smart memory context retrieved: " . strlen($memoryContext) . " chars");
+                    error_log("MEMORY_DEBUG: Memory context content preview: " . substr($memoryContext, 0, 200));
+                    
+                    if ($includeDebugData) {
+                        $debugData['memory_enabled'] = true;
+                        $debugData['memory_system'] = 'qdrant_inference_2025';
+                        $debugData['memory_models'] = [
+                            'default' => $memoryOptions['default_model'],
+                            'quality' => $memoryOptions['quality_model']
+                        ];
+                        $debugData['memory_context'] = $memoryContext;
+                    }
+                    
+                } catch (Exception $memoryError) {
+                    error_log("MEMORY_DEBUG: Memory system error: " . $memoryError->getMessage());
+                    error_log("MEMORY_DEBUG: Error trace: " . $memoryError->getTraceAsString());
+                    if ($includeDebugData) {
+                        $debugData['memory_error'] = $memoryError->getMessage();
+                        $debugData['memory_system'] = 'failed_to_initialize';
+                    }
+                    $memoryContext = ''; // Empty on error
+                }
+            } else {
+                error_log("MEMORY_DEBUG: QDRANT_URL or QDRANT_API_KEY not defined");
+                if ($includeDebugData) {
+                    $debugData['memory_system'] = 'not_configured';
+                    $debugData['memory_enabled'] = false;
+                }
+            }
+        } else {
+            error_log("MEMORY_DEBUG: memory_config.php not found");
+            if ($includeDebugData) {
+                $debugData['memory_system'] = 'config_not_found';
+                $debugData['memory_enabled'] = false;
+            }
+        }
+        
+        // Combine all context parts
         $systemPrompt = $baseSystemPrompt . "\n\n" . $emotionContext;
+        if (!empty($memoryContext)) {
+            $systemPrompt .= "\n\n" . $memoryContext;
+        }
         
         if ($includeDebugData) {
             $debugData['full_system_prompt'] = $systemPrompt;
@@ -379,6 +459,52 @@ function generateAIResponseWithSSECallback($userMessage, $aei, $user, $sessionId
         if ($includeDebugData) {
             $debugData['api_response'] = $response;
             $debugData['response_length'] = strlen($response);
+        }
+        
+        // Store conversation in smart memory system if enabled
+        if (isset($memoryManager) && defined('MEMORY_EXTRACTION_ENABLED') && MEMORY_EXTRACTION_ENABLED) {
+            try {
+                error_log("MEMORY_DEBUG: Storing Q&A pair as memory...");
+                
+                // Create Q&A pair format
+                $qaMemoryText = "User: " . $userMessage . "\n" . $aei['name'] . ": " . $response;
+                
+                // Store as single conversation memory
+                $qaMemoryId = $memoryManager->storeChatMessage(
+                    $aei['id'],
+                    $qaMemoryText,
+                    'conversation',
+                    $sessionId,
+                    $user['id']
+                );
+                
+                if ($includeDebugData) {
+                    $debugData['memory_storage'] = [
+                        'enabled' => true,
+                        'qa_pair_stored' => $qaMemoryId ? true : false,
+                        'qa_memory_id' => $qaMemoryId,
+                        'qa_length' => strlen($qaMemoryText),
+                        'storage_method' => 'qa_pairs',
+                        'qa_preview' => substr($qaMemoryText, 0, 100) . '...'
+                    ];
+                }
+                
+                error_log("MEMORY_DEBUG: Q&A memory stored with ID: " . ($qaMemoryId ?: 'failed'));
+            } catch (Exception $memoryStorageError) {
+                error_log("MEMORY_DEBUG: Memory storage error: " . $memoryStorageError->getMessage());
+                if ($includeDebugData) {
+                    $debugData['memory_storage'] = [
+                        'enabled' => true,
+                        'error' => $memoryStorageError->getMessage(),
+                        'storage_method' => 'qa_pairs'
+                    ];
+                }
+            }
+        } else if ($includeDebugData) {
+            $debugData['memory_storage'] = [
+                'enabled' => false,
+                'reason' => 'MEMORY_EXTRACTION_ENABLED not set or memoryManager not available'
+            ];
         }
         
         // Analyze emotional state after the conversation
