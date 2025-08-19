@@ -78,21 +78,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// NUCLEAR OPTION: Load ALL AEIs (active + inactive) for admin panel - FUCK THE ACTIVE FILTER
-try {
-    // Admin should see ALL AEIs regardless of status for regeneration purposes
-    $aeiSelectionStmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at, is_active FROM aeis ORDER BY name ASC");
-    $aeiSelectionStmt->execute();
-    $allAeisRaw = $aeiSelectionStmt->fetchAll();
-    
-    // Separate active and inactive for display
-    $allAeis = $allAeisRaw; // Show ALL AEIs in admin panel
-    
-    error_log("DEBUG: NUCLEAR - Found " . count($allAeis) . " total AEIs for admin panel");
-    
-} catch (PDOException $e) {
+// EMERGENCY DEBUG: Test if we can even reach this code
+error_log("EMERGENCY: Reached AEI loading section");
+
+// Test PDO connection
+if (!$pdo) {
+    error_log("EMERGENCY: PDO is null!");
     $allAeis = [];
-    error_log("Error in NUCLEAR AEI query: " . $e->getMessage());
+} else {
+    error_log("EMERGENCY: PDO is OK, trying query");
+    
+    try {
+        // Simplest possible query first
+        $testStmt = $pdo->query("SELECT COUNT(*) as count FROM aeis");
+        $testCount = $testStmt->fetch()['count'];
+        error_log("EMERGENCY: Basic query works, found $testCount AEIs");
+        
+        // Now try the real query
+        $aeiSelectionStmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at, is_active FROM aeis ORDER BY name ASC");
+        $aeiSelectionStmt->execute();
+        $allAeis = $aeiSelectionStmt->fetchAll();
+        
+        error_log("EMERGENCY: Real query found " . count($allAeis) . " AEIs");
+        
+    } catch (Exception $e) {
+        error_log("EMERGENCY: Exception - " . $e->getMessage());
+        $allAeis = [];
+    }
 }
 
 // Debug info only if needed
@@ -148,6 +160,12 @@ try {
                 </p>
                 <p class="text-red-700 dark:text-red-300">
                     <strong>Active AEIs found:</strong> <?= count($allAeis) ?>
+                </p>
+                <p class="text-red-700 dark:text-red-300">
+                    <strong>allAeis variable type:</strong> <?= gettype($allAeis) ?>
+                </p>
+                <p class="text-red-700 dark:text-red-300">
+                    <strong>PDO connection:</strong> <?= $pdo ? 'OK' : 'NULL' ?>
                 </p>
                 <p class="text-red-700 dark:text-red-300">
                     <strong>Statistics show:</strong> <?= $stats['total_aeis'] ?> total AEIs, <?= $stats['aeis_with_avatars'] ?> with avatars
