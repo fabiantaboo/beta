@@ -78,19 +78,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get all active AEIs for selection - NUCLEAR APPROACH: Copy exact working statistics pattern
+// NUCLEAR OPTION: Load ALL AEIs (active + inactive) for admin panel - FUCK THE ACTIVE FILTER
 try {
-    // Step 1: Use integer comparison since AEIs have is_active = 1 (integer), not TRUE (boolean)
-    $aeiSelectionStmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = 1 ORDER BY name ASC");
+    // Admin should see ALL AEIs regardless of status for regeneration purposes
+    $aeiSelectionStmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at, is_active FROM aeis ORDER BY name ASC");
     $aeiSelectionStmt->execute();
-    $allAeis = $aeiSelectionStmt->fetchAll();
+    $allAeisRaw = $aeiSelectionStmt->fetchAll();
     
-    error_log("DEBUG: AEI Selection Query found " . count($allAeis) . " AEIs");
+    // Separate active and inactive for display
+    $allAeis = $allAeisRaw; // Show ALL AEIs in admin panel
+    
+    error_log("DEBUG: NUCLEAR - Found " . count($allAeis) . " total AEIs for admin panel");
     
 } catch (PDOException $e) {
     $allAeis = [];
-    error_log("Error in AEI selection query: " . $e->getMessage());
-    error_log("SQL Error Info: " . print_r($e->errorInfo, true));
+    error_log("Error in NUCLEAR AEI query: " . $e->getMessage());
 }
 
 // Debug info only if needed
@@ -227,6 +229,7 @@ try {
                                             <?= (isset($_POST['aei_id']) && $_POST['aei_id'] === $aei['id']) ? 'selected' : '' ?>>
                                         <?= htmlspecialchars($aei['name']) ?> (<?= ucfirst($aei['gender']) ?>) 
                                         <?= !empty($aei['avatar_url']) ? '• Has Avatar' : '• No Avatar' ?>
+                                        <?= $aei['is_active'] ? '• Active' : '• INACTIVE' ?>
                                     </option>
                                 <?php endforeach; ?>
                             <?php endif; ?>
