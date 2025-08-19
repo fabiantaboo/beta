@@ -360,49 +360,6 @@ if ($isCurrentUserAdmin) {
         </div>
     </div>
 
-    <!-- Visibility Debug Panel (always visible) -->
-    <div id="visibility-debug" class="bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border-b border-blue-600 text-blue-100 text-xs">
-        <div class="max-w-4xl mx-auto px-3 py-3">
-            <!-- Mobile: Stack vertically, Desktop: Side by side -->
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-                <!-- Status indicators -->
-                <div class="flex flex-wrap items-center gap-2 text-xs">
-                    <span class="text-blue-300 font-medium">🔍 PWA:</span>
-                    <div class="flex items-center bg-blue-800/40 rounded-lg px-2 py-1">
-                        <span class="text-blue-200 mr-1">V:</span>
-                        <span id="visibility-status" class="font-bold text-white">?</span>
-                    </div>
-                    <div class="flex items-center bg-blue-800/40 rounded-lg px-2 py-1">
-                        <span class="text-blue-200 mr-1">H:</span>
-                        <span id="hidden-status" class="font-bold text-white">?</span>
-                    </div>
-                    <div class="flex items-center bg-blue-800/40 rounded-lg px-2 py-1">
-                        <span class="text-blue-200 mr-1">S:</span>
-                        <span id="visibility-state" class="font-bold text-white text-xs">?</span>
-                    </div>
-                    <div class="flex items-center bg-orange-800/60 rounded-lg px-2 py-1 cursor-pointer hover:bg-orange-700/60 transition-colors" 
-                         onclick="manualPendingCheck()" 
-                         title="Click to process pending messages">
-                        <span class="text-orange-200 mr-1">P:</span>
-                        <span id="pending-count" class="font-bold text-white">0</span>
-                        <span class="text-orange-200 ml-1 text-xs">📥</span>
-                    </div>
-                </div>
-                
-                <!-- Log area -->
-                <div class="flex-1 min-w-0">
-                    <div id="visibility-log" class="text-xs text-blue-300 truncate bg-blue-800/20 rounded px-2 py-1 font-mono">
-                        Ready...
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Mobile helper text -->
-            <div class="mt-2 text-xs text-blue-400 opacity-75 sm:hidden">
-                V=Visible, H=Hidden, S=State, P=Pending (tap to process)
-            </div>
-        </div>
-    </div>
 
     <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full min-h-0">
         <!-- Messages Area -->
@@ -1026,19 +983,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add message to chat
     function addMessage(message) {
-        updateVisibilityDebug(`>>> addMessage ENTRY <<<`);
-        updateVisibilityDebug(`Message object: ${JSON.stringify({id: message.id, sender_type: message.sender_type, message_text: message.message_text?.substring(0,30)})}`);
-        
         const messageDiv = document.createElement('div');
-        updateVisibilityDebug(`messageDiv created: ${!!messageDiv}`);
-        
         messageDiv.className = `flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'} message-fade-in`;
-        updateVisibilityDebug(`messageDiv className set: ${messageDiv.className}`);
         
         // Add message ID as data attribute for duplicate detection
         if (message.id) {
             messageDiv.setAttribute('data-message-id', message.id);
-            updateVisibilityDebug(`data-message-id set: ${message.id}`);
         }
         
         // Format time in user's timezone with appropriate format
@@ -1113,70 +1063,15 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         const messagesContainer = document.getElementById('messages-container');
-        updateVisibilityDebug(`messages-container found: ${!!messagesContainer}`);
-        
         if (messagesContainer) {
-            updateVisibilityDebug(`Container innerHTML length: ${messagesContainer.innerHTML.length}`);
-            updateVisibilityDebug(`Container scrollHeight: ${messagesContainer.scrollHeight}`);
-            
-            // TEST: Add simple test element first
-            const testDiv = document.createElement('div');
-            testDiv.textContent = 'TEST MESSAGE - If you see this, appendChild works!';
-            testDiv.style.background = 'red';
-            testDiv.style.color = 'white';
-            testDiv.style.padding = '10px';
-            messagesContainer.appendChild(testDiv);
-            updateVisibilityDebug(`Test element added: ${document.contains(testDiv)}`);
-            
-            updateVisibilityDebug(`Attempting real appendChild...`);
             messagesContainer.appendChild(messageDiv);
-            updateVisibilityDebug(`appendChild completed`);
-            updateVisibilityDebug(`Container children count: ${messagesContainer.children.length}`);
-            updateVisibilityDebug(`New element in DOM: ${document.contains(messageDiv)}`);
-            updateVisibilityDebug(`MessageDiv innerHTML: ${messageDiv.innerHTML.length} chars`);
-            
-            // Check if message is actually visible
-            const rect = messageDiv.getBoundingClientRect();
-            updateVisibilityDebug(`MessageDiv position: top=${rect.top}, height=${rect.height}, visible=${rect.height > 0 && rect.top >= 0}`);
-            updateVisibilityDebug(`Container scroll: scrollTop=${messagesContainer.scrollTop}, scrollHeight=${messagesContainer.scrollHeight}`);
-            updateVisibilityDebug(`Viewport height: ${window.innerHeight}`);
-            
-            // Check if input is focused
-            const activeElement = document.activeElement;
-            updateVisibilityDebug(`Active element: ${activeElement ? activeElement.tagName + (activeElement.id ? '#' + activeElement.id : '') : 'none'}`);
-            updateVisibilityDebug(`Input focused: ${activeElement && activeElement.id === 'message-input'}`);
-            
-            // Force scroll to show new message
-            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            updateVisibilityDebug(`Forced scroll to new message`);
-            
-            // Remove test element after 3 seconds
-            setTimeout(() => {
-                if (document.contains(testDiv)) {
-                    testDiv.remove();
-                }
-            }, 3000);
-        } else {
-            updateVisibilityDebug('ERROR: messages-container not found!');
-            updateVisibilityDebug(`Available elements: ${Array.from(document.querySelectorAll('[id]')).map(el => el.id).join(', ')}`);
         }
         
         // Apply current font size to new message
-        try {
-            applyFontSizeToNewMessage(messageDiv);
-            updateVisibilityDebug(`Font size applied`);
-        } catch (e) {
-            updateVisibilityDebug(`Font size error: ${e.message}`);
-        }
+        applyFontSizeToNewMessage(messageDiv);
         
-        try {
-            scrollToBottomWithImages();
-            updateVisibilityDebug(`Scroll to bottom completed`);
-        } catch (e) {
-            updateVisibilityDebug(`Scroll error: ${e.message}`);
-        }
+        scrollToBottomWithImages();
         
-        updateVisibilityDebug(`>>> addMessage EXIT <<<`);
         // Return the message element so it can be updated later
         return messageDiv;
     }
@@ -1355,12 +1250,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         const processStream = async () => {
                             try {
-                                let readAttempts = 0;
                                 while (true) {
-                                    readAttempts++;
-                                    updateVisibilityDebug(`Stream read attempt ${readAttempts}, page visible: ${!document.hidden}`);
-                                    
-                                    // Force keep connection alive even when hidden
                                     const { done, value } = await reader.read();
                                     
                                     if (done) {
@@ -1420,12 +1310,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // BACKUP SYSTEM: Poll for completed messages when page becomes visible
                 const pollForCompletion = () => {
                     if (document.hidden) {
-                        updateVisibilityDebug(`Setting up completion poller...`);
-                        
                         const pollInterval = setInterval(async () => {
                             if (!document.hidden) {
-                                updateVisibilityDebug(`Page visible - checking for completion...`);
-                                
                                 try {
                                     const pollResponse = await fetch('/api/chat-poll.php', {
                                         method: 'POST',
@@ -1438,15 +1324,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                     
                                     if (pollResponse.ok) {
                                         const pollData = await pollResponse.json();
-                                        updateVisibilityDebug(`Poll result: ${pollData.status}`);
                                         
                                         if (pollData.status === 'completed' && pollData.message) {
-                                            updateVisibilityDebug(`Found completed message via polling!`);
                                             clearInterval(pollInterval);
                                             hideTyping();
                                             
                                             // Add the message that was missed
                                             handleSSEEvent('aei_message', pollData.message, requestId, resolve, reject);
+                                            
+                                            // Also send debug data if available (for admins)
+                                            if (pollData.debug_data) {
+                                                handleSSEEvent('debug_data', pollData.debug_data, requestId, resolve, reject);
+                                            }
+                                            
                                             handleSSEEvent('complete', { success: true }, requestId, resolve, reject);
                                         } else if (pollData.status === 'error') {
                                             clearInterval(pollInterval);
@@ -1454,7 +1344,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         }
                                     }
                                 } catch (pollError) {
-                                    updateVisibilityDebug(`Poll error: ${pollError.message}`);
+                                    // Silent fail - polling is best effort
                                 }
                             }
                         }, 2000); // Check every 2 seconds when visible
@@ -1472,7 +1362,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Start polling when page becomes hidden
                 const visibilityHandler = () => {
                     if (document.hidden) {
-                        updateVisibilityDebug(`Page became hidden - starting poller`);
                         pollForCompletion();
                     }
                 };
@@ -1532,38 +1421,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             case 'aei_message':
                 console.log(`[${requestId}] AEI message received`);
-                updateVisibilityDebug(`=== SSE aei_message RECEIVED ===`);
-                updateVisibilityDebug(`Message ID: ${data.id}`);
-                updateVisibilityDebug(`Message text: ${data.message_text?.substring(0, 50)}...`);
-                updateVisibilityDebug(`isPageVisible: ${isPageVisible}`);
-                updateVisibilityDebug(`document.hidden: ${document.hidden}`);
-                
                 hideTyping();
                 
                 if (!isPageVisible || document.hidden) {
-                    updateVisibilityDebug(`>>> PAGE HIDDEN - STORING MESSAGE <<<`);
                     pendingMessages.push(data);
-                    updateVisibilityDebug(`Message stored in pendingMessages array`);
-                    updateVisibilityDebug(`Total pending: ${pendingMessages.length}`);
-                    updateVisibilityDebug(`Stored message data: ${JSON.stringify({id: data.id.substring(0,8), text: data.message_text?.substring(0,20)})}`);
                 } else {
-                    updateVisibilityDebug(`>>> PAGE VISIBLE - PROCESSING IMMEDIATELY <<<`);
                     const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
-                    updateVisibilityDebug(`Existing message check: ${!!existingMessage}`);
-                    
                     if (!existingMessage) {
-                        updateVisibilityDebug(`=== CALLING addMessage() IMMEDIATELY ===`);
-                        try {
-                            const result = addMessage(data);
-                            updateVisibilityDebug(`Immediate addMessage result: ${!!result}`);
-                        } catch (error) {
-                            updateVisibilityDebug(`Immediate addMessage ERROR: ${error.message}`);
-                        }
-                    } else {
-                        updateVisibilityDebug(`Duplicate message skipped: ${data.id.substring(0, 8)}`);
+                        addMessage(data);
                     }
                 }
-                updateVisibilityDebug(`=== SSE aei_message COMPLETE ===`);
                 break;
                 
             case 'system_overload':
@@ -2678,168 +2545,24 @@ document.addEventListener('keydown', function(e) {
 let isPageVisible = !document.hidden;
 let pendingMessages = [];
 
-// Update debug panel and store in localStorage for persistence
-function updateVisibilityDebug(message = null) {
-    const statusEl = document.getElementById('visibility-status');
-    const hiddenEl = document.getElementById('hidden-status');
-    const stateEl = document.getElementById('visibility-state');
-    const pendingEl = document.getElementById('pending-count');
-    const logEl = document.getElementById('visibility-log');
-    
-    const debugData = {
-        visible: isPageVisible ? 'YES' : 'NO',
-        hidden: document.hidden ? 'YES' : 'NO', 
-        state: document.visibilityState || 'unknown',
-        pending: pendingMessages.length,
-        timestamp: new Date().toLocaleTimeString()
-    };
-    
-    if (message) {
-        debugData.lastMessage = `${debugData.timestamp}: ${message}`;
-    }
-    
-    // Store in localStorage for persistence
-    localStorage.setItem('pwa_debug', JSON.stringify(debugData));
-    
-    // Update UI elements if they exist
-    if (statusEl) statusEl.textContent = debugData.visible;
-    if (hiddenEl) hiddenEl.textContent = debugData.hidden;
-    if (stateEl) stateEl.textContent = debugData.state;
-    if (pendingEl) pendingEl.textContent = debugData.pending;
-    
-    if (debugData.lastMessage && logEl) {
-        logEl.textContent = debugData.lastMessage;
-    }
-    
-    // Update document title to show debug info when minimized
-    if (!isPageVisible && pendingMessages.length > 0) {
-        document.title = `(${pendingMessages.length}) Ayuni - New Message`;
-    } else if (isPageVisible) {
-        document.title = 'Ayuni - AI Companion Chat';
-    }
-}
-
-// Load debug data on return
-function loadDebugHistory() {
-    const stored = localStorage.getItem('pwa_debug');
-    if (stored) {
-        try {
-            const debugData = JSON.parse(stored);
-            updateVisibilityDebug(`Restored: Last was ${debugData.state}, pending: ${debugData.pending}`);
-        } catch (e) {
-            // Ignore parse errors
-        }
-    }
-}
-
-// Initialize debug panel
-updateVisibilityDebug('Initialized');
-
-// Manual check function for when visibility events fail
-function manualPendingCheck() {
-    updateVisibilityDebug(`=== MANUAL CHECK START ===`);
-    updateVisibilityDebug(`pendingMessages.length: ${pendingMessages.length}`);
-    updateVisibilityDebug(`document.hidden: ${document.hidden}`);
-    updateVisibilityDebug(`isPageVisible: ${isPageVisible}`);
-    updateVisibilityDebug(`pendingMessages array: ${JSON.stringify(pendingMessages.map(m => ({id: m.id.substring(0,8), text: m.message_text.substring(0,20)})))}`);
-    
-    // Force process regardless of visibility status for debugging
-    if (pendingMessages.length > 0) {
-        updateVisibilityDebug(`=== STARTING TO PROCESS ${pendingMessages.length} MESSAGES ===`);
-        
-        pendingMessages.forEach((messageData, index) => {
-            updateVisibilityDebug(`--- Processing message ${index + 1} ---`);
-            updateVisibilityDebug(`Message ID: ${messageData.id}`);
-            updateVisibilityDebug(`Message text: ${messageData.message_text.substring(0, 50)}...`);
-            updateVisibilityDebug(`Message sender: ${messageData.sender_type}`);
-            
-            const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
-            updateVisibilityDebug(`Existing message check: ${!!existingMessage}`);
-            
-            if (!existingMessage) {
-                updateVisibilityDebug(`=== CALLING addMessage() ===`);
-                try {
-                    const result = addMessage(messageData);
-                    updateVisibilityDebug(`addMessage returned: ${!!result}`);
-                    updateVisibilityDebug(`DOM after addMessage: ${document.querySelectorAll(`[data-message-id="${messageData.id}"]`).length} elements found`);
-                } catch (error) {
-                    updateVisibilityDebug(`addMessage ERROR: ${error.message}`);
-                    updateVisibilityDebug(`addMessage ERROR stack: ${error.stack}`);
-                }
-            } else {
-                updateVisibilityDebug(`Message ${index + 1} already exists in DOM`);
-            }
-        });
-        
-        updateVisibilityDebug(`=== CLEARING PENDING ARRAY ===`);
-        pendingMessages = [];
-        updateVisibilityDebug(`pendingMessages.length after clear: ${pendingMessages.length}`);
-        
-        hideTyping();
-        updateVisibilityDebug('=== MANUAL CHECK COMPLETE ===');
-    } else {
-        updateVisibilityDebug('=== NO PENDING MESSAGES IN ARRAY ===');
-    }
-}
-
-// Check for pending messages periodically when page is visible
-setInterval(() => {
-    if (!document.hidden && pendingMessages.length > 0) {
-        manualPendingCheck();
-    }
-}, 2000); // Check every 2 seconds
-
 function handleVisibilityChange() {
     const wasVisible = isPageVisible;
     isPageVisible = !document.hidden;
     
-    updateVisibilityDebug(`Changed: ${isPageVisible ? 'visible' : 'hidden'} (was: ${wasVisible ? 'visible' : 'hidden'})`);
-    
     // When page becomes visible again, check for any missed updates
     if (!wasVisible && isPageVisible) {
-        loadDebugHistory(); // Load what happened while away
-        updateVisibilityDebug('Became visible, checking updates...');
-        
-        // Check focus state when becoming visible
-        const activeElement = document.activeElement;
-        updateVisibilityDebug(`On visible - Active element: ${activeElement ? activeElement.tagName + (activeElement.id ? '#' + activeElement.id : '') : 'none'}`);
-        
-        // Blur input to prevent keyboard interference with message display
-        if (activeElement && activeElement.id === 'message-input') {
-            updateVisibilityDebug('Blurring input to prevent scroll issues...');
-            activeElement.blur();
+        // Process any pending messages
+        if (pendingMessages.length > 0) {
+            pendingMessages.forEach((messageData) => {
+                const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
+                if (!existingMessage) {
+                    addMessage(messageData);
+                }
+            });
             
-            // Wait a bit for blur to take effect before processing messages
-            setTimeout(() => {
-                processAllPendingMessages();
-            }, 100);
-        } else {
-            processAllPendingMessages();
+            pendingMessages = [];
+            hideTyping();
         }
-        
-        function processAllPendingMessages() {
-            // Force refresh of message container if there are pending updates
-            if (pendingMessages.length > 0) {
-                updateVisibilityDebug(`Processing ${pendingMessages.length} pending messages`);
-                
-                pendingMessages.forEach((messageData, index) => {
-                    const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
-                    if (!existingMessage) {
-                        addMessage(messageData);
-                        updateVisibilityDebug(`Added pending message ${index + 1}`);
-                    }
-                });
-                
-                pendingMessages = [];
-                hideTyping(); // Make sure typing indicator is cleared
-                updateVisibilityDebug('All pending messages processed');
-            } else {
-                updateVisibilityDebug('No pending messages to process');
-            }
-            updateVisibilityDebug(); // Final update to show current state
-        }
-    } else {
-        updateVisibilityDebug(); // Update current state display
     }
 }
 
@@ -2849,7 +2572,5 @@ document.addEventListener('focus', handleVisibilityChange);
 document.addEventListener('blur', handleVisibilityChange);
 window.addEventListener('focus', handleVisibilityChange);
 window.addEventListener('blur', handleVisibilityChange);
-
-// Messages are now handled directly in the SSE event handler with visibility awareness
 
 </script>

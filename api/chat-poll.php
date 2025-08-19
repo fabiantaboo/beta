@@ -65,20 +65,43 @@ try {
     $recentMessage = $stmt->fetch();
     
     if ($recentMessage) {
-        // Return the most recent message
-        echo json_encode([
+        // Get additional message metadata that might be needed
+        $messageData = [
+            'id' => $recentMessage['id'],
+            'sender_type' => $recentMessage['sender_type'],
+            'message_text' => $recentMessage['message_text'],
+            'created_at' => $recentMessage['created_at'],
+            'sender_name' => $recentMessage['aei_name'],
+            'has_image' => $recentMessage['has_image'] ? true : false,
+            'image_filename' => $recentMessage['image_filename'],
+            'image_original_name' => $recentMessage['image_original_name']
+        ];
+        
+        // For admin users, include debug data if available
+        $debugData = null;
+        if (isAdmin()) {
+            // Try to get debug data for this message (stored emotions, memory context, etc.)
+            // Note: This is a limitation - we can't reconstruct the full debug data
+            // that was available during generation, but we can provide what we have
+            $debugData = [
+                'message_retrieved_via' => 'polling_api',
+                'original_generation_time' => $recentMessage['created_at'],
+                'note' => 'Full debug data not available for polled messages',
+                'memory_system' => 'not_available_in_polling',
+                'emotions_system' => 'message_stored_separately'
+            ];
+        }
+        
+        $response = [
             'status' => 'completed',
-            'message' => [
-                'id' => $recentMessage['id'],
-                'sender_type' => $recentMessage['sender_type'],
-                'message_text' => $recentMessage['message_text'],
-                'created_at' => $recentMessage['created_at'],
-                'sender_name' => $recentMessage['aei_name'],
-                'has_image' => false,
-                'image_filename' => null,
-                'image_original_name' => null
-            ]
-        ]);
+            'message' => $messageData
+        ];
+        
+        if ($debugData) {
+            $response['debug_data'] = $debugData;
+        }
+        
+        echo json_encode($response);
     } else {
         // No recent messages found
         echo json_encode([
