@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 try {
                     // Get AEI details
-                    $stmt = $pdo->prepare("SELECT id, name, gender, appearance_description, avatar_url FROM aeis WHERE id = ? AND is_active = TRUE");
+                    $stmt = $pdo->prepare("SELECT id, name, gender, appearance_description, avatar_url FROM aeis WHERE id = ? AND is_active = 1");
                     $stmt->execute([$aeiId]);
                     $aei = $stmt->fetch();
                     
@@ -80,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get all active AEIs for selection - NUCLEAR APPROACH: Copy exact working statistics pattern
 try {
-    // Step 1: Use the EXACT same WHERE clause as statistics (that works)
-    $aeiSelectionStmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = TRUE ORDER BY name ASC");
+    // Step 1: Use integer comparison since AEIs have is_active = 1 (integer), not TRUE (boolean)
+    $aeiSelectionStmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = 1 ORDER BY name ASC");
     $aeiSelectionStmt->execute();
     $allAeis = $aeiSelectionStmt->fetchAll();
     
@@ -102,7 +102,7 @@ if (empty($allAeis)) {
         $debugStmt->execute();
         $totalCount = $debugStmt->fetch()['total'];
         
-        $debugStmt2 = $pdo->prepare("SELECT name, is_active, user_id FROM aeis WHERE is_active = TRUE LIMIT 5");
+        $debugStmt2 = $pdo->prepare("SELECT name, is_active, user_id FROM aeis WHERE is_active = 1 LIMIT 5");
         $debugStmt2->execute();
         $debugAeis = $debugStmt2->fetchAll();
     } catch (PDOException $e) {
@@ -117,7 +117,7 @@ try {
         COUNT(*) as total_aeis,
         COUNT(avatar_url) as aeis_with_avatars,
         COUNT(*) - COUNT(avatar_url) as aeis_without_avatars
-        FROM aeis WHERE is_active = TRUE");
+        FROM aeis WHERE is_active = 1");
     $stmt->execute();
     $stats = $stmt->fetch();
 } catch (PDOException $e) {
