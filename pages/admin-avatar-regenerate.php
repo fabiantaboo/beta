@@ -78,35 +78,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get all active AEIs for selection
+// Get all active AEIs for selection (copied pattern from admin-avatar-batch.php which works)
 try {
-    // For admin panel, we want ALL AEIs from ALL users
     $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis WHERE is_active = TRUE ORDER BY name ASC");
     $stmt->execute();
     $allAeis = $stmt->fetchAll();
     
-    // Debug info - get total count and sample data
-    $debugStmt = $pdo->prepare("SELECT COUNT(*) as total FROM aeis");
-    $debugStmt->execute();
-    $totalCount = $debugStmt->fetch()['total'];
-    
-    // Get sample of all AEIs to see their status
-    $debugStmt2 = $pdo->prepare("SELECT name, is_active, user_id FROM aeis LIMIT 5");
-    $debugStmt2->execute();
-    $debugAeis = $debugStmt2->fetchAll();
-    
-    // More debug info if needed
+    // Fallback: If no active AEIs found, try without is_active filter for admin debugging
     if (empty($allAeis)) {
-        error_log("DEBUG: No active AEIs found. Total AEIs in database: " . $totalCount);
-        foreach ($debugAeis as $debugAei) {
-            error_log("DEBUG: AEI {$debugAei['name']} - is_active: " . var_export($debugAei['is_active'], true) . " - user_id: {$debugAei['user_id']}");
-        }
+        $stmt = $pdo->prepare("SELECT id, name, gender, avatar_url, appearance_description, created_at, updated_at FROM aeis ORDER BY name ASC");
+        $stmt->execute();
+        $allAeisDebug = $stmt->fetchAll();
+        error_log("DEBUG: Found " . count($allAeisDebug) . " total AEIs (ignoring is_active)");
     }
     
 } catch (PDOException $e) {
     $allAeis = [];
-    $totalCount = 'Error';
     error_log("Error fetching AEIs: " . $e->getMessage());
+}
+
+// Debug info only if needed
+$totalCount = 0;
+$debugAeis = [];
+if (empty($allAeis)) {
+    try {
+        $debugStmt = $pdo->prepare("SELECT COUNT(*) as total FROM aeis");
+        $debugStmt->execute();
+        $totalCount = $debugStmt->fetch()['total'];
+        
+        $debugStmt2 = $pdo->prepare("SELECT name, is_active, user_id FROM aeis LIMIT 5");
+        $debugStmt2->execute();
+        $debugAeis = $debugStmt2->fetchAll();
+    } catch (PDOException $e) {
+        $totalCount = 'Error';
+        error_log("Debug query error: " . $e->getMessage());
+    }
 }
 
 // Get statistics
