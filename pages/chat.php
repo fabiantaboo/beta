@@ -1094,14 +1094,49 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollToBottomWithImages();
     }
     
-    // Show extended thinking indicator (for retries)
+    // Show extended thinking indicator (for retries) with smooth transition
     function showThinkingLonger(aeiName) {
-        // Remove existing typing indicator if any
+        const existingTyping = document.getElementById('typing-indicator');
+        
+        if (existingTyping) {
+            // Smoothly transition the existing indicator
+            const messageDiv = existingTyping.querySelector('.bg-white, .bg-amber-50');
+            const textDiv = existingTyping.querySelector('.text-sm');
+            const dotsDiv = existingTyping.querySelector('.typing-dots');
+            
+            if (messageDiv && textDiv && dotsDiv) {
+                // Add transition classes
+                messageDiv.style.transition = 'all 0.3s ease-in-out';
+                textDiv.style.transition = 'all 0.3s ease-in-out';
+                
+                // Change styling smoothly
+                messageDiv.className = 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 rounded-2xl px-4 py-3 shadow-sm';
+                
+                // Update dots color
+                const dots = dotsDiv.querySelectorAll('.typing-dot');
+                dots.forEach(dot => {
+                    dot.style.transition = 'background-color 0.3s ease-in-out';
+                    dot.className = 'typing-dot w-2 h-2 bg-amber-500 rounded-full animate-bounce';
+                });
+                
+                // Update text content with typewriter effect
+                setTimeout(() => {
+                    textDiv.innerHTML = `<span class="font-medium">${aeiName}</span> is thinking a bit longer...`;
+                }, 150);
+                
+                return;
+            }
+        }
+        
+        // If no existing indicator, create new one
         hideTyping();
         
-        // Create extended thinking indicator element
+        // Create extended thinking indicator element with fade-in
         const thinkingDiv = document.createElement('div');
         thinkingDiv.id = 'typing-indicator';
+        thinkingDiv.style.opacity = '0';
+        thinkingDiv.style.transform = 'translateY(10px)';
+        thinkingDiv.style.transition = 'all 0.3s ease-out';
         thinkingDiv.innerHTML = `
             <div class="flex justify-start mb-4">
                 <div class="max-w-sm sm:max-w-md">
@@ -1123,71 +1158,121 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        // Append to messages container (after all messages)
+        // Append to messages container
         container.appendChild(thinkingDiv);
+        
+        // Trigger fade-in animation
+        requestAnimationFrame(() => {
+            thinkingDiv.style.opacity = '1';
+            thinkingDiv.style.transform = 'translateY(0)';
+        });
+        
         scrollToBottomWithImages();
     }
     
-    // Hide typing indicator
+    // Hide typing indicator with smooth fade-out
     function hideTyping() {
         const existingTyping = document.getElementById('typing-indicator');
         if (existingTyping) {
-            existingTyping.remove();
+            // Add fade-out animation
+            existingTyping.style.transition = 'all 0.2s ease-in';
+            existingTyping.style.opacity = '0';
+            existingTyping.style.transform = 'translateY(-5px)';
+            
+            // Remove element after animation
+            setTimeout(() => {
+                if (existingTyping.parentNode) {
+                    existingTyping.remove();
+                }
+            }, 200);
         }
     }
     
-    // Send AI message with optional image
+    // Enhanced AI message with progressive retry feedback
     async function sendAIMessage(message, imageFile = null) {
-        try {
-            let requestData;
-            let headers = {};
-            
-            if (imageFile) {
-                // Use FormData for file upload
-                const formData = new FormData();
-                formData.append('message', message);
-                formData.append('aei_id', aeiId);
-                formData.append('csrf_token', csrfToken);
-                formData.append('image', imageFile);
+        return new Promise(async (resolve, reject) => {
+            try {
+                let requestData;
+                let headers = {};
                 
-                requestData = formData;
-                // Don't set Content-Type header - let browser set it with boundary
-            } else {
-                // Use JSON for text-only messages
-                headers['Content-Type'] = 'application/json';
-                requestData = JSON.stringify({
-                    message: message,
-                    aei_id: aeiId,
-                    csrf_token: csrfToken
-                });
-            }
-            
-            const response = await fetch('/api/chat.php', {
-                method: 'POST',
-                headers: headers,
-                body: requestData
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                // Handle API overload specially
-                if (response.status === 503 && data.error_type === 'api_overload') {
-                    showSystemDownModal(data.aei_name, data.message);
-                    throw new Error('API_OVERLOAD_MAX_RETRIES');
+                if (imageFile) {
+                    // Use FormData for file upload
+                    const formData = new FormData();
+                    formData.append('message', message);
+                    formData.append('aei_id', aeiId);
+                    formData.append('csrf_token', csrfToken);
+                    formData.append('image', imageFile);
+                    
+                    requestData = formData;
+                    // Don't set Content-Type header - let browser set it with boundary
+                } else {
+                    // Use JSON for text-only messages
+                    headers['Content-Type'] = 'application/json';
+                    requestData = JSON.stringify({
+                        message: message,
+                        aei_id: aeiId,
+                        csrf_token: csrfToken
+                    });
                 }
-                throw new Error(data.error || 'Failed to send message');
+                
+                // Start with normal thinking indicator
+                showTyping();
+                
+                // Track timing for progressive UI updates
+                const startTime = Date.now();
+                let thinkingLongerShown = false;
+                
+                // Show "thinking longer" after 8 seconds (covers fast retries)
+                const thinkingLongerTimer = setTimeout(() => {
+                    if (!thinkingLongerShown) {
+                        thinkingLongerShown = true;
+                        showThinkingLonger(aeiName);
+                    }
+                }, 8000);
+                
+                try {
+                    const response = await fetch('/api/chat.php', {
+                        method: 'POST',
+                        headers: headers,
+                        body: requestData
+                    });
+                    
+                    clearTimeout(thinkingLongerTimer);
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        // Handle API overload specially
+                        if (response.status === 503 && data.error_type === 'api_overload') {
+                            hideTyping();
+                            showSystemDownModal(data.aei_name, data.message);
+                            reject(new Error('API_OVERLOAD_MAX_RETRIES'));
+                            return;
+                        }
+                        throw new Error(data.error || 'Failed to send message');
+                    }
+                    
+                    // Success - hide any thinking indicators
+                    hideTyping();
+                    resolve(data);
+                    
+                } catch (fetchError) {
+                    clearTimeout(thinkingLongerTimer);
+                    throw fetchError;
+                }
+                
+            } catch (error) {
+                console.error('Chat error:', error);
+                hideTyping();
+                
+                // Don't show generic error for API overload
+                if (error.message !== 'API_OVERLOAD_MAX_RETRIES') {
+                    showAlert(error.message || 'Failed to send message. Please try again.');
+                }
+                
+                reject(error);
             }
-            
-            // Return the response data so we can update the user message with correct image URL
-            return data;
-            
-        } catch (error) {
-            console.error('Chat error:', error);
-            showAlert(error.message || 'Failed to send message. Please try again.');
-            hideTyping();
-            throw error;
-        }
+        });
     }
     
     // Handle form submission

@@ -228,38 +228,51 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         curl_close($ch);
         
         if ($curlError) {
+            // CURL errors should not retry, they're connection issues
             throw new Exception("CURL Error: " . $curlError);
         }
         
-        // Handle HTTP 529 (overloaded) with retries
-        if ($httpCode === 529) {
-            $retryCount++;
-            
-            if ($retryCount <= $maxRetries) {
-                // Call retry callback if provided
-                if ($retryCallback && is_callable($retryCallback)) {
-                    $retryCallback($retryCount, $maxRetries);
-                }
-                
-                // Exponential backoff: 2^(retry-1) seconds, max 30 seconds
-                $delay = min(pow(2, $retryCount - 1), 30);
-                error_log("API overloaded (529), retry $retryCount/$maxRetries in {$delay}s");
-                sleep($delay);
-                continue;
-            } else {
-                // Max retries exceeded
-                throw new Exception("API_OVERLOAD_MAX_RETRIES");
-            }
-        }
-        
-        // Handle other HTTP errors
+        // CRITICAL: Handle ALL errors here, including 529
         if ($httpCode !== 200) {
             $errorData = json_decode($response, true);
             $errorMessage = isset($errorData['error']['message']) ? $errorData['error']['message'] : 'Unknown API error';
-            throw new Exception("API Error (HTTP $httpCode): " . $errorMessage);
+            
+            // Handle HTTP 529 (overloaded) with retries
+            if ($httpCode === 529) {
+                $retryCount++;
+                
+                if ($retryCount <= $maxRetries) {
+                    // Call retry callback if provided
+                    if ($retryCallback && is_callable($retryCallback)) {
+                        $retryCallback($retryCount, $maxRetries);
+                    }
+                    
+                    // Optimized delay strategy for better user experience
+                    // Fast retries 1-3: Very short delays for transient issues
+                    // Retries 4-7: Progressive delays for persistent issues  
+                    // Retries 8-10: Longer delays as last resort
+                    if ($retryCount <= 3) {
+                        $delay = 1; // Always 1 second for fast retries
+                    } elseif ($retryCount <= 7) {
+                        $delay = $retryCount - 2; // 2s, 3s, 4s, 5s
+                    } else {
+                        $delay = 8; // 8 seconds for final retries
+                    }
+                    
+                    error_log("API overloaded (529), retry $retryCount/$maxRetries in {$delay}s");
+                    sleep($delay);
+                    continue; // Try again
+                } else {
+                    // Max retries exceeded for 529 errors
+                    throw new Exception("API_OVERLOAD_MAX_RETRIES");
+                }
+            } else {
+                // Non-529 errors should not retry
+                throw new Exception("API Error (HTTP $httpCode): " . $errorMessage);
+            }
         }
         
-        // Success - parse response
+        // SUCCESS - parse response
         $data = json_decode($response, true, 512, JSON_INVALID_UTF8_IGNORE);
         
         if (!$data || !isset($data['content'][0]['text'])) {
@@ -273,6 +286,9 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         
         return $responseText;
     }
+    
+    // This should never be reached, but just in case
+    throw new Exception("Unexpected end of retry loop");
 }
 
 function getChatHistory($sessionId, $limit = 40, $userTimezone = 'UTC') {
@@ -595,8 +611,13 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             }
         }
 
-        // Call Anthropic API with optional image data
-        $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData, $userTimezone);
+        // Call Anthropic API with optional image data and retry callback
+        $retryCallback = function($retryCount, $maxRetries) use ($aei) {
+            // This gets called during retries - we can use it to send status updates
+            error_log("API Retry $retryCount/$maxRetries for AEI: " . ($aei['name'] ?? 'unknown'));
+        };
+        
+        $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData, $userTimezone, $retryCallback);
         
         if ($includeDebugData) {
             $debugData['api_response'] = $response;
@@ -696,6 +717,25 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             }
             
             // Special response for max retries exceeded
+            throw new Exception("API_OVERLOAD_MAX_RETRIES");
+        }
+        
+        // Handle HTTP 529 errors during the first few retries - don't show error to user
+        if (strpos($e->getMessage(), "API Error (HTTP 529)") !== false) {
+            // This is a 529 error that happened during the initial tries
+            // We should retry transparently without showing the user an error
+            if ($includeDebugData) {
+                $debugData['error'] = 'Transparent retry in progress';
+                $debugData['original_error'] = $e->getMessage();
+                $debugData['trace'] = $e->getTraceAsString();
+                
+                return [
+                    'response' => "TRANSPARENT_RETRY_IN_PROGRESS",
+                    'debug_data' => $debugData
+                ];
+            }
+            
+            // For regular users, throw the overload exception to trigger proper handling
             throw new Exception("API_OVERLOAD_MAX_RETRIES");
         }
         
