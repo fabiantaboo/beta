@@ -852,6 +852,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewFilesize = document.getElementById('preview-filesize');
     let selectedImage = null;
     let currentFeedbackMessageId = null;
+    let isSubmitting = false; // Prevent double submissions
+    let recentMessages = new Set(); // Track recent messages to prevent duplicates
     
     // Image upload handling
     imageInput.addEventListener('change', function(e) {
@@ -1497,8 +1499,25 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        // Prevent double submissions
+        if (isSubmitting) return;
+        
         const message = messageInput.value.trim();
         if (!message && !selectedImage) return;
+        
+        // Create message hash for duplicate detection
+        const messageHash = message + (selectedImage ? selectedImage.name + selectedImage.size : '');
+        if (recentMessages.has(messageHash)) {
+            console.log('Duplicate message detected, ignoring');
+            return;
+        }
+        
+        // Add to recent messages and clean up after 5 seconds
+        recentMessages.add(messageHash);
+        setTimeout(() => recentMessages.delete(messageHash), 5000);
+        
+        // Set submitting flag
+        isSubmitting = true;
         
         // Disable form
         sendButton.disabled = true;
@@ -1592,6 +1611,9 @@ document.addEventListener('DOMContentLoaded', function() {
         messageInput.disabled = false;
         messageInput.focus();
         
+        // Reset submitting flag
+        isSubmitting = false;
+        
         // Hide typing indicator (backup - should already be hidden by SSE)
         hideTyping();
     });
@@ -1602,7 +1624,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check if device is mobile - prevent Enter submission on mobile
             const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
-            if (!isMobile) {
+            if (!isMobile && !isSubmitting) {
                 e.preventDefault();
                 form.dispatchEvent(new Event('submit'));
             }
