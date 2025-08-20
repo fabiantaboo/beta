@@ -853,7 +853,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedImage = null;
     let currentFeedbackMessageId = null;
     let isSubmitting = false; // Prevent double submissions
-    let recentMessages = new Set(); // Track recent messages to prevent duplicates
     
     // Image upload handling
     imageInput.addEventListener('change', function(e) {
@@ -1444,7 +1443,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
                 
             case 'aei_message':
-                console.log(`[${requestId}] AEI message received`);
+                console.log(`[${requestId}] AEI message received:`, data);
                 hideTyping();
                 
                 if (!isPageVisible || document.hidden) {
@@ -1452,10 +1451,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     const existingMessage = document.querySelector(`[data-message-id="${data.id}"]`);
                     if (!existingMessage) {
+                        console.log(`[${requestId}] Adding message with ID: ${data.id}`);
                         // Add a small delay to let typing indicator fade out smoothly
                         setTimeout(() => {
                             addMessage(data);
                         }, 300); // 300ms delay for smooth transition
+                    } else {
+                        console.log(`[${requestId}] DUPLICATE: Message with ID ${data.id} already exists, skipping`);
                     }
                 }
                 break;
@@ -1499,25 +1501,22 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        // Debug logging
+        const timestamp = new Date().toISOString();
+        console.log(`[${timestamp}] FORM SUBMIT triggered, isSubmitting: ${isSubmitting}`);
+        
         // Prevent double submissions
-        if (isSubmitting) return;
+        if (isSubmitting) {
+            console.log(`[${timestamp}] BLOCKED: Already submitting`);
+            return;
+        }
         
         const message = messageInput.value.trim();
         if (!message && !selectedImage) return;
         
-        // Create message hash for duplicate detection
-        const messageHash = message + (selectedImage ? selectedImage.name + selectedImage.size : '');
-        if (recentMessages.has(messageHash)) {
-            console.log('Duplicate message detected, ignoring');
-            return;
-        }
-        
-        // Add to recent messages and clean up after 5 seconds
-        recentMessages.add(messageHash);
-        setTimeout(() => recentMessages.delete(messageHash), 5000);
-        
-        // Set submitting flag
+        // Set submitting flag immediately
         isSubmitting = true;
+        console.log(`[${timestamp}] Setting isSubmitting = true, message: "${message.substring(0, 50)}..."`);
         
         // Disable form
         sendButton.disabled = true;
@@ -1613,6 +1612,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Reset submitting flag
         isSubmitting = false;
+        console.log(`[${new Date().toISOString()}] FORM SUBMIT completed, isSubmitting reset to false`);
         
         // Hide typing indicator (backup - should already be hidden by SSE)
         hideTyping();
