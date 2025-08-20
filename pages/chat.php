@@ -2567,33 +2567,40 @@ document.addEventListener('keydown', function(e) {
 // Page Visibility API - Handle tab focus/blur for background processing
 let isPageVisible = !document.hidden;
 let pendingMessages = [];
+let visibilityChangeTimeout = null;
 
 function handleVisibilityChange() {
-    const wasVisible = isPageVisible;
-    isPageVisible = !document.hidden;
-    
-    // When page becomes visible again, check for any missed updates
-    if (!wasVisible && isPageVisible) {
-        // Process any pending messages
-        if (pendingMessages.length > 0) {
-            pendingMessages.forEach((messageData) => {
-                const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
-                if (!existingMessage) {
-                    addMessage(messageData);
-                }
-            });
-            
-            pendingMessages = [];
-            hideTyping();
-        }
+    // Clear any existing timeout to prevent multiple rapid executions
+    if (visibilityChangeTimeout) {
+        clearTimeout(visibilityChangeTimeout);
     }
+    
+    // Debounce the visibility change handling
+    visibilityChangeTimeout = setTimeout(() => {
+        const wasVisible = isPageVisible;
+        isPageVisible = !document.hidden;
+        
+        // When page becomes visible again, check for any missed updates
+        if (!wasVisible && isPageVisible) {
+            // Process any pending messages
+            if (pendingMessages.length > 0) {
+                pendingMessages.forEach((messageData) => {
+                    const existingMessage = document.querySelector(`[data-message-id="${messageData.id}"]`);
+                    if (!existingMessage) {
+                        addMessage(messageData);
+                    }
+                });
+                
+                pendingMessages = [];
+                hideTyping();
+            }
+        }
+        
+        visibilityChangeTimeout = null;
+    }, 100); // 100ms debounce
 }
 
-// Listen for visibility changes (multiple events for better PWA support)
+// Use only visibilitychange event as it's the most reliable
 document.addEventListener('visibilitychange', handleVisibilityChange);
-document.addEventListener('focus', handleVisibilityChange);
-document.addEventListener('blur', handleVisibilityChange);
-window.addEventListener('focus', handleVisibilityChange);
-window.addEventListener('blur', handleVisibilityChange);
 
 </script>
