@@ -10,6 +10,7 @@ class ImageUploadHandler {
         $this->maxFileSize = 10 * 1024 * 1024; // 10MB
         $this->allowedTypes = [
             'image/jpeg' => 'jpg',
+            'image/jpg' => 'jpg',  // Some systems report this MIME type
             'image/png' => 'png',
             'image/gif' => 'gif',
             'image/webp' => 'webp'
@@ -138,6 +139,7 @@ class ImageUploadHandler {
         // Create image resource based on type
         switch ($mimeType) {
             case 'image/jpeg':
+            case 'image/jpg':
                 $sourceImage = imagecreatefromjpeg($filepath);
                 break;
             case 'image/png':
@@ -174,6 +176,7 @@ class ImageUploadHandler {
         // Save optimized image
         switch ($mimeType) {
             case 'image/jpeg':
+            case 'image/jpg':
                 imagejpeg($newImage, $filepath, 85); // 85% quality
                 break;
             case 'image/png':

@@ -860,9 +860,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!file) return;
         
         // Validate file type
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
-            showAlert('Unsupported file type. Please select a JPEG, PNG, GIF, or WebP image.', 'error');
+            showAlert(`Unsupported file type: ${file.type}. Please select a JPEG, PNG, GIF, or WebP image.`, 'error');
             return;
         }
         
