@@ -1330,11 +1330,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Start the async request
                 sendRequest();
                 
-                // BACKUP SYSTEM: Poll for completed messages when page becomes visible
+                // BACKUP SYSTEM: Poll for completed messages ONLY if SSE fails completely
+                let sseWorking = false;
+                let sseCompleted = false;
+                
                 const pollForCompletion = () => {
-                    if (document.hidden) {
+                    // Only start polling if SSE hasn't worked AND request hasn't completed
+                    if (document.hidden && !sseWorking && !sseCompleted) {
+                        console.log(`[${requestId}] Starting backup polling - SSE appears to have failed`);
                         const pollInterval = setInterval(async () => {
-                            if (!document.hidden) {
+                            if (!document.hidden && !sseCompleted) {
                                 try {
                                     const pollResponse = await fetch('/api/chat-poll.php', {
                                         method: 'POST',
@@ -1351,6 +1356,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         if (pollData.status === 'completed' && pollData.message) {
                                             clearInterval(pollInterval);
                                             hideTyping();
+                                            console.log(`[${requestId}] Backup polling retrieved message:`, pollData.message.id);
                                             
                                             // Add the message that was missed
                                             handleSSEEvent('aei_message', pollData.message, requestId, resolve, reject);
@@ -1367,25 +1373,28 @@ document.addEventListener('DOMContentLoaded', function() {
                                         }
                                     }
                                 } catch (pollError) {
-                                    // Silent fail - polling is best effort
+                                    console.log(`[${requestId}] Backup polling error:`, pollError);
                                 }
                             }
-                        }, 1000); // Check every 1 second when visible
+                        }, 2000); // Check every 2 seconds when visible (less aggressive)
                         
-                        // Clean up poller after 5 minutes
-                        setTimeout(() => clearInterval(pollInterval), 300000);
+                        // Clean up poller after 3 minutes (shorter timeout)
+                        setTimeout(() => {
+                            clearInterval(pollInterval);
+                            console.log(`[${requestId}] Backup polling timeout after 3 minutes`);
+                        }, 180000);
                     }
                 };
                 
-                // Start polling if page is already hidden
-                if (document.hidden) {
-                    pollForCompletion();
-                }
-                
-                // Start polling when page becomes hidden
+                // Don't start polling immediately - wait to see if SSE works
                 const visibilityHandler = () => {
-                    if (document.hidden) {
-                        pollForCompletion();
+                    if (document.hidden && !sseWorking && !sseCompleted) {
+                        // Delay polling start to give SSE a chance
+                        setTimeout(() => {
+                            if (!sseWorking && !sseCompleted) {
+                                pollForCompletion();
+                            }
+                        }, 5000); // Wait 5 seconds before starting backup polling
                     }
                 };
                 
@@ -1421,6 +1430,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle Server-Sent Events
     function handleSSEEvent(eventType, data, requestId, resolve, reject) {
         console.log(`[${requestId}] SSE Event: ${eventType}`, data);
+        
+        // Mark SSE as working when we receive any event
+        if (typeof sseWorking !== 'undefined') sseWorking = true;
         
         switch (eventType) {
             case 'status':
@@ -1471,6 +1483,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             case 'complete':
                 console.log(`[${requestId}] Chat complete`);
+                if (typeof sseCompleted !== 'undefined') sseCompleted = true;
                 hideTyping();
                 resolve(data);
                 break;
