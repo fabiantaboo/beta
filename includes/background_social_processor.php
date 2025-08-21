@@ -651,7 +651,7 @@ class BackgroundSocialProcessor {
             // Process each component with detailed error tracking
             $interactions = [];
             
-            // 1. Process contact interactions
+            // 1. Process contact interactions - NOW WITH AEI INITIATION!
             try {
                 foreach ($contacts as $contact) {
                     // Evolve contact life
@@ -659,20 +659,30 @@ class BackgroundSocialProcessor {
                         $this->socialContactManager->evolveContactLife($contact['id']);
                     }
                     
-                    // Check contact probability
-                    $contactProbability = $this->calculateAdvancedContactProbability($contact);
-                    if (mt_rand(1, 100) <= ($contactProbability * 100)) {
-                        $interaction = $this->socialContactManager->generateContactToAEIInteraction($contact['id'], $aeiId);
-                        if ($interaction) {
-                            $interactions[] = $interaction;
-                            $processingDetails['interactions_generated']++;
-                        }
-                    }
+                    // NEW: Much simpler and more frequent interaction generation
+                    // Base chance for ANY interaction happening (much higher!)
+                    $baseInteractionChance = 75; // 75% chance per contact per 6h cycle
                     
-                    // Spontaneous interactions
-                    $spontaneousChance = $this->calculateSpontaneousInteractionChance($contact);
-                    if (mt_rand(1, 100) <= ($spontaneousChance * 100)) {
-                        $interaction = $this->socialContactManager->generateContactToAEIInteraction($contact['id'], $aeiId, 'spontaneous');
+                    if (mt_rand(1, 100) <= $baseInteractionChance) {
+                        // Determine who initiates (simplified)
+                        $aeiInitiatesChance = 60; // 60% chance AEI initiates (much higher!)
+                        
+                        if (mt_rand(1, 100) <= $aeiInitiatesChance) {
+                            // AEI initiates - MUCH MORE FREQUENT!
+                            $interaction = $this->socialContactManager->generateAEIToContactInteraction(
+                                $aeiId,
+                                $contact['id']
+                            );
+                            error_log("AEI-initiated interaction generated for contact: {$contact['name']}");
+                        } else {
+                            // Contact initiates
+                            $interaction = $this->socialContactManager->generateContactToAEIInteraction(
+                                $contact['id'], 
+                                $aeiId
+                            );
+                            error_log("Contact-initiated interaction generated from: {$contact['name']}");
+                        }
+                        
                         if ($interaction) {
                             $interactions[] = $interaction;
                             $processingDetails['interactions_generated']++;
