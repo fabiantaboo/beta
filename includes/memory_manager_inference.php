@@ -642,7 +642,7 @@ $conversationText";
     /**
      * Get smart memory context with time-decay and multi-window retrieval
      */
-    public function getSmartMemoryContext($aeiId, $currentMessage, $limit = 6) {
+    public function getSmartMemoryContext($aeiId, $currentMessage, $limit = 60) {
         // AUTO-CREATE COLLECTION IF NOT EXISTS
         try {
             $collectionName = $this->initializeAEICollection($aeiId);
@@ -660,25 +660,25 @@ $conversationText";
         // Multi-window smart retrieval
         $allMemories = [];
         
-        // Distribute limit across windows intelligently
-        $windowLimit = max(8, intval($limit / 2.5)); // More dynamic window limits
+        // Distribute limit across windows intelligently - 20 per window for 60 total
+        $windowLimit = 20; // Fixed 20 per window for maximum memory retrieval
         
         // Window 1: Recent messages (1 day) - lower similarity threshold
-        $recent = $this->getTimeBasedMemories($aeiId, $currentMessage, 1, 0.4, $windowLimit);
+        $recent = $this->getTimeBasedMemories($aeiId, $currentMessage, 1, 0.3, $windowLimit);
         if ($this->debugCallback) {
             call_user_func($this->debugCallback, "📅 Found " . count($recent) . " recent memories (1 day)", 'info');
         }
         
-        // Window 2: Medium term (7 days) - medium similarity  
-        $medium = $this->getTimeBasedMemories($aeiId, $currentMessage, 7, 0.6, $windowLimit);
+        // Window 2: Medium term (7 days) - low similarity for more matches
+        $medium = $this->getTimeBasedMemories($aeiId, $currentMessage, 7, 0.3, $windowLimit);
         if ($this->debugCallback) {
             call_user_func($this->debugCallback, "📆 Found " . count($medium) . " medium-term memories (7 days)", 'info');
         }
         
-        // Window 3: Long term (any time) - high similarity only
-        $longterm = $this->getTimeBasedMemories($aeiId, $currentMessage, 999, 0.8, $windowLimit);
+        // Window 3: Long term (any time) - low similarity to catch everything relevant
+        $longterm = $this->getTimeBasedMemories($aeiId, $currentMessage, 999, 0.3, $windowLimit);
         if ($this->debugCallback) {
-            call_user_func($this->debugCallback, "🗄️ Found " . count($longterm) . " long-term memories (high similarity)", 'info');
+            call_user_func($this->debugCallback, "🗄️ Found " . count($longterm) . " long-term memories (low similarity)", 'info');
         }
         
         // Combine and deduplicate
