@@ -494,9 +494,39 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                     
                     // Get relevant memories with smart context retrieval
                     $memoryLimit = defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 60; // Increased for maximum memory context
+                    
+                    // Get last AEI message for better context
+                    $lastAEIMessage = '';
+                    $stmt = $pdo->prepare("
+                        SELECT message_text 
+                        FROM chat_messages 
+                        WHERE session_id = ? AND sender_type = 'aei' 
+                        ORDER BY created_at DESC 
+                        LIMIT 1
+                    ");
+                    $stmt->execute([$sessionId]);
+                    $lastMessage = $stmt->fetch();
+                    if ($lastMessage) {
+                        $lastAEIMessage = $lastMessage['message_text'];
+                    }
+                    
+                    // Combine AEI context + user message for better memory search with clear attribution
+                    $contextualQuery = '';
+                    if (!empty($lastAEIMessage)) {
+                        $contextualQuery .= $aei['name'] . ': ' . $lastAEIMessage . ' ';
+                    }
+                    $contextualQuery .= 'User: ' . $userMessage;
+                    $contextualQuery = trim($contextualQuery);
+                    
+                    if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
+                        error_log("MEMORY_DEBUG: Last AEI message: " . substr($lastAEIMessage, 0, 100));
+                        error_log("MEMORY_DEBUG: User message: " . substr($userMessage, 0, 100));
+                        error_log("MEMORY_DEBUG: Combined query: " . substr($contextualQuery, 0, 200));
+                    }
+                    
                     $memoryContext = $memoryManager->getSmartMemoryContext(
                         $aei['id'], 
-                        $userMessage, 
+                        $contextualQuery, 
                         $memoryLimit
                     );
                     error_log("MEMORY_DEBUG: Smart memory context retrieved: " . strlen($memoryContext) . " chars");

@@ -706,6 +706,16 @@ $conversationText";
         $context .= "These are relevant memories from your previous interactions. Use them naturally to maintain continuity and show you remember past conversations.\n\n";
         $context .= "IMPORTANT: These memories are for your context and remembrance only. Even if the current user message is EXACTLY the same as one in your memories, you should NOT repeat the exact same response. Instead, respond naturally and contextually based on the current conversation flow while incorporating what you remember. Show that you remember without being repetitive.\n\n";
         
+        // Track memory access for learning
+        if (!empty($allMemories)) {
+            $memoryIds = array_column($allMemories, 'memory_id');
+            if (!empty($memoryIds)) {
+                $placeholders = str_repeat('?,', count($memoryIds) - 1) . '?';
+                $stmt = $this->pdo->prepare("UPDATE aei_memories SET access_count = access_count + 1, last_accessed = NOW() WHERE memory_id IN ($placeholders)");
+                $stmt->execute($memoryIds);
+            }
+        }
+        
         foreach ($allMemories as $memory) {
             $timeAgo = $this->getTimeAgo($memory['timestamp'] ?? time());
             $isQaPair = isset($memory['is_qa_pair']) && $memory['is_qa_pair'];
