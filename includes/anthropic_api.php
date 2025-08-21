@@ -198,6 +198,7 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
     $payload = [
         'model' => 'claude-3-5-sonnet-20241022',
         'max_tokens' => $maxTokens,
+        'temperature' => 1.3,
         'system' => $systemPrompt,
         'messages' => $cleanMessages
     ];
@@ -396,6 +397,7 @@ Do not include any explanation or additional text - ONLY the JSON object.";
     $payload = [
         'model' => 'claude-3-5-sonnet-20241022',
         'max_tokens' => 500,
+        'temperature' => 0.5,
         'system' => $systemPrompt,
         'messages' => $messages
     ];
@@ -835,6 +837,7 @@ Be creative but realistic. Make sure all selected traits and interests are from 
     $payload = [
         'model' => 'claude-3-5-sonnet-20241022',
         'max_tokens' => 4000,
+        'temperature' => 0.5,
         'system' => $systemPrompt,
         'messages' => $messages
     ];
