@@ -20,7 +20,7 @@ The application uses MySQL with the following core tables:
 - `beta_codes` - Invitation system for beta access.
 - `users` - User accounts with profile data and admin flags
 - `aeis` - AI companion entities linked to users
-- `chat_sessions` - Chat sessions between users and AEIs.
+- `chat_sessions` - Chat sessions between users and AEIs..
 - `chat_messages` - Individual messages within chat sessions
 
 ### Security Features
