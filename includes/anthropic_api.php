@@ -198,7 +198,7 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
     $payload = [
         'model' => 'claude-3-5-sonnet-20241022',
         'max_tokens' => $maxTokens,
-        'temperature' => 1.3,
+        'temperature' => 1.0,
         'system' => $systemPrompt,
         'messages' => $cleanMessages
     ];
