@@ -388,7 +388,7 @@ function generateAIResponseWithSSECallback($userMessage, $aei, $user, $sessionId
                     error_log("MEMORY_DEBUG: MemoryManager created successfully");
                     
                     // Get relevant memories with smart context retrieval
-                    $memoryLimit = defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 20;
+                    $memoryLimit = defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 60;
                     $memoryContext = $memoryManager->getSmartMemoryContext(
                         $aei['id'], 
                         $userMessage, 
