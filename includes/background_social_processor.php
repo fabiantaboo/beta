@@ -178,40 +178,28 @@ class BackgroundSocialProcessor {
                     $this->socialContactManager->evolveContactLife($contact['id']);
                 }
                 
-                // 2. Determine who initiates contact (only ONE interaction per contact per session)
-                $contactProbability = $this->calculateAdvancedContactProbability($contact);
-                $aeiInitiatedProbability = $this->calculateAEIInitiatedProbability($contact, $aeiId);
-                $spontaneousChance = $this->calculateSpontaneousInteractionChance($contact);
+                // 2. Much simpler and more frequent interaction generation
+                // Base chance for ANY interaction happening (much higher!)
+                $baseInteractionChance = 75; // 75% chance per contact per 6h cycle
                 
-                // Calculate total probability and choose ONE type of interaction
-                $totalProbability = $contactProbability + $aeiInitiatedProbability + $spontaneousChance;
-                $randomValue = mt_rand(1, 10000) / 100; // 0.01 to 100.00
-                
-                if ($randomValue <= ($totalProbability * 100)) {
-                    // Determine which type of interaction to create
-                    $rand = mt_rand(1, 10000);
-                    $contactThreshold = ($contactProbability / $totalProbability) * 10000;
-                    $aeiThreshold = $contactThreshold + (($aeiInitiatedProbability / $totalProbability) * 10000);
+                if (mt_rand(1, 100) <= $baseInteractionChance) {
+                    // Determine who initiates (simplified)
+                    $aeiInitiatesChance = 60; // 60% chance AEI initiates (much higher!)
                     
-                    if ($rand <= $contactThreshold) {
+                    if (mt_rand(1, 100) <= $aeiInitiatesChance) {
+                        // AEI initiates - MUCH MORE FREQUENT!
+                        $interaction = $this->socialContactManager->generateAEIToContactInteraction(
+                            $aeiId,
+                            $contact['id']
+                        );
+                        error_log("AEI-initiated interaction generated for contact: {$contact['name']}");
+                    } else {
                         // Contact initiates
                         $interaction = $this->socialContactManager->generateContactToAEIInteraction(
                             $contact['id'], 
                             $aeiId
                         );
-                    } elseif ($rand <= $aeiThreshold) {
-                        // AEI initiates  
-                        $interaction = $this->socialContactManager->generateAEIToContactInteraction(
-                            $aeiId,
-                            $contact['id']
-                        );
-                    } else {
-                        // Spontaneous contact interaction
-                        $interaction = $this->socialContactManager->generateContactToAEIInteraction(
-                            $contact['id'], 
-                            $aeiId,
-                            'spontaneous'
-                        );
+                        error_log("Contact-initiated interaction generated from: {$contact['name']}");
                     }
                     
                     if ($interaction) {
@@ -299,12 +287,12 @@ class BackgroundSocialProcessor {
      * Calculate probability of AEI initiating contact with this person
      */
     private function calculateAEIInitiatedProbability($contact, $aeiId) {
-        // Base probability is lower than contact-initiated (AEIs are generally more reactive)
+        // Base probability significantly increased - AEIs should be more proactive!
         $baseFrequency = [
-            'daily' => 0.15,        // 15% chance per 6-hour interval
-            'weekly' => 0.08,       // 8% chance
-            'monthly' => 0.04,      // 4% chance
-            'rarely' => 0.01        // 1% chance
+            'daily' => 0.45,        // 45% chance per 6-hour interval (much higher!)
+            'weekly' => 0.25,       // 25% chance
+            'monthly' => 0.15,      // 15% chance
+            'rarely' => 0.08        // 8% chance
         ];
         
         $baseProbability = $baseFrequency[$contact['contact_frequency']] ?? 0.05;
