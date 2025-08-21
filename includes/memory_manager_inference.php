@@ -506,7 +506,7 @@ class MemoryManagerInference {
             $isDuplicate = false;
             
             foreach ($seen as $seenContent) {
-                if (similar_text($content, $seenContent, $percent) && $percent > 80) {
+                if (similar_text($content, $seenContent, $percent) && $percent > 90) {
                     $isDuplicate = true;
                     break;
                 }
@@ -683,10 +683,20 @@ $conversationText";
         
         // Combine and deduplicate
         $allMemories = array_merge($recent, $medium, $longterm);
+        if ($this->debugCallback) {
+            call_user_func($this->debugCallback, "📋 Combined memories: " . count($allMemories) . " total before deduplication", 'info');
+        }
+        
         $allMemories = $this->deduplicateMemories($allMemories);
+        if ($this->debugCallback) {
+            call_user_func($this->debugCallback, "🔄 After deduplication: " . count($allMemories) . " unique memories", 'info');
+        }
         
         // Limit to requested amount
         $allMemories = array_slice($allMemories, 0, $limit);
+        if ($this->debugCallback) {
+            call_user_func($this->debugCallback, "✂️ Final memory count after limit ($limit): " . count($allMemories), 'info');
+        }
         
         if (empty($allMemories)) {
             return "";
