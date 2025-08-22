@@ -2396,6 +2396,8 @@ function getFeedbackButtons(message) {
 
 async function loadOlderMessages() {
     console.log('loadOlderMessages called');
+    console.log('sessionId:', sessionId);
+    console.log('currentOffset:', currentOffset);
     
     if (isLoading) {
         console.log('Already loading, returning');
