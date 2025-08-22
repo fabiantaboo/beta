@@ -113,7 +113,7 @@ function renderAdminNavigation($currentPage = '') {
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div class="admin-dropdown-menu absolute left-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible transition-all duration-200 z-50">
+                        <div class="admin-dropdown-menu absolute left-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-200 z-50" style="opacity: 0; visibility: hidden;">
                             <div class="py-2">
                                 <?php foreach ($category['items'] as $pageKey => $item): ?>
                                     <a href="<?= htmlspecialchars($item['url']) ?>" 
@@ -129,6 +129,87 @@ function renderAdminNavigation($currentPage = '') {
             </div>
         </div>
     </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Admin dropdown script loaded');
+        const dropdowns = document.querySelectorAll('.admin-dropdown');
+        console.log('Found dropdowns:', dropdowns.length);
+        
+        dropdowns.forEach(dropdown => {
+            const btn = dropdown.querySelector('.admin-dropdown-btn');
+            const menu = dropdown.querySelector('.admin-dropdown-menu');
+            const arrow = dropdown.querySelector('.dropdown-arrow');
+            let isOpen = false;
+            
+            // Toggle on click
+            btn.addEventListener('click', function(e) {
+                console.log('Dropdown clicked!');
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Close all other dropdowns
+                dropdowns.forEach(otherDropdown => {
+                    if (otherDropdown !== dropdown) {
+                        const otherMenu = otherDropdown.querySelector('.admin-dropdown-menu');
+                        const otherArrow = otherDropdown.querySelector('.dropdown-arrow');
+                        if (otherMenu && otherArrow) {
+                            otherMenu.style.opacity = '0';
+                            otherMenu.style.visibility = 'hidden';
+                            otherArrow.style.transform = 'rotate(0deg)';
+                        }
+                    }
+                });
+                
+                // Toggle current dropdown
+                isOpen = !isOpen;
+                if (isOpen) {
+                    menu.style.opacity = '1';
+                    menu.style.visibility = 'visible';
+                    arrow.style.transform = 'rotate(180deg)';
+                    console.log('Dropdown opened');
+                } else {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    arrow.style.transform = 'rotate(0deg)';
+                    console.log('Dropdown closed');
+                }
+            });
+            
+            // Close on mouse leave (with small delay)
+            let leaveTimeout;
+            dropdown.addEventListener('mouseleave', function() {
+                leaveTimeout = setTimeout(() => {
+                    if (isOpen) {
+                        menu.style.opacity = '0';
+                        menu.style.visibility = 'hidden';
+                        arrow.style.transform = 'rotate(0deg)';
+                        isOpen = false;
+                    }
+                }, 300);
+            });
+            
+            dropdown.addEventListener('mouseenter', function() {
+                if (leaveTimeout) {
+                    clearTimeout(leaveTimeout);
+                }
+            });
+        });
+        
+        // Close all dropdowns when clicking outside
+        document.addEventListener('click', function() {
+            dropdowns.forEach(dropdown => {
+                const menu = dropdown.querySelector('.admin-dropdown-menu');
+                const arrow = dropdown.querySelector('.dropdown-arrow');
+                if (menu && arrow) {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    arrow.style.transform = 'rotate(0deg)';
+                }
+            });
+        });
+    });
+    </script>
     <?php
 }
 
@@ -163,79 +244,3 @@ function renderAdminAlerts($error = null, $success = null) {
     <?php endif;
 }
 ?>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const dropdowns = document.querySelectorAll('.admin-dropdown');
-    
-    dropdowns.forEach(dropdown => {
-        const btn = dropdown.querySelector('.admin-dropdown-btn');
-        const menu = dropdown.querySelector('.admin-dropdown-menu');
-        const arrow = dropdown.querySelector('.dropdown-arrow');
-        let isOpen = false;
-        
-        // Toggle on click
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Close all other dropdowns
-            dropdowns.forEach(otherDropdown => {
-                if (otherDropdown !== dropdown) {
-                    const otherMenu = otherDropdown.querySelector('.admin-dropdown-menu');
-                    const otherArrow = otherDropdown.querySelector('.dropdown-arrow');
-                    if (otherMenu && otherArrow) {
-                        otherMenu.classList.add('opacity-0', 'invisible');
-                        otherMenu.classList.remove('opacity-100', 'visible');
-                        otherArrow.classList.remove('rotate-180');
-                    }
-                }
-            });
-            
-            // Toggle current dropdown
-            isOpen = !isOpen;
-            if (isOpen) {
-                menu.classList.remove('opacity-0', 'invisible');
-                menu.classList.add('opacity-100', 'visible');
-                arrow.classList.add('rotate-180');
-            } else {
-                menu.classList.add('opacity-0', 'invisible');
-                menu.classList.remove('opacity-100', 'visible');
-                arrow.classList.remove('rotate-180');
-            }
-        });
-        
-        // Close on mouse leave (with small delay)
-        let leaveTimeout;
-        dropdown.addEventListener('mouseleave', function() {
-            leaveTimeout = setTimeout(() => {
-                if (isOpen) {
-                    menu.classList.add('opacity-0', 'invisible');
-                    menu.classList.remove('opacity-100', 'visible');
-                    arrow.classList.remove('rotate-180');
-                    isOpen = false;
-                }
-            }, 300);
-        });
-        
-        dropdown.addEventListener('mouseenter', function() {
-            if (leaveTimeout) {
-                clearTimeout(leaveTimeout);
-            }
-        });
-    });
-    
-    // Close all dropdowns when clicking outside
-    document.addEventListener('click', function() {
-        dropdowns.forEach(dropdown => {
-            const menu = dropdown.querySelector('.admin-dropdown-menu');
-            const arrow = dropdown.querySelector('.dropdown-arrow');
-            if (menu && arrow) {
-                menu.classList.add('opacity-0', 'invisible');
-                menu.classList.remove('opacity-100', 'visible');
-                arrow.classList.remove('rotate-180');
-            }
-        });
-    });
-});
-</script>
