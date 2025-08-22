@@ -6,7 +6,7 @@ $success = null;
 $selectedUserId = $_GET['user_id'] ?? '';
 $selectedSessionId = $_GET['session_id'] ?? '';
 
-// Get non-admin users with their AEIs and chat sessions (anonymized)
+// Get non-admin users with their AEIs and chat sessions (anonymized).
 try {
     $stmt = $pdo->prepare("
         SELECT 
