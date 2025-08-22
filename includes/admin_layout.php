@@ -113,7 +113,7 @@ function renderAdminNavigation($currentPage = '') {
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div class="admin-dropdown-menu absolute left-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-200" style="opacity: 0; visibility: hidden; z-index: 9999; position: absolute;">
+                        <div class="admin-dropdown-menu absolute left-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-200" style="opacity: 0; visibility: hidden; z-index: 99999; position: absolute;">
                             <div class="py-2">
                                 <?php foreach ($category['items'] as $pageKey => $item): ?>
                                     <a href="<?= htmlspecialchars($item['url']) ?>" 
@@ -166,15 +166,11 @@ function renderAdminNavigation($currentPage = '') {
                 if (isOpen) {
                     menu.style.opacity = '1';
                     menu.style.visibility = 'visible';
-                    menu.style.backgroundColor = 'red'; // Debug: Mach es rot!
-                    menu.style.border = '5px solid blue'; // Debug: Blaue Border!
                     arrow.style.transform = 'rotate(180deg)';
-                    console.log('Dropdown opened', menu);
+                    console.log('Dropdown opened');
                 } else {
                     menu.style.opacity = '0';
                     menu.style.visibility = 'hidden';
-                    menu.style.backgroundColor = '';
-                    menu.style.border = '';
                     arrow.style.transform = 'rotate(0deg)';
                     console.log('Dropdown closed');
                 }
