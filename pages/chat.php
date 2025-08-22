@@ -2302,8 +2302,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Chat Pagination / Load More Messages
 let currentOffset = 20; // We already loaded first 20 messages
 let isLoading = false;
-const sessionId = '<?= $sessionId ?>';
-const aeiName = '<?= htmlspecialchars($aei['name']) ?>';
 
 function createMessageElement(message) {
     const isUser = message.sender_type === 'user';
@@ -2490,7 +2488,12 @@ async function loadOlderMessages() {
         
     } catch (error) {
         console.error('Error loading older messages:', error);
-        alert('Failed to load older messages. Please try again.');
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        alert('Failed to load older messages. Please try again. Error: ' + error.message);
     } finally {
         isLoading = false;
         loadBtn.disabled = false;
