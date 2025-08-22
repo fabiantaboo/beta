@@ -142,13 +142,16 @@ function renderAdminNavigation($currentPage = '') {
             const arrow = dropdown.querySelector('.dropdown-arrow');
             let isOpen = false;
             
-            // Toggle on click
-            btn.addEventListener('click', function(e) {
-                console.log('Dropdown clicked!');
-                e.preventDefault();
-                e.stopPropagation();
+            // Show on hover (desktop) and toggle on click (mobile)
+            let hoverTimeout;
+            
+            dropdown.addEventListener('mouseenter', function() {
+                // Clear any pending close timeouts
+                if (hoverTimeout) {
+                    clearTimeout(hoverTimeout);
+                }
                 
-                // Close all other dropdowns
+                // Close all other dropdowns first
                 dropdowns.forEach(otherDropdown => {
                     if (otherDropdown !== dropdown) {
                         const otherMenu = otherDropdown.querySelector('.admin-dropdown-menu');
@@ -161,37 +164,50 @@ function renderAdminNavigation($currentPage = '') {
                     }
                 });
                 
-                // Toggle current dropdown
+                // Open current dropdown
+                menu.style.opacity = '1';
+                menu.style.visibility = 'visible';
+                arrow.style.transform = 'rotate(180deg)';
+                isOpen = true;
+            });
+            
+            dropdown.addEventListener('mouseleave', function() {
+                hoverTimeout = setTimeout(() => {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    arrow.style.transform = 'rotate(0deg)';
+                    isOpen = false;
+                }, 200);
+            });
+            
+            // Keep click functionality for mobile
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // On mobile or if already open, toggle
                 isOpen = !isOpen;
                 if (isOpen) {
+                    // Close all other dropdowns
+                    dropdowns.forEach(otherDropdown => {
+                        if (otherDropdown !== dropdown) {
+                            const otherMenu = otherDropdown.querySelector('.admin-dropdown-menu');
+                            const otherArrow = otherDropdown.querySelector('.dropdown-arrow');
+                            if (otherMenu && otherArrow) {
+                                otherMenu.style.opacity = '0';
+                                otherMenu.style.visibility = 'hidden';
+                                otherArrow.style.transform = 'rotate(0deg)';
+                            }
+                        }
+                    });
+                    
                     menu.style.opacity = '1';
                     menu.style.visibility = 'visible';
                     arrow.style.transform = 'rotate(180deg)';
-                    console.log('Dropdown opened');
                 } else {
                     menu.style.opacity = '0';
                     menu.style.visibility = 'hidden';
                     arrow.style.transform = 'rotate(0deg)';
-                    console.log('Dropdown closed');
-                }
-            });
-            
-            // Close on mouse leave (with small delay)
-            let leaveTimeout;
-            dropdown.addEventListener('mouseleave', function() {
-                leaveTimeout = setTimeout(() => {
-                    if (isOpen) {
-                        menu.style.opacity = '0';
-                        menu.style.visibility = 'hidden';
-                        arrow.style.transform = 'rotate(0deg)';
-                        isOpen = false;
-                    }
-                }, 300);
-            });
-            
-            dropdown.addEventListener('mouseenter', function() {
-                if (leaveTimeout) {
-                    clearTimeout(leaveTimeout);
                 }
             });
         });
