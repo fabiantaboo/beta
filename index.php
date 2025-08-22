@@ -18,7 +18,7 @@ if (isset($_GET['action'])) {
     }
 }
 
-$allowed_pages = ['home', 'onboarding', 'create-aei', 'choose-avatar', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-prompts', 'admin-users', 'admin-chats', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-feedback', 'admin-logs', 'admin-decay', 'admin-migration', 'admin-replicate', 'admin-avatar-batch', 'admin-avatar-regenerate', 'memory-setup'];
+$allowed_pages = ['home', 'onboarding', 'create-aei', 'choose-avatar', 'chat', 'dashboard', 'profile', 'admin', 'admin-api', 'admin-api-logs', 'admin-prompts', 'admin-users', 'admin-chats', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-feedback', 'admin-logs', 'admin-decay', 'admin-migration', 'admin-replicate', 'admin-avatar-batch', 'admin-avatar-regenerate', 'memory-setup'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
@@ -37,6 +37,7 @@ $page_title = match($page) {
     'profile' => 'Profile Settings',
     'admin' => 'Admin Panel',
     'admin-api' => 'Admin - API Settings',
+    'admin-api-logs' => 'Admin - API Request Logs',
     'admin-prompts' => 'Admin - System Prompts',
     'admin-users' => 'Admin - User Management',
     'admin-chats' => 'Admin - Chat Analytics',

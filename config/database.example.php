@@ -1383,6 +1383,39 @@ Be conversational, helpful, and maintain your unique personality. Keep responses
         // Table might not exist yet, ignore
     }
     
+    // 16. Create API request logging table for training data
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'api_request_logs'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("CREATE TABLE api_request_logs (
+                id VARCHAR(32) PRIMARY KEY,
+                user_id VARCHAR(32) NULL,
+                aei_id VARCHAR(32) NULL,
+                session_id VARCHAR(32) NULL,
+                message_id VARCHAR(32) NULL,
+                request_payload LONGTEXT NOT NULL,
+                response_payload LONGTEXT,
+                system_prompt LONGTEXT,
+                user_message TEXT,
+                ai_response TEXT,
+                model VARCHAR(100),
+                tokens_used INT,
+                processing_time_ms INT,
+                status VARCHAR(50) DEFAULT 'success',
+                error_message TEXT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_user_aei (user_id, aei_id),
+                INDEX idx_session (session_id),
+                INDEX idx_created (created_at),
+                INDEX idx_status (status),
+                INDEX idx_model (model)
+            )");
+            error_log("Created api_request_logs table");
+        }
+    } catch (PDOException $e) {
+        error_log("Could not create api_request_logs table: " . $e->getMessage());
+    }
+    
     // Create admin account if it doesn't exist
     try {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");

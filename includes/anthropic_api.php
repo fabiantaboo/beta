@@ -4,6 +4,34 @@ require_once __DIR__ . '/template_engine.php';
 require_once __DIR__ . '/emotions.php';
 require_once __DIR__ . '/aei_social_context.php';
 
+/**
+ * Log API request and response for training data
+ */
+function logApiRequest($userId, $aeiId, $sessionId, $messageId, $requestPayload, $responsePayload, $systemPrompt, $userMessage, $aiResponse, $model, $tokensUsed, $processingTime, $status = 'success', $errorMessage = null) {
+    global $pdo;
+    
+    try {
+        $logId = generateId();
+        $stmt = $pdo->prepare("
+            INSERT INTO api_request_logs 
+            (id, user_id, aei_id, session_id, message_id, request_payload, response_payload, system_prompt, user_message, ai_response, model, tokens_used, processing_time_ms, status, error_message) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $logId, $userId, $aeiId, $sessionId, $messageId,
+            json_encode($requestPayload), 
+            json_encode($responsePayload),
+            $systemPrompt, $userMessage, $aiResponse,
+            $model, $tokensUsed, $processingTime,
+            $status, $errorMessage
+        ]);
+        
+        error_log("API request logged: $logId");
+    } catch (Exception $e) {
+        error_log("Failed to log API request: " . $e->getMessage());
+    }
+}
+
 function getRelativeTimeDescription($timestamp) {
     $now = time();
     $messageTime = strtotime($timestamp);
@@ -129,11 +157,16 @@ function generateSystemPrompt($aei, $user, $sessionId = null) {
     }
 }
 
-function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageData = null, $userTimezone = 'UTC', $retryCallback = null) {
+function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageData = null, $userTimezone = 'UTC', $retryCallback = null, $logData = null) {
     $apiKey = getAnthropicApiKey();
     
     if (!$apiKey) {
         throw new Exception("Anthropic API key not configured");
+    }
+    
+    // Set start time for logging
+    if ($logData && !isset($logData['start_time'])) {
+        $logData['start_time'] = microtime(true);
     }
     
     // Add current time and timezone context
@@ -284,10 +317,28 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
                     continue; // Try again
                 } else {
                     // Max retries exceeded for 529 errors
+                    if ($logData) {
+                        $processingTime = (microtime(true) - $logData['start_time']) * 1000;
+                        logApiRequest(
+                            $logData['user_id'] ?? null, $logData['aei_id'] ?? null, 
+                            $logData['session_id'] ?? null, $logData['message_id'] ?? null,
+                            $payload, null, $systemPrompt, $logData['user_message'] ?? '', null,
+                            'claude-3-5-sonnet-20241022', 0, (int)$processingTime, 'error', 'API_OVERLOAD_MAX_RETRIES'
+                        );
+                    }
                     throw new Exception("API_OVERLOAD_MAX_RETRIES");
                 }
             } else {
                 // Non-529 errors should not retry
+                if ($logData) {
+                    $processingTime = (microtime(true) - $logData['start_time']) * 1000;
+                    logApiRequest(
+                        $logData['user_id'] ?? null, $logData['aei_id'] ?? null, 
+                        $logData['session_id'] ?? null, $logData['message_id'] ?? null,
+                        $payload, $errorData ?? null, $systemPrompt, $logData['user_message'] ?? '', null,
+                        'claude-3-5-sonnet-20241022', 0, (int)$processingTime, 'error', $errorMessage
+                    );
+                }
                 throw new Exception("API Error (HTTP $httpCode): " . $errorMessage);
             }
         }
@@ -303,6 +354,27 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         
         // Remove any accidental timestamps from AI response
         $responseText = removeTimestampsFromResponse($responseText);
+        
+        // Log the API request and response for training data
+        if ($logData) {
+            $tokensUsed = $data['usage']['input_tokens'] ?? 0 + $data['usage']['output_tokens'] ?? 0;
+            $processingTime = (microtime(true) - $logData['start_time']) * 1000; // Convert to milliseconds
+            
+            logApiRequest(
+                $logData['user_id'] ?? null,
+                $logData['aei_id'] ?? null, 
+                $logData['session_id'] ?? null,
+                $logData['message_id'] ?? null,
+                $payload,
+                $data,
+                $systemPrompt,
+                $logData['user_message'] ?? '',
+                $responseText,
+                'claude-3-5-sonnet-20241022',
+                $tokensUsed,
+                (int)$processingTime
+            );
+        }
         
         return $responseText;
     }
@@ -668,7 +740,27 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             error_log("API Retry $retryCount/$maxRetries for AEI: " . ($aei['name'] ?? 'unknown'));
         };
         
-        $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData, $userTimezone, $retryCallback);
+        // Prepare logging data for training
+        $userMessage = '';
+        if (!empty($chatHistory)) {
+            $lastMessage = end($chatHistory);
+            if ($lastMessage['role'] === 'user') {
+                $userMessage = is_array($lastMessage['content']) ? 
+                    ($lastMessage['content'][0]['text'] ?? '') : 
+                    $lastMessage['content'];
+            }
+        }
+        
+        $logData = [
+            'user_id' => $userId,
+            'aei_id' => $aei['id'],
+            'session_id' => $sessionId,
+            'message_id' => $messageId ?? generateId(),
+            'user_message' => $userMessage,
+            'start_time' => microtime(true)
+        ];
+        
+        $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData, $userTimezone, $retryCallback, $logData);
         
         if ($includeDebugData) {
             $debugData['api_response'] = $response;

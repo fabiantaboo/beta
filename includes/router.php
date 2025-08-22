@@ -20,6 +20,7 @@ class Router {
             'beta-access' => ['page' => 'home', 'step' => 'beta_code'],
             'admin' => ['page' => 'admin'],
             'admin/api' => ['page' => 'admin-api'],
+            'admin/api-logs' => ['page' => 'admin-api-logs'],
             'admin/prompts' => ['page' => 'admin-prompts'],
             'admin/users' => ['page' => 'admin-users'],
             'admin/chats' => ['page' => 'admin-chats'],

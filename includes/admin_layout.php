@@ -3,6 +3,7 @@ function renderAdminNavigation($currentPage = '') {
     $navItems = [
         'admin' => ['name' => 'Overview', 'icon' => 'fas fa-chart-line', 'url' => '/admin'],
         'admin-api' => ['name' => 'API Settings', 'icon' => 'fas fa-key', 'url' => '/admin/api'],
+        'admin-api-logs' => ['name' => 'API Request Logs', 'icon' => 'fas fa-list-alt', 'url' => '/admin/api-logs'],
         'admin-prompts' => ['name' => 'System Prompts', 'icon' => 'fas fa-code', 'url' => '/admin/prompts'],
         'admin-users' => ['name' => 'User Management', 'icon' => 'fas fa-users', 'url' => '/admin/users'],
         'admin-chats' => ['name' => 'Chat Analytics', 'icon' => 'fas fa-chart-bar', 'url' => '/admin/chats'],
