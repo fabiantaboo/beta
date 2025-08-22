@@ -2302,6 +2302,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // Chat Pagination / Load More Messages
 let currentOffset = 20; // We already loaded first 20 messages
 let isLoading = false;
+// Make sessionId globally available for pagination
+const sessionId = '<?= htmlspecialchars($sessionId) ?>';
 
 function createMessageElement(message) {
     const isUser = message.sender_type === 'user';
