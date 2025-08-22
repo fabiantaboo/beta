@@ -105,15 +105,15 @@ function renderAdminNavigation($currentPage = '') {
                 foreach ($navCategories as $categoryKey => $category): 
                     $isActiveCategory = $currentCategory === $categoryKey;
                 ?>
-                    <div class="relative group">
-                        <button class="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap <?= $isActiveCategory ? 'bg-ayuni-blue text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700' ?>">
+                    <div class="relative admin-dropdown">
+                        <button class="admin-dropdown-btn flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap <?= $isActiveCategory ? 'bg-ayuni-blue text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700' ?>">
                             <i class="<?= htmlspecialchars($category['icon']) ?>"></i>
                             <span><?= htmlspecialchars($category['name']) ?></span>
-                            <i class="fas fa-chevron-down text-xs ml-1 transition-transform group-hover:rotate-180"></i>
+                            <i class="fas fa-chevron-down text-xs ml-1 transition-transform dropdown-arrow"></i>
                         </button>
                         
                         <!-- Dropdown Menu -->
-                        <div class="absolute left-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        <div class="admin-dropdown-menu absolute left-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible transition-all duration-200 z-50">
                             <div class="py-2">
                                 <?php foreach ($category['items'] as $pageKey => $item): ?>
                                     <a href="<?= htmlspecialchars($item['url']) ?>" 
@@ -129,6 +129,78 @@ function renderAdminNavigation($currentPage = '') {
             </div>
         </div>
     </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdowns = document.querySelectorAll('.admin-dropdown');
+        
+        dropdowns.forEach(dropdown => {
+            const btn = dropdown.querySelector('.admin-dropdown-btn');
+            const menu = dropdown.querySelector('.admin-dropdown-menu');
+            const arrow = dropdown.querySelector('.dropdown-arrow');
+            let isOpen = false;
+            
+            // Toggle on click
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Close all other dropdowns
+                dropdowns.forEach(otherDropdown => {
+                    if (otherDropdown !== dropdown) {
+                        const otherMenu = otherDropdown.querySelector('.admin-dropdown-menu');
+                        const otherArrow = otherDropdown.querySelector('.dropdown-arrow');
+                        otherMenu.classList.add('opacity-0', 'invisible');
+                        otherMenu.classList.remove('opacity-100', 'visible');
+                        otherArrow.classList.remove('rotate-180');
+                    }
+                });
+                
+                // Toggle current dropdown
+                isOpen = !isOpen;
+                if (isOpen) {
+                    menu.classList.remove('opacity-0', 'invisible');
+                    menu.classList.add('opacity-100', 'visible');
+                    arrow.classList.add('rotate-180');
+                } else {
+                    menu.classList.add('opacity-0', 'invisible');
+                    menu.classList.remove('opacity-100', 'visible');
+                    arrow.classList.remove('rotate-180');
+                }
+            });
+            
+            // Close on mouse leave (with small delay)
+            let leaveTimeout;
+            dropdown.addEventListener('mouseleave', function() {
+                leaveTimeout = setTimeout(() => {
+                    if (isOpen) {
+                        menu.classList.add('opacity-0', 'invisible');
+                        menu.classList.remove('opacity-100', 'visible');
+                        arrow.classList.remove('rotate-180');
+                        isOpen = false;
+                    }
+                }, 300);
+            });
+            
+            dropdown.addEventListener('mouseenter', function() {
+                if (leaveTimeout) {
+                    clearTimeout(leaveTimeout);
+                }
+            });
+        });
+        
+        // Close all dropdowns when clicking outside
+        document.addEventListener('click', function() {
+            dropdowns.forEach(dropdown => {
+                const menu = dropdown.querySelector('.admin-dropdown-menu');
+                const arrow = dropdown.querySelector('.dropdown-arrow');
+                menu.classList.add('opacity-0', 'invisible');
+                menu.classList.remove('opacity-100', 'visible');
+                arrow.classList.remove('rotate-180');
+            });
+        });
+    });
+    </script>
     <?php
 }
 
