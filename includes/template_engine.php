@@ -223,8 +223,8 @@ class TemplateEngine {
             $user_age = $birthDate->diff($today)->y . ' years old';
         }
 
-        // Get response length preference
-        $responseLength = $_SESSION['response_length_' . $aei['id']] ?? 2;
+        // Get response length preference from AEI
+        $responseLength = (int)($aei['response_length'] ?? 2);
         $responseLengthText = match($responseLength) {
             1 => 'Short responses (2-3 sentences)',
             3 => 'Long detailed responses', 

@@ -77,6 +77,7 @@ function createTablesIfNotExist($pdo) {
             goals VARCHAR(200) NULL,
             relationship_context TEXT NULL,
             system_prompt TEXT NULL,
+            response_length TINYINT DEFAULT 2,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN DEFAULT TRUE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -934,7 +935,8 @@ try {
                     'goals' => "ALTER TABLE aeis ADD COLUMN goals VARCHAR(200) NULL AFTER occupation",
                     'relationship_context' => "ALTER TABLE aeis ADD COLUMN relationship_context TEXT NULL AFTER goals",
                     'avatar_url' => "ALTER TABLE aeis ADD COLUMN avatar_url VARCHAR(500) NULL AFTER relationship_context",
-                    'system_prompt' => "ALTER TABLE aeis ADD COLUMN system_prompt TEXT NULL AFTER avatar_url"
+                    'system_prompt' => "ALTER TABLE aeis ADD COLUMN system_prompt TEXT NULL AFTER avatar_url",
+                    'response_length' => "ALTER TABLE aeis ADD COLUMN response_length TINYINT DEFAULT 2 AFTER system_prompt"
                 ];
                 
                 foreach ($newColumns as $columnName => $alterSQL) {

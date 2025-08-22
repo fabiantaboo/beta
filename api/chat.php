@@ -90,11 +90,30 @@ if (!empty($input['action'])) {
             exit;
         }
         
-        // Store in session
-        $_SESSION['response_length_' . $aeiId] = $length;
-        
-        echo json_encode(['success' => true, 'message' => 'Response length saved'], JSON_UNESCAPED_UNICODE);
-        exit;
+        // Verify AEI belongs to current user
+        try {
+            $stmt = $pdo->prepare("SELECT id FROM aeis WHERE id = ? AND user_id = ?");
+            $stmt->execute([$aeiId, getUserSession()]);
+            
+            if (!$stmt->fetch()) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Access denied'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            
+            // Update AEI response length in database
+            $stmt = $pdo->prepare("UPDATE aeis SET response_length = ? WHERE id = ? AND user_id = ?");
+            $stmt->execute([$length, $aeiId, getUserSession()]);
+            
+            echo json_encode(['success' => true, 'message' => 'Response length saved to database'], JSON_UNESCAPED_UNICODE);
+            exit;
+            
+        } catch (PDOException $e) {
+            error_log("Error updating response length: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Database error'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
     }
 }
 

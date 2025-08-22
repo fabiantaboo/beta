@@ -36,13 +36,13 @@ if ($step === 'finalize' && isset($_SESSION['selected_avatar'])) {
             }
             
             // Create AEI in database
-            $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context, avatar_url, response_length) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $aeiId, $userId, $aeiData['name'], $aeiData['age'], $aeiData['gender'],
                 $aeiData['personality'], $aeiData['appearance'], $aeiData['background'],
                 $aeiData['interests'], $aeiData['communication'], $aeiData['quirks'],
                 $aeiData['occupation'], $aeiData['goals'], $aeiData['relationship'],
-                $finalAvatarUrl
+                $finalAvatarUrl, $aeiData['response_length'] ?? 2
             ]);
             
             // Initialize social environment
@@ -119,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $quirks = sanitizeInput($_POST['quirks'] ?? '');
         $occupation = sanitizeInput($_POST['occupation'] ?? '');
         $goals = sanitizeInput($_POST['goals'] ?? '');
+        $responseLength = (int)($_POST['response_length'] ?? 2);
         
         // Process relationship data
         $relationshipType = sanitizeInput($_POST['relationship_type'] ?? '');
@@ -147,7 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'quirks' => $quirks,
                     'occupation' => $occupation,
                     'goals' => $goals,
-                    'relationship' => $relationship
+                    'relationship' => $relationship,
+                    'response_length' => $responseLength
                 ];
                 
                 // Generate 3 avatar options if Replicate API is configured
@@ -206,8 +208,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // Create AEI without avatar as fallback
                     $aeiId = generateId();
-                    $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    $stmt->execute([$aeiId, $userId, $name, $age, $gender, $personality, $appearance, $background, $interests, $communication, $quirks, $occupation, $goals, $relationship, null]);
+                    $stmt = $pdo->prepare("INSERT INTO aeis (id, user_id, name, age, gender, personality, appearance_description, background, interests, communication_style, quirks, occupation, goals, relationship_context, avatar_url, response_length) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$aeiId, $userId, $name, $age, $gender, $personality, $appearance, $background, $interests, $communication, $quirks, $occupation, $goals, $relationship, null, $responseLength]);
                     
                     // Initialize social environment
                     try {
@@ -850,6 +852,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
+                <!-- Response Length Preference -->
+                <div class="border-b border-gray-200 dark:border-gray-700 pb-8">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                        <i class="fas fa-comment mr-2 text-purple-500"></i>
+                        Response Style
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                How verbose should your AEI be?
+                            </label>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <label class="response-length flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="response_length" value="1" class="sr-only">
+                                    <i class="fas fa-compress text-blue-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Short & Sweet</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">2-3 sentences, concise</p>
+                                    </div>
+                                </label>
+                                <label class="response-length flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="response_length" value="2" class="sr-only" checked>
+                                    <i class="fas fa-balance-scale text-green-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Balanced</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">4-5 sentences, just right</p>
+                                    </div>
+                                </label>
+                                <label class="response-length flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <input type="radio" name="response_length" value="3" class="sr-only">
+                                    <i class="fas fa-expand text-purple-500 mr-3"></i>
+                                    <div>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Detailed</span>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Comprehensive, elaborate</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <i class="fas fa-lightbulb text-blue-500 mt-0.5"></i>
+                                <div>
+                                    <p class="text-sm text-blue-800 dark:text-blue-200 font-medium mb-1">💡 Pro Tip</p>
+                                    <p class="text-xs text-blue-700 dark:text-blue-300">
+                                        You can change this setting anytime in the chat profile. Your AEI will adapt their response length to match your preference, regardless of how much you write.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Submit -->
                 <div class="flex space-x-4 pt-6">
                     <a href="/dashboard" class="flex-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-4 px-6 rounded-lg text-center hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors">
@@ -997,6 +1052,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 /* Relationship type styling */
 .relationship-type:has(input:checked) {
+    border-color: #2196F3;
+    background: rgba(33, 150, 243, 0.1);
+}
+/* Response length styling */
+.response-length:has(input:checked) {
     border-color: #2196F3;
     background: rgba(33, 150, 243, 0.1);
 }

@@ -101,7 +101,7 @@ function generateSystemPrompt($aei, $user, $sessionId = null) {
         }
         
         // Add response length instructions
-        $responseLength = $_SESSION['response_length_' . $aei['id']] ?? 2;
+        $responseLength = (int)($aei['response_length'] ?? 2);
         $lengthInstructions = "\n\n🚨 CRITICAL RESPONSE LENGTH REQUIREMENT - MUST FOLLOW EXACTLY:\n";
         
         switch ($responseLength) {

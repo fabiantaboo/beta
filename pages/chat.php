@@ -2593,30 +2593,36 @@ function applyFontSizeToNewMessage(messageElement) {
 
 // Response Length Management
 function loadResponseLength() {
-    const savedLength = localStorage.getItem('ayuni-chat-response-length');
-    if (savedLength) {
-        currentResponseLength = parseInt(savedLength);
-        document.getElementById('response-length-slider').value = currentResponseLength;
-        updateResponseLength(currentResponseLength);
-    }
+    // Load from AEI database value (PHP-injected)
+    const dbResponseLength = <?= (int)($aei['response_length'] ?? 2) ?>;
+    currentResponseLength = dbResponseLength;
+    document.getElementById('response-length-slider').value = currentResponseLength;
+    updateResponseLength(currentResponseLength, false); // Don't save on initial load
 }
 
 function saveResponseLength(length) {
-    localStorage.setItem('ayuni-chat-response-length', length.toString());
-    
-    // Also save to session for immediate use
+    // Save to database
     fetch('/api/chat.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: `action=save_response_length&length=${length}&aei_id=<?= htmlspecialchars($aei['id']) ?>`
-    }).catch(error => {
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Response length saved to database:', length);
+        } else {
+            console.error('Error saving response length:', data.error);
+        }
+    })
+    .catch(error => {
         console.error('Error saving response length:', error);
     });
 }
 
-function updateResponseLength(length) {
+function updateResponseLength(length, shouldSave = true) {
     currentResponseLength = parseInt(length);
     
     const lengthLabels = {
@@ -2634,7 +2640,9 @@ function updateResponseLength(length) {
     document.getElementById('response-length-display').textContent = lengthLabels[length] || 'Medium';
     document.getElementById('response-length-description').textContent = lengthDescriptions[length] || 'Medium responses (4-5 sentences)';
     
-    saveResponseLength(length);
+    if (shouldSave) {
+        saveResponseLength(length);
+    }
     
     console.log('Response length updated to:', lengthLabels[length]);
 }
