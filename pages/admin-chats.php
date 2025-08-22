@@ -6,22 +6,22 @@ $success = null;
 $selectedUserId = $_GET['user_id'] ?? '';
 $selectedSessionId = $_GET['session_id'] ?? '';
 
-// Get non-admin users with their AEIs and chat sessions
+// Get non-admin users with their AEIs and chat sessions (anonymized)
 try {
     $stmt = $pdo->prepare("
         SELECT 
             u.id as user_id,
-            u.first_name,
-            u.email,
+            CONCAT('User ', RIGHT(u.id, 6)) as anonymous_name,
             COUNT(DISTINCT a.id) as aei_count,
             COUNT(DISTINCT cs.id) as session_count,
-            MAX(cs.last_message_at) as last_activity
+            MAX(cs.last_message_at) as last_activity,
+            DATE(u.created_at) as join_date
         FROM users u
         LEFT JOIN aeis a ON u.id = a.user_id AND a.is_active = TRUE
         LEFT JOIN chat_sessions cs ON a.id = cs.aei_id
         WHERE u.is_admin = FALSE
         GROUP BY u.id
-        ORDER BY last_activity DESC, u.first_name ASC
+        ORDER BY last_activity DESC, u.created_at DESC
     ");
     $stmt->execute();
     $users = $stmt->fetchAll();
@@ -60,13 +60,12 @@ $messages = [];
 $sessionInfo = null;
 if ($selectedSessionId) {
     try {
-        // Get session info
+        // Get session info (anonymized)
         $stmt = $pdo->prepare("
             SELECT 
                 cs.*,
                 a.name as aei_name,
-                u.first_name as user_name,
-                u.email as user_email
+                CONCAT('User ', RIGHT(u.id, 6)) as anonymous_name
             FROM chat_sessions cs
             JOIN aeis a ON cs.aei_id = a.id
             JOIN users u ON cs.user_id = u.id
@@ -97,7 +96,7 @@ if ($selectedSessionId) {
     <?php renderAdminNavigation('admin-chats'); ?>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <?php renderAdminPageHeader('Chat Monitor', 'Monitor user conversations and chat activity'); ?>
+        <?php renderAdminPageHeader('Chat Analytics', 'Analyze anonymized chat patterns and conversation flows'); ?>
         
         <?php renderAdminAlerts($error, $success); ?>
 
@@ -105,8 +104,8 @@ if ($selectedSessionId) {
             <!-- Users List -->
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Users</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Select a user to view their chats</p>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Anonymous Users</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Beta testers and their chat activity</p>
                 </div>
                 <div class="divide-y divide-gray-200 dark:divide-gray-700">
                     <?php foreach ($users as $user): ?>
@@ -116,10 +115,10 @@ if ($selectedSessionId) {
                                 <div class="flex items-center justify-between">
                                     <div>
                                         <h4 class="font-medium text-gray-900 dark:text-white">
-                                            <?= htmlspecialchars($user['first_name']) ?>
+                                            <?= htmlspecialchars($user['anonymous_name']) ?>
                                         </h4>
                                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                                            <?= htmlspecialchars($user['email']) ?>
+                                            Joined <?= date('M j, Y', strtotime($user['join_date'])) ?>
                                         </p>
                                     </div>
                                     <div class="text-right text-xs text-gray-500">
@@ -191,7 +190,7 @@ if ($selectedSessionId) {
                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                            Chat: <?= htmlspecialchars($sessionInfo['user_name']) ?> & <?= htmlspecialchars($sessionInfo['aei_name']) ?>
+                            Chat: <?= htmlspecialchars($sessionInfo['anonymous_name']) ?> & <?= htmlspecialchars($sessionInfo['aei_name']) ?>
                         </h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                             <?= count($messages) ?> messages • Started <?= date('M j, Y g:i A', strtotime($sessionInfo['created_at'])) ?>
@@ -225,7 +224,7 @@ if ($selectedSessionId) {
                                             <?php endif; ?>
                                         </div>
                                         <div class="flex items-center mt-1 text-xs text-gray-500 <?= $message['sender_type'] === 'user' ? 'justify-end' : 'justify-start' ?>">
-                                            <span><?= $message['sender_type'] === 'user' ? $sessionInfo['user_name'] : $sessionInfo['aei_name'] ?></span>
+                                            <span><?= $message['sender_type'] === 'user' ? $sessionInfo['anonymous_name'] : $sessionInfo['aei_name'] ?></span>
                                             <span class="mx-1">•</span>
                                             <span><?= date('M j, g:i A', strtotime($message['timestamp'])) ?></span>
                                         </div>
@@ -249,10 +248,10 @@ if ($selectedSessionId) {
         <?php if (!$selectedUserId): ?>
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-8 text-center">
                 <i class="fas fa-search text-6xl text-gray-300 dark:text-gray-600 mb-6"></i>
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Chat Monitor</h3>
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Chat Analytics</h3>
                 <p class="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                    Select a user from the list above to view their chat sessions and messages. 
-                    Admin conversations are not accessible for privacy.
+                    Analyze anonymized beta user conversations to understand chat patterns and improve AEI responses. 
+                    All data is anonymized to protect user privacy.
                 </p>
             </div>
         <?php endif; ?>

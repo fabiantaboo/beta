@@ -5,7 +5,7 @@ function renderAdminNavigation($currentPage = '') {
         'admin-api' => ['name' => 'API Settings', 'icon' => 'fas fa-key', 'url' => '/admin/api'],
         'admin-prompts' => ['name' => 'System Prompts', 'icon' => 'fas fa-code', 'url' => '/admin/prompts'],
         'admin-users' => ['name' => 'User Management', 'icon' => 'fas fa-users', 'url' => '/admin/users'],
-        'admin-chats' => ['name' => 'Chat Monitor', 'icon' => 'fas fa-comments', 'url' => '/admin/chats'],
+        'admin-chats' => ['name' => 'Chat Analytics', 'icon' => 'fas fa-chart-bar', 'url' => '/admin/chats'],
         'admin-beta' => ['name' => 'Beta Codes', 'icon' => 'fas fa-ticket-alt', 'url' => '/admin/beta'],
         'admin-emotions' => ['name' => 'Emotions', 'icon' => 'fas fa-brain', 'url' => '/admin/emotions'],
         'admin-social' => ['name' => 'Social System', 'icon' => 'fas fa-users-cog', 'url' => '/admin/social'],
