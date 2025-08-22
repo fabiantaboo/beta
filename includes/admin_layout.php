@@ -1,22 +1,59 @@
 <?php
 function renderAdminNavigation($currentPage = '') {
-    $navItems = [
-        'admin' => ['name' => 'Overview', 'icon' => 'fas fa-chart-line', 'url' => '/admin'],
-        'admin-api' => ['name' => 'API Settings', 'icon' => 'fas fa-key', 'url' => '/admin/api'],
-        'admin-api-logs' => ['name' => 'API Request Logs', 'icon' => 'fas fa-list-alt', 'url' => '/admin/api-logs'],
-        'admin-prompts' => ['name' => 'System Prompts', 'icon' => 'fas fa-code', 'url' => '/admin/prompts'],
-        'admin-users' => ['name' => 'User Management', 'icon' => 'fas fa-users', 'url' => '/admin/users'],
-        'admin-chats' => ['name' => 'Chat Analytics', 'icon' => 'fas fa-chart-bar', 'url' => '/admin/chats'],
-        'admin-beta' => ['name' => 'Beta Codes', 'icon' => 'fas fa-ticket-alt', 'url' => '/admin/beta'],
-        'admin-emotions' => ['name' => 'Emotions', 'icon' => 'fas fa-brain', 'url' => '/admin/emotions'],
-        'admin-social' => ['name' => 'Social System', 'icon' => 'fas fa-users-cog', 'url' => '/admin/social'],
-        'admin-proactive' => ['name' => 'Proactive Messaging', 'icon' => 'fas fa-bell', 'url' => '/admin/proactive'],
-        'admin-feedback' => ['name' => 'User Feedback', 'icon' => 'fas fa-comment-dots', 'url' => '/admin/feedback'],
-        'admin-decay' => ['name' => 'Emotional Decay', 'icon' => 'fas fa-heart-broken', 'url' => '/admin/decay'],
-        'admin-replicate' => ['name' => 'Replicate AI', 'icon' => 'fas fa-robot', 'url' => '/admin/replicate'],
-        'admin-avatar-regenerate' => ['name' => 'Regenerate Avatars', 'icon' => 'fas fa-redo-alt', 'url' => '/admin/avatar-regenerate'],
-        'memory-setup' => ['name' => 'Memory Setup', 'icon' => 'fas fa-brain', 'url' => '/admin/memory-setup'],
-        'admin-logs' => ['name' => 'Error Logs', 'icon' => 'fas fa-file-alt', 'url' => '/admin/logs'],
+    $navCategories = [
+        'dashboard' => [
+            'name' => 'Dashboard',
+            'icon' => 'fas fa-chart-line',
+            'items' => [
+                'admin' => ['name' => 'Overview', 'icon' => 'fas fa-chart-line', 'url' => '/admin']
+            ]
+        ],
+        'system' => [
+            'name' => 'System',
+            'icon' => 'fas fa-cogs',
+            'items' => [
+                'admin-api' => ['name' => 'API Settings', 'icon' => 'fas fa-key', 'url' => '/admin/api'],
+                'admin-prompts' => ['name' => 'System Prompts', 'icon' => 'fas fa-code', 'url' => '/admin/prompts'],
+                'admin-logs' => ['name' => 'Error Logs', 'icon' => 'fas fa-file-alt', 'url' => '/admin/logs']
+            ]
+        ],
+        'users' => [
+            'name' => 'Users & Analytics',
+            'icon' => 'fas fa-users',
+            'items' => [
+                'admin-users' => ['name' => 'User Management', 'icon' => 'fas fa-users', 'url' => '/admin/users'],
+                'admin-chats' => ['name' => 'Chat Analytics', 'icon' => 'fas fa-chart-bar', 'url' => '/admin/chats'],
+                'admin-beta' => ['name' => 'Beta Codes', 'icon' => 'fas fa-ticket-alt', 'url' => '/admin/beta'],
+                'admin-feedback' => ['name' => 'User Feedback', 'icon' => 'fas fa-comment-dots', 'url' => '/admin/feedback']
+            ]
+        ],
+        'ai' => [
+            'name' => 'AI Features',
+            'icon' => 'fas fa-brain',
+            'items' => [
+                'admin-emotions' => ['name' => 'Emotions', 'icon' => 'fas fa-heart', 'url' => '/admin/emotions'],
+                'admin-social' => ['name' => 'Social System', 'icon' => 'fas fa-users-cog', 'url' => '/admin/social'],
+                'admin-proactive' => ['name' => 'Proactive Messaging', 'icon' => 'fas fa-bell', 'url' => '/admin/proactive'],
+                'admin-decay' => ['name' => 'Emotional Decay', 'icon' => 'fas fa-heart-broken', 'url' => '/admin/decay'],
+                'memory-setup' => ['name' => 'Memory Setup', 'icon' => 'fas fa-database', 'url' => '/admin/memory-setup']
+            ]
+        ],
+        'external' => [
+            'name' => 'External Services',
+            'icon' => 'fas fa-cloud',
+            'items' => [
+                'admin-replicate' => ['name' => 'Replicate AI', 'icon' => 'fas fa-robot', 'url' => '/admin/replicate'],
+                'admin-avatar-regenerate' => ['name' => 'Avatar Regenerate', 'icon' => 'fas fa-redo-alt', 'url' => '/admin/avatar-regenerate'],
+                'admin-avatar-batch' => ['name' => 'Avatar Batch', 'icon' => 'fas fa-images', 'url' => '/admin/avatar-batch']
+            ]
+        ],
+        'monitoring' => [
+            'name' => 'Logs & Monitoring',
+            'icon' => 'fas fa-chart-area',
+            'items' => [
+                'admin-api-logs' => ['name' => 'API Request Logs', 'icon' => 'fas fa-list-alt', 'url' => '/admin/api-logs']
+            ]
+        ]
     ];
     
     ?>
@@ -53,12 +90,41 @@ function renderAdminNavigation($currentPage = '') {
     <div class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex space-x-1 overflow-x-auto py-2">
-                <?php foreach ($navItems as $pageKey => $item): ?>
-                    <a href="<?= htmlspecialchars($item['url']) ?>" 
-                       class="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap <?= $currentPage === $pageKey ? 'bg-ayuni-blue text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700' ?>">
-                        <i class="<?= htmlspecialchars($item['icon']) ?>"></i>
-                        <span><?= htmlspecialchars($item['name']) ?></span>
-                    </a>
+                <?php 
+                // Determine which category the current page belongs to
+                $currentCategory = '';
+                foreach ($navCategories as $categoryKey => $category) {
+                    foreach ($category['items'] as $pageKey => $item) {
+                        if ($currentPage === $pageKey) {
+                            $currentCategory = $categoryKey;
+                            break 2;
+                        }
+                    }
+                }
+                
+                foreach ($navCategories as $categoryKey => $category): 
+                    $isActiveCategory = $currentCategory === $categoryKey;
+                ?>
+                    <div class="relative group">
+                        <button class="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap <?= $isActiveCategory ? 'bg-ayuni-blue text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700' ?>">
+                            <i class="<?= htmlspecialchars($category['icon']) ?>"></i>
+                            <span><?= htmlspecialchars($category['name']) ?></span>
+                            <i class="fas fa-chevron-down text-xs ml-1 transition-transform group-hover:rotate-180"></i>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div class="absolute left-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <div class="py-2">
+                                <?php foreach ($category['items'] as $pageKey => $item): ?>
+                                    <a href="<?= htmlspecialchars($item['url']) ?>" 
+                                       class="flex items-center space-x-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-ayuni-blue transition-colors <?= $currentPage === $pageKey ? 'bg-ayuni-blue/10 text-ayuni-blue border-r-2 border-ayuni-blue' : '' ?>">
+                                        <i class="<?= htmlspecialchars($item['icon']) ?> w-4"></i>
+                                        <span><?= htmlspecialchars($item['name']) ?></span>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
                 <?php endforeach; ?>
             </div>
         </div>
