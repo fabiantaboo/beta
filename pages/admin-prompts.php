@@ -270,6 +270,26 @@ try {
                                     </div>
                                 </div>
                                 
+                                <!-- Response Preferences -->
+                                <div>
+                                    <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Response Preferences</h5>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{response_length}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">Response length preference</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                        <h6 class="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">💬 Response Length Options</h6>
+                                        <div class="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+                                            <p><strong>Short:</strong> 2-3 sentences</p>
+                                            <p><strong>Medium:</strong> 4-5 sentences</p>
+                                            <p><strong>Long:</strong> Detailed responses</p>
+                                            <p class="mt-2 italic">User can adjust via chat profile modal</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <!-- Conditional Logic -->
                                 <div>
                                     <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Conditional Logic</h5>

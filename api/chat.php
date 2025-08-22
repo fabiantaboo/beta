@@ -42,7 +42,8 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $input = [
         'message' => $_POST['message'] ?? '',
         'aei_id' => $_POST['aei_id'] ?? '',
-        'csrf_token' => $_POST['csrf_token'] ?? ''
+        'csrf_token' => $_POST['csrf_token'] ?? '',
+        'action' => $_POST['action'] ?? ''
     ];
     
     // Handle image upload
@@ -58,12 +59,41 @@ if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     $uploadedImage = $uploadResult;
     
 } else {
-    // JSON request (text only)
-    $input = json_decode(file_get_contents('php://input'), true);
+    // JSON request (text only) or form data
+    if (isset($_POST['action'])) {
+        // Form data for actions
+        $input = $_POST;
+    } else {
+        // JSON request
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        if (!$input) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid input'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+}
+
+// Handle special actions first
+if (!empty($input['action'])) {
+    $action = $input['action'];
     
-    if (!$input) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Invalid input'], JSON_UNESCAPED_UNICODE);
+    if ($action === 'save_response_length') {
+        // Validate parameters
+        $length = (int)($input['length'] ?? 2);
+        $aeiId = sanitizeInput($input['aei_id'] ?? '');
+        
+        if (empty($aeiId) || !in_array($length, [1, 2, 3])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Invalid parameters'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        
+        // Store in session
+        $_SESSION['response_length_' . $aeiId] = $length;
+        
+        echo json_encode(['success' => true, 'message' => 'Response length saved'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 }

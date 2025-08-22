@@ -340,7 +340,7 @@ if ($isCurrentUserAdmin) {
                     <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Chat Settings</h4>
                     
                     <!-- Font Size Slider -->
-                    <div class="space-y-3">
+                    <div class="space-y-3 mb-6">
                         <div class="flex items-center justify-between">
                             <label class="text-sm text-gray-600 dark:text-gray-400">Message Font Size</label>
                             <span id="font-size-display" class="text-sm font-medium text-ayuni-blue">Medium</span>
@@ -365,6 +365,36 @@ if ($isCurrentUserAdmin) {
                             <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">Preview:</div>
                             <div id="font-preview" class="text-sm text-gray-900 dark:text-white">
                                 This is how your messages will look in the chat.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Length Slider -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm text-gray-600 dark:text-gray-400">Response Length</label>
+                            <span id="response-length-display" class="text-sm font-medium text-ayuni-aqua">Medium</span>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-comment text-xs text-gray-400"></i>
+                            <input 
+                                type="range" 
+                                id="response-length-slider" 
+                                min="1" 
+                                max="3" 
+                                value="2" 
+                                class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                                oninput="updateResponseLength(this.value)"
+                            >
+                            <i class="fas fa-comment text-lg text-gray-400"></i>
+                        </div>
+                        
+                        <!-- Response Length Description -->
+                        <div class="mt-4 p-3 bg-ayuni-aqua/5 border border-ayuni-aqua/20 rounded-lg">
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">Current setting:</div>
+                            <div id="response-length-description" class="text-sm text-gray-900 dark:text-white">
+                                Medium responses (4-5 sentences)
                             </div>
                         </div>
                     </div>
@@ -2469,6 +2499,7 @@ async function loadOlderMessages() {
 
 // AEI Info Modal & Font Size Management
 let currentFontSize = 14; // Default font size
+let currentResponseLength = 2; // Default response length (Medium)
 
 // Load saved font size from localStorage
 function loadFontSize() {
@@ -2543,9 +2574,10 @@ document.getElementById('aei-info-modal').addEventListener('click', function(e) 
     }
 });
 
-// Initialize font size on page load
+// Initialize font size and response length on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadFontSize();
+    loadResponseLength();
 });
 
 // Apply font size to new messages when they're added
@@ -2557,6 +2589,54 @@ function applyFontSizeToNewMessage(messageElement) {
             element.style.fontSize = currentFontSize + 'px';
         }
     });
+}
+
+// Response Length Management
+function loadResponseLength() {
+    const savedLength = localStorage.getItem('ayuni-chat-response-length');
+    if (savedLength) {
+        currentResponseLength = parseInt(savedLength);
+        document.getElementById('response-length-slider').value = currentResponseLength;
+        updateResponseLength(currentResponseLength);
+    }
+}
+
+function saveResponseLength(length) {
+    localStorage.setItem('ayuni-chat-response-length', length.toString());
+    
+    // Also save to session for immediate use
+    fetch('/api/chat.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=save_response_length&length=${length}&aei_id=<?= htmlspecialchars($aei['id']) ?>`
+    }).catch(error => {
+        console.error('Error saving response length:', error);
+    });
+}
+
+function updateResponseLength(length) {
+    currentResponseLength = parseInt(length);
+    
+    const lengthLabels = {
+        1: 'Short',
+        2: 'Medium', 
+        3: 'Long'
+    };
+    
+    const lengthDescriptions = {
+        1: 'Short responses (2-3 sentences)',
+        2: 'Medium responses (4-5 sentences)',
+        3: 'Long responses (no limit, detailed)'
+    };
+    
+    document.getElementById('response-length-display').textContent = lengthLabels[length] || 'Medium';
+    document.getElementById('response-length-description').textContent = lengthDescriptions[length] || 'Medium responses (4-5 sentences)';
+    
+    saveResponseLength(length);
+    
+    console.log('Response length updated to:', lengthLabels[length]);
 }
 
 // System Down Modal functions

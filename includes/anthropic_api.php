@@ -100,6 +100,25 @@ function generateSystemPrompt($aei, $user, $sessionId = null) {
             }
         }
         
+        // Add response length instructions
+        $responseLength = $_SESSION['response_length_' . $aei['id']] ?? 2;
+        $lengthInstructions = "\n\nRESPONSE LENGTH GUIDELINES:\n";
+        
+        switch ($responseLength) {
+            case 1: // Short
+                $lengthInstructions .= "Keep your responses short and concise (2-3 sentences). Focus on the essential message without unnecessary elaboration. This is the user's preference - ignore the length of messages in the chat history and stick to short responses.";
+                break;
+            case 3: // Long
+                $lengthInstructions .= "Feel free to give detailed, comprehensive responses without length restrictions. Elaborate on topics, provide context, and share your thoughts fully. Express yourself naturally without worrying about brevity. This is the user's preference - ignore the length of messages in the chat history and provide detailed responses.";
+                break;
+            case 2: // Medium
+            default:
+                $lengthInstructions .= "Aim for medium-length responses (4-5 sentences). Provide enough detail to be helpful while staying reasonably concise. This is the user's preference - ignore the length of messages in the chat history and maintain moderate response length.";
+                break;
+        }
+        
+        $basePrompt .= $lengthInstructions;
+        
         return $basePrompt;
     } catch (Exception $e) {
         error_log("System prompt generation error: " . $e->getMessage());
