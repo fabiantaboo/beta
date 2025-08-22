@@ -740,25 +740,39 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             error_log("API Retry $retryCount/$maxRetries for AEI: " . ($aei['name'] ?? 'unknown'));
         };
         
-        // Prepare logging data for training
-        $userMessage = '';
-        if (!empty($chatHistory)) {
-            $lastMessage = end($chatHistory);
-            if ($lastMessage['role'] === 'user') {
-                $userMessage = is_array($lastMessage['content']) ? 
-                    ($lastMessage['content'][0]['text'] ?? '') : 
-                    $lastMessage['content'];
-            }
+        // Prepare logging data for training (skip admin users)
+        $logData = null;
+        
+        // Check if user is admin - don't log admin conversations
+        try {
+            $stmt = $pdo->prepare("SELECT is_admin FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $userInfo = $stmt->fetch();
+            $isAdmin = $userInfo && $userInfo['is_admin'];
+        } catch (Exception $e) {
+            $isAdmin = false; // Default to non-admin if query fails
         }
         
-        $logData = [
-            'user_id' => $userId,
-            'aei_id' => $aei['id'],
-            'session_id' => $sessionId,
-            'message_id' => $messageId ?? generateId(),
-            'user_message' => $userMessage,
-            'start_time' => microtime(true)
-        ];
+        if (!$isAdmin) {
+            $userMessage = '';
+            if (!empty($chatHistory)) {
+                $lastMessage = end($chatHistory);
+                if ($lastMessage['role'] === 'user') {
+                    $userMessage = is_array($lastMessage['content']) ? 
+                        ($lastMessage['content'][0]['text'] ?? '') : 
+                        $lastMessage['content'];
+                }
+            }
+            
+            $logData = [
+                'user_id' => $userId,
+                'aei_id' => $aei['id'],
+                'session_id' => $sessionId,
+                'message_id' => $messageId ?? generateId(),
+                'user_message' => $userMessage,
+                'start_time' => microtime(true)
+            ];
+        }
         
         $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData, $userTimezone, $retryCallback, $logData);
         
