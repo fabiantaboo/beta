@@ -461,8 +461,28 @@ function generateAIResponseWithSSECallback($userMessage, $aei, $user, $sessionId
             $imageData = imageToBase64($imagePath);
         }
 
-        // Call Anthropic API with retry callback for live updates
-        $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData, $userTimezone, $retryCallback);
+        // Prepare logging data for training
+        $lastUserMessage = '';
+        if (!empty($chatHistory)) {
+            $lastMessage = end($chatHistory);
+            if ($lastMessage['role'] === 'user') {
+                $lastUserMessage = is_array($lastMessage['content']) ? 
+                    ($lastMessage['content'][0]['text'] ?? '') : 
+                    $lastMessage['content'];
+            }
+        }
+        
+        $logData = [
+            'user_id' => $user['id'],
+            'aei_id' => $aei['id'],
+            'session_id' => $sessionId,
+            'message_id' => $messageId,
+            'user_message' => $lastUserMessage,
+            'start_time' => microtime(true)
+        ];
+
+        // Call Anthropic API with retry callback for live updates and logging
+        $response = callAnthropicAPI($chatHistory, $systemPrompt, 8000, $imageData, $userTimezone, $retryCallback, $logData);
         
         if ($includeDebugData) {
             $debugData['api_response'] = $response;
