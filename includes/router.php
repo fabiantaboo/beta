@@ -22,6 +22,7 @@ class Router {
             'admin/api' => ['page' => 'admin-api'],
             'admin/prompts' => ['page' => 'admin-prompts'],
             'admin/users' => ['page' => 'admin-users'],
+            'admin/chats' => ['page' => 'admin-chats'],
             'admin/beta' => ['page' => 'admin-beta'],
             'admin/emotions' => ['page' => 'admin-emotions'],
             'admin/social' => ['page' => 'admin-social'],
