@@ -862,6 +862,13 @@ if ($isCurrentUserAdmin) {
 </style>
 
 <script>
+// Global variables for chat functionality
+const sessionId = '<?= htmlspecialchars($sessionId) ?>';
+const aeiName = '<?= htmlspecialchars($aei['name']) ?>';
+const userTimezone = '<?= htmlspecialchars($userTimezone) ?>';
+const use12HourFormat = <?= $timeFormat['js_format'] ? 'true' : 'false' ?>;
+const aeiId = '<?= htmlspecialchars($aeiId) ?>';
+
 document.addEventListener('DOMContentLoaded', function() {
     const container = document.getElementById('messages-container');
     const form = document.getElementById('chat-form');
@@ -870,11 +877,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const sendText = document.getElementById('send-text');
     const chatAlerts = document.getElementById('chat-alerts');
     const csrfToken = document.getElementById('csrf-token').value;
-    const aeiId = '<?= htmlspecialchars($aeiId) ?>';
-    const sessionId = '<?= htmlspecialchars($sessionId) ?>';
-    const aeiName = '<?= htmlspecialchars($aei['name']) ?>';
-    const userTimezone = '<?= htmlspecialchars($userTimezone) ?>';
-    const use12HourFormat = <?= $timeFormat['js_format'] ? 'true' : 'false' ?>;
     const imageInput = document.getElementById('image-input');
     const imagePreview = document.getElementById('image-preview');
     const previewImage = document.getElementById('preview-image');
