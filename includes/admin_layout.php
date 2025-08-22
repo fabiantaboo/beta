@@ -89,7 +89,7 @@ function renderAdminNavigation($currentPage = '') {
     <!-- Admin Sub-Navigation -->
     <div class="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex space-x-1 overflow-x-auto py-2">
+            <div class="flex space-x-1 py-2">
                 <?php 
                 // Determine which category the current page belongs to
                 $currentCategory = '';
