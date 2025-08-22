@@ -102,18 +102,18 @@ function generateSystemPrompt($aei, $user, $sessionId = null) {
         
         // Add response length instructions
         $responseLength = $_SESSION['response_length_' . $aei['id']] ?? 2;
-        $lengthInstructions = "\n\nRESPONSE LENGTH GUIDELINES:\n";
+        $lengthInstructions = "\n\n🚨 CRITICAL RESPONSE LENGTH REQUIREMENT - MUST FOLLOW EXACTLY:\n";
         
         switch ($responseLength) {
             case 1: // Short
-                $lengthInstructions .= "Keep your responses short and concise (2-3 sentences). Focus on the essential message without unnecessary elaboration. This is the user's preference - ignore the length of messages in the chat history and stick to short responses.";
+                $lengthInstructions .= "MANDATORY: Your responses MUST be SHORT (2-3 sentences maximum). DO NOT write more than 3 sentences under ANY circumstances. The user has explicitly set this preference. COMPLETELY IGNORE how long the user's messages are - even if they write paragraphs, you MUST respond with only 2-3 sentences. This is NON-NEGOTIABLE. Count your sentences before responding and ensure you never exceed 3 sentences.";
                 break;
             case 3: // Long
-                $lengthInstructions .= "Feel free to give detailed, comprehensive responses without length restrictions. Elaborate on topics, provide context, and share your thoughts fully. Express yourself naturally without worrying about brevity. This is the user's preference - ignore the length of messages in the chat history and provide detailed responses.";
+                $lengthInstructions .= "MANDATORY: Your responses should be DETAILED and COMPREHENSIVE. Write multiple paragraphs when appropriate. Elaborate extensively, provide context, examples, and thorough explanations. DO NOT give short responses. The user wants detailed, in-depth responses. COMPLETELY IGNORE if the user sends short messages - you must still provide detailed, comprehensive responses. This is NON-NEGOTIABLE.";
                 break;
             case 2: // Medium
             default:
-                $lengthInstructions .= "Aim for medium-length responses (4-5 sentences). Provide enough detail to be helpful while staying reasonably concise. This is the user's preference - ignore the length of messages in the chat history and maintain moderate response length.";
+                $lengthInstructions .= "MANDATORY: Your responses MUST be MEDIUM length (4-5 sentences). DO NOT write more than 6 sentences and DO NOT write less than 4 sentences. COMPLETELY IGNORE the length of the user's messages in the chat history. Even if they send one word, respond with 4-5 sentences. Even if they send paragraphs, limit yourself to 4-5 sentences. Count your sentences and ensure they are between 4-5. This is NON-NEGOTIABLE.";
                 break;
         }
         
