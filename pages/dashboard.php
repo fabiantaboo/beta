@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT id, name, personality, personality_traits, communication_style, appearance_description, avatar_url, created_at FROM aeis WHERE user_id = ? AND is_active = TRUE ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("SELECT id, name, personality, appearance_description, avatar_url, created_at FROM aeis WHERE user_id = ? AND is_active = TRUE ORDER BY created_at DESC");
     $stmt->execute([$userId]);
     $aeis = $stmt->fetchAll();
 } catch (PDOException $e) {
@@ -205,11 +205,9 @@ try {
                         <!-- AEI Details -->
                         <div class="space-y-3 mb-4">
                             <?php 
-                            // Format personality traits nicely
+                            // Format personality nicely
                             $formattedPersonality = '';
-                            if ($aei['personality_traits']) {
-                                $formattedPersonality = formatAEIData($aei['personality_traits'], 'personality');
-                            } elseif ($aei['personality']) {
+                            if (!empty($aei['personality'])) {
                                 $formattedPersonality = formatAEIData($aei['personality'], 'personality');
                             }
                             
@@ -223,20 +221,11 @@ try {
                             <?php endif; ?>
                             
                             <?php 
-                            // Format communication style
-                            $communicationStyle = formatAEIData($aei['communication_style'] ?? '', 'other');
-                            if ($communicationStyle): ?>
-                                <div>
-                                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Communication Style</span>
-                                    <p class="text-gray-700 dark:text-gray-300 text-sm">
-                                        <?= htmlspecialchars(ucfirst($communicationStyle)) ?>
-                                    </p>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <?php 
                             // Format appearance
-                            $appearance = formatAEIData($aei['appearance_description'] ?? '', 'other');
+                            $appearance = '';
+                            if (!empty($aei['appearance_description'])) {
+                                $appearance = formatAEIData($aei['appearance_description'], 'other');
+                            }
                             if ($appearance): ?>
                                 <div>
                                     <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Appearance</span>
