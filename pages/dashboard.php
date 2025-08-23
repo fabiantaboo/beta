@@ -167,9 +167,26 @@ try {
                             </div>
                         </div>
                         
-                        <?php if ($aei['personality']): ?>
-                            <p class="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3"><?= htmlspecialchars(substr($aei['personality'], 0, 120)) ?>...</p>
-                        <?php endif; ?>
+                        <!-- AEI Details -->
+                        <div class="space-y-2 mb-4">
+                            <?php if ($aei['personality']): ?>
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Personality</span>
+                                    <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed line-clamp-2">
+                                        <?= htmlspecialchars(substr($aei['personality'], 0, 100)) ?><?= strlen($aei['personality']) > 100 ? '...' : '' ?>
+                                    </p>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <?php if ($aei['appearance_description']): ?>
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Appearance</span>
+                                    <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed line-clamp-2">
+                                        <?= htmlspecialchars(substr($aei['appearance_description'], 0, 100)) ?><?= strlen($aei['appearance_description']) > 100 ? '...' : '' ?>
+                                    </p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                         
                         <a href="/chat/<?= urlencode($aei['id']) ?>" class="block w-full bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-3 px-4 rounded-lg text-center hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
                             <i class="fas fa-comments mr-2"></i>
