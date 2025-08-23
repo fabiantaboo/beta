@@ -25,6 +25,7 @@ class MemoryManagerInference {
         $this->defaultModel = $options['default_model'] ?? self::MODEL_FAST;
         $this->qualityModel = $options['quality_model'] ?? self::MODEL_QUALITY;
         $this->collectionPrefix = $options['collection_prefix'] ?? 'aei_memories_';
+        $this->factsPrefix = $options['facts_prefix'] ?? 'aei_facts_';
         $this->debugCallback = null;
         
         // Test connection
@@ -44,8 +45,9 @@ class MemoryManagerInference {
     /**
      * Initialize memory collection for an AEI with proper indexes
      */
-    public function initializeAEICollection($aeiId) {
-        $collectionName = $this->collectionPrefix . $aeiId;
+    public function initializeAEICollection($aeiId, $useFacts = true) {
+        // Use new facts collection by default, old memories as backup only
+        $collectionName = $useFacts ? $this->factsPrefix . $aeiId : $this->collectionPrefix . $aeiId;
         
         // Use debug callback if available
         $debugFunc = function($message, $type = 'info') {
@@ -214,7 +216,7 @@ class MemoryManagerInference {
             $memoryId = bin2hex(random_bytes(16));
             $debugFunc("🆔 Generated memory ID: $memoryId");
             
-            $collectionName = $this->initializeAEICollection($aeiId);
+            $collectionName = $this->initializeAEICollection($aeiId, true); // Use facts collection
             $debugFunc("📁 Collection name: $collectionName");
             
             // Select model based on importance
@@ -417,7 +419,7 @@ class MemoryManagerInference {
      * Time-based memory retrieval with smart scoring
      */
     private function getTimeBasedMemories($aeiId, $query, $maxDays, $minSimilarity, $limit) {
-        $collectionName = $this->collectionPrefix . $aeiId;
+        $collectionName = $this->factsPrefix . $aeiId; // Use facts collection only
         $currentTime = time();
         $cutoffTime = $currentTime - ($maxDays * 24 * 60 * 60);
         
@@ -564,24 +566,43 @@ class MemoryManagerInference {
                 }
             }
             
-            // Create enhanced extraction prompt
-            $extractionPrompt = "Analyze this conversation and extract important long-term memories. Focus on:
+            // Create comprehensive extraction prompt for batch analysis
+            $extractionPrompt = "Analyze this conversation batch and extract ALL important facts, preferences, and details about the user.
 
-FACTS: Concrete information about the user (name, job, family, location, preferences)
-EVENTS: Important things that happened or were mentioned
-EMOTIONS: Emotional states, feelings, reactions
-RELATIONSHIPS: Information about people in user's life
-GOALS: Aspirations, plans, dreams the user mentioned
-CONCERNS: Worries, fears, problems the user discussed
+EXTRACT EVERYTHING RELEVANT:
+- User preferences, likes, dislikes (food, activities, hobbies, music, movies, etc.)
+- Personal facts (job, family, location, age, education, background, etc.)
+- Important events, experiences, stories mentioned
+- Emotional states, feelings, reactions
+- People in user's life (names, relationships, details)
+- Goals, aspirations, plans, dreams
+- Concerns, worries, problems, fears
+- Habits, routines, lifestyle details
+- Opinions, beliefs, values
+- Past experiences, memories shared
+- Future plans or intentions
 
-Only extract information that would be valuable to remember weeks or months later for maintaining conversation continuity.
+BE COMPREHENSIVE: Extract EVERY meaningful detail, no matter how small. Look for nuances and subtle information.
 
-Format as JSON:
+FORMAT: Write detailed, specific factual statements. Include context and specifics.
+
+GOOD EXAMPLES:
+- \"User prefers salami pizza specifically from Mario's Pizzeria because they make handmade dough\"
+- \"User works as senior software engineer at TechCorp in San Francisco, been there 3 years\"
+- \"User felt anxious about job interview next week, worried about technical questions\"
+- \"User's mother calls every Sunday evening, they have close relationship\"
+- \"User enjoys hiking on weekends, favorite trail is Mount Tamalpais\"
+
+BAD EXAMPLES:
+- \"User likes food\" (too general)
+- \"The conversation was about work\" (not factual about user)
+
+Return as JSON:
 {
     \"memories\": [
         {
-            \"content\": \"specific memory text\",
-            \"type\": \"fact|event|emotion|relationship|goal|concern\",
+            \"content\": \"detailed factual statement with context\",
+            \"type\": \"fact|event|emotion|preference|relationship|goal|concern|habit|opinion\",
             \"importance\": 0.1-1.0
         }
     ]
@@ -592,7 +613,7 @@ $conversationText";
             
             // Use existing Anthropic API for extraction
             $messages = [['role' => 'user', 'content' => $extractionPrompt]];
-            $systemPrompt = "You are a memory extraction specialist. Extract only the most important, long-term relevant information. Be selective - quality over quantity. Focus on facts that would help maintain personality and relationship continuity in future conversations.";
+            $systemPrompt = "You are a comprehensive memory extraction specialist. Your goal is to extract EVERY meaningful piece of information about the user from this conversation batch. Be thorough and detailed - capture ALL facts, preferences, emotions, relationships, and context. Think of building a complete user profile. Don't miss any details, no matter how small they seem. Quality AND quantity both matter.";
             
             $response = callAnthropicAPI($messages, $systemPrompt, 4000);
             $memoryData = json_decode($response, true);
@@ -643,9 +664,9 @@ $conversationText";
      * Get smart memory context with time-decay and multi-window retrieval
      */
     public function getSmartMemoryContext($aeiId, $currentMessage, $limit = 60) {
-        // AUTO-CREATE COLLECTION IF NOT EXISTS
+        // AUTO-CREATE FACTS COLLECTION IF NOT EXISTS (ignore old Q&A memories)
         try {
-            $collectionName = $this->initializeAEICollection($aeiId);
+            $collectionName = $this->initializeAEICollection($aeiId, true);
             if ($this->debugCallback) {
                 call_user_func($this->debugCallback, "🏗️ Collection initialized: $collectionName", 'info');
             }
@@ -750,7 +771,7 @@ $conversationText";
     public function getMemoryContext($aeiId, $currentMessage, $limit = 5) {
         // AUTO-CREATE COLLECTION IF NOT EXISTS
         try {
-            $collectionName = $this->initializeAEICollection($aeiId);
+            $collectionName = $this->initializeAEICollection($aeiId, true); // Use facts collection
             if ($this->debugCallback) {
                 call_user_func($this->debugCallback, "🏗️ Collection initialized: $collectionName", 'info');
             }
@@ -786,7 +807,7 @@ $conversationText";
      */
     public function storeBatchMemories($aeiId, $memoryBatch) {
         try {
-            $collectionName = $this->initializeAEICollection($aeiId);
+            $collectionName = $this->initializeAEICollection($aeiId, true); // Use facts collection
             
             // Prepare batch for Qdrant
             $qdrantBatch = [];

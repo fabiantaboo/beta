@@ -35,7 +35,8 @@ function renderAdminNavigation($currentPage = '') {
                 'admin-social' => ['name' => 'Social System', 'icon' => 'fas fa-users-cog', 'url' => '/admin/social'],
                 'admin-proactive' => ['name' => 'Proactive Messaging', 'icon' => 'fas fa-bell', 'url' => '/admin/proactive'],
                 'admin-decay' => ['name' => 'Emotional Decay', 'icon' => 'fas fa-heart-broken', 'url' => '/admin/decay'],
-                'memory-setup' => ['name' => 'Memory Setup', 'icon' => 'fas fa-database', 'url' => '/admin/memory-setup']
+                'memory-setup' => ['name' => 'Memory Setup', 'icon' => 'fas fa-database', 'url' => '/admin/memory-setup'],
+                'memory-migration' => ['name' => 'Memory Migration', 'icon' => 'fas fa-exchange-alt', 'url' => '/admin/memory-migration']
             ]
         ],
         'external' => [

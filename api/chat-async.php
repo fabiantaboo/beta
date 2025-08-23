@@ -494,42 +494,58 @@ function generateAIResponseWithSSECallback($userMessage, $aei, $user, $sessionId
             $debugData['response_length'] = strlen($response);
         }
         
-        // Store conversation in smart memory system if enabled
+        // Store extracted memories in batches for better context
         if (isset($memoryManager) && defined('MEMORY_EXTRACTION_ENABLED') && MEMORY_EXTRACTION_ENABLED) {
             try {
-                error_log("MEMORY_DEBUG: Storing Q&A pair as memory...");
+                // Get message count for this session to determine if we should extract
+                $stmt = $pdo->prepare("SELECT COUNT(*) as msg_count FROM chat_messages WHERE session_id = ?");
+                $stmt->execute([$sessionId]);
+                $messageCount = $stmt->fetch()['msg_count'];
                 
-                // Create Q&A pair format
-                $qaMemoryText = "User: " . $userMessage . "\n" . $aei['name'] . ": " . $response;
-                
-                // Store as single conversation memory
-                $qaMemoryId = $memoryManager->storeChatMessage(
-                    $aei['id'],
-                    $qaMemoryText,
-                    'conversation',
-                    $sessionId,
-                    $user['id']
-                );
+                // Extract memories every 5 messages for better context
+                if ($messageCount % 5 == 0) {
+                    error_log("MEMORY_DEBUG: Batch extracting memories from last 10 messages (message count: $messageCount)...");
+                    
+                    // Get last 10 messages for rich context analysis
+                    $recentHistory = getChatHistory($sessionId, 10, $user['timezone'] ?? 'UTC');
+                    
+                    if (!empty($recentHistory)) {
+                        // Extract structured memories from recent conversation batch
+                        $extractedMemories = $memoryManager->extractMemoriesFromConversation(
+                            $aei['id'],
+                            $recentHistory,
+                            $user['id'],
+                            $sessionId
+                        );
+                        
+                        error_log("MEMORY_DEBUG: Batch extraction completed - extracted " . count($extractedMemories) . " memories");
+                    } else {
+                        $extractedMemories = [];
+                        error_log("MEMORY_DEBUG: No recent history available for batch extraction");
+                    }
+                } else {
+                    $extractedMemories = [];
+                    error_log("MEMORY_DEBUG: Skipping extraction (message $messageCount, waiting for batch at multiple of 5)");
+                }
                 
                 if ($includeDebugData) {
                     $debugData['memory_storage'] = [
                         'enabled' => true,
-                        'qa_pair_stored' => $qaMemoryId ? true : false,
-                        'qa_memory_id' => $qaMemoryId,
-                        'qa_length' => strlen($qaMemoryText),
-                        'storage_method' => 'qa_pairs',
-                        'qa_preview' => substr($qaMemoryText, 0, 100) . '...'
+                        'extracted_count' => count($extractedMemories),
+                        'storage_method' => 'extracted_facts',
+                        'memories' => $extractedMemories
                     ];
                 }
                 
-                error_log("MEMORY_DEBUG: Q&A memory stored with ID: " . ($qaMemoryId ?: 'failed'));
+                error_log("MEMORY_DEBUG: Extracted " . count($extractedMemories) . " memories from conversation");
+                
             } catch (Exception $memoryStorageError) {
-                error_log("MEMORY_DEBUG: Memory storage error: " . $memoryStorageError->getMessage());
+                error_log("MEMORY_DEBUG: Memory extraction error: " . $memoryStorageError->getMessage());
                 if ($includeDebugData) {
                     $debugData['memory_storage'] = [
                         'enabled' => true,
                         'error' => $memoryStorageError->getMessage(),
-                        'storage_method' => 'qa_pairs'
+                        'storage_method' => 'extracted_facts'
                     ];
                 }
             }
