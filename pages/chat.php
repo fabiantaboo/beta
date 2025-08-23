@@ -574,7 +574,27 @@ if ($isCurrentUserAdmin) {
                         </button>
                     </div>
                     
-                    <div class="flex-1">
+                    <!-- Emoji Picker Button -->
+                    <div class="flex-shrink-0 relative">
+                        <button 
+                            type="button" 
+                            id="emoji-button"
+                            onclick="toggleEmojiPicker()"
+                            class="bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                            title="Add emoji"
+                        >
+                            <i class="fas fa-smile"></i>
+                        </button>
+                        
+                        <!-- Emoji Picker Panel -->
+                        <div id="emoji-picker" class="hidden absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-4 w-80 max-h-64 overflow-y-auto z-50">
+                            <div class="grid grid-cols-8 gap-2" id="emoji-grid">
+                                <!-- Emojis will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 relative">
                         <textarea 
                             id="message-input"
                             name="message" 
@@ -2733,5 +2753,113 @@ function handleVisibilityChange() {
 
 // Use only visibilitychange event as it's the most reliable
 document.addEventListener('visibilitychange', handleVisibilityChange);
+
+// ============ EMOJI PICKER ============
+const emojis = [
+    '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣',
+    '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰',
+    '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜',
+    '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏',
+    '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣',
+    '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠',
+    '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨',
+    '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥',
+    '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧',
+    '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐',
+    '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑',
+    '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻',
+    '💀', '☠️', '👽', '👾', '🤖', '🎃', '😺', '😸',
+    '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '❤️',
+    '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎',
+    '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘',
+    '💝', '💟', '👍', '👎', '👌', '🤌', '🤏', '✌️',
+    '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕',
+    '👇', '☝️', '👋', '🤚', '🖐️', '✋', '🖖', '👏',
+    '🙌', '🤝', '👐', '🤲', '🙏', '✍️', '💅', '🤳',
+    '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃',
+    '🧠', '🦷', '🦴', '👀', '👁️', '👅', '👄', '💋',
+    '🩸', '👶', '🧒', '👦', '👧', '🧑', '👨', '👩'
+];
+
+let emojiPickerOpen = false;
+
+function initEmojiPicker() {
+    const emojiGrid = document.getElementById('emoji-grid');
+    if (!emojiGrid) return;
+    
+    emojiGrid.innerHTML = '';
+    
+    emojis.forEach(emoji => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = emoji;
+        button.className = 'text-2xl hover:bg-gray-100 dark:hover:bg-gray-600 rounded p-2 transition-colors';
+        button.onclick = () => insertEmoji(emoji);
+        emojiGrid.appendChild(button);
+    });
+}
+
+function toggleEmojiPicker() {
+    const emojiPicker = document.getElementById('emoji-picker');
+    if (!emojiPicker) return;
+    
+    if (emojiPickerOpen) {
+        emojiPicker.classList.add('hidden');
+        emojiPickerOpen = false;
+    } else {
+        emojiPicker.classList.remove('hidden');
+        emojiPickerOpen = true;
+    }
+}
+
+function insertEmoji(emoji) {
+    const messageInput = document.getElementById('message-input');
+    if (!messageInput) return;
+    
+    const start = messageInput.selectionStart;
+    const end = messageInput.selectionEnd;
+    const currentValue = messageInput.value;
+    
+    // Insert emoji at cursor position
+    const newValue = currentValue.substring(0, start) + emoji + currentValue.substring(end);
+    messageInput.value = newValue;
+    
+    // Move cursor after the emoji
+    const newCursorPos = start + emoji.length;
+    messageInput.setSelectionRange(newCursorPos, newCursorPos);
+    
+    // Focus back to textarea
+    messageInput.focus();
+    
+    // Close emoji picker
+    const emojiPicker = document.getElementById('emoji-picker');
+    if (emojiPicker) {
+        emojiPicker.classList.add('hidden');
+        emojiPickerOpen = false;
+    }
+    
+    // Auto resize textarea if needed
+    if (typeof autoResizeTextarea === 'function') {
+        autoResizeTextarea(messageInput);
+    }
+}
+
+// Close emoji picker when clicking outside
+document.addEventListener('click', function(event) {
+    const emojiButton = document.getElementById('emoji-button');
+    const emojiPicker = document.getElementById('emoji-picker');
+    
+    if (!emojiButton || !emojiPicker) return;
+    
+    if (!emojiButton.contains(event.target) && !emojiPicker.contains(event.target)) {
+        emojiPicker.classList.add('hidden');
+        emojiPickerOpen = false;
+    }
+});
+
+// Initialize emoji picker when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initEmojiPicker();
+});
 
 </script>
