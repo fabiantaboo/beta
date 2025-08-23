@@ -23,7 +23,7 @@ if ($memoryConfigured) {
 if ($memoryConfigured && defined('QDRANT_URL') && defined('QDRANT_API_KEY')) {
     try {
         $stmt = $pdo->prepare("
-            SELECT a.id, a.name, a.user_id, u.name as user_name,
+            SELECT a.id, a.name, a.user_id, u.first_name as user_name,
                    COUNT(DISTINCT cs.id) as session_count,
                    COUNT(cm.id) as message_count,
                    MIN(cm.created_at) as first_message,
@@ -33,7 +33,7 @@ if ($memoryConfigured && defined('QDRANT_URL') && defined('QDRANT_API_KEY')) {
             LEFT JOIN chat_sessions cs ON a.id = cs.aei_id  
             LEFT JOIN chat_messages cm ON cs.id = cm.session_id
             WHERE a.is_active = TRUE
-            GROUP BY a.id, a.name, a.user_id, u.name
+            GROUP BY a.id, a.name, a.user_id, u.first_name
             HAVING message_count >= 5
             ORDER BY message_count DESC
         ");
