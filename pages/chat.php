@@ -589,7 +589,7 @@ if ($isCurrentUserAdmin) {
                             type="button" 
                             id="emoji-button"
                             onclick="toggleEmojiPicker()"
-                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded transition-colors z-10"
+                            class="absolute right-2 top-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded transition-colors z-10"
                             title="Add emoji"
                         >
                             <i class="fas fa-smile text-lg"></i>
