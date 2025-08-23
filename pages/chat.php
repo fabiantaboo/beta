@@ -574,35 +574,33 @@ if ($isCurrentUserAdmin) {
                         </button>
                     </div>
                     
-                    <!-- Emoji Picker Button -->
-                    <div class="flex-shrink-0 relative">
-                        <button 
-                            type="button" 
-                            id="emoji-button"
-                            onclick="toggleEmojiPicker()"
-                            class="bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                            title="Add emoji"
-                        >
-                            <i class="fas fa-smile"></i>
-                        </button>
-                        
-                        <!-- Emoji Picker Panel -->
-                        <div id="emoji-picker" class="hidden absolute bottom-full mb-2 left-0 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-4 w-80 max-h-64 overflow-y-auto z-50">
-                            <div class="grid grid-cols-8 gap-2" id="emoji-grid">
-                                <!-- Emojis will be populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                    
                     <div class="flex-1 relative">
                         <textarea 
                             id="message-input"
                             name="message" 
                             rows="1"
                             maxlength="2000"
-                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
+                            class="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
                             placeholder="Type your message or upload an image..."
                         ></textarea>
+                        
+                        <!-- Emoji Button inside textarea -->
+                        <button 
+                            type="button" 
+                            id="emoji-button"
+                            onclick="toggleEmojiPicker()"
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded transition-colors z-10"
+                            title="Add emoji"
+                        >
+                            <i class="fas fa-smile text-lg"></i>
+                        </button>
+                        
+                        <!-- Emoji Picker Panel -->
+                        <div id="emoji-picker" class="hidden absolute bottom-full mb-2 right-0 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl p-4 w-80 max-h-64 overflow-y-auto z-50">
+                            <div class="grid grid-cols-8 gap-2" id="emoji-grid">
+                                <!-- Emojis will be populated by JavaScript -->
+                            </div>
+                        </div>
                     </div>
                     <button 
                         type="submit" 
