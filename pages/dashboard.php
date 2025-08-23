@@ -203,7 +203,7 @@ try {
                         </div>
                         
                         <!-- AEI Details -->
-                        <div class="space-y-3 mb-4">
+                        <div class="mb-4">
                             <?php 
                             // Format personality nicely
                             $formattedPersonality = '';
@@ -216,21 +216,6 @@ try {
                                     <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Personality</span>
                                     <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
                                         <?= htmlspecialchars(strlen($formattedPersonality) > 120 ? substr($formattedPersonality, 0, 120) . '...' : $formattedPersonality) ?>
-                                    </p>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <?php 
-                            // Format appearance
-                            $appearance = '';
-                            if (!empty($aei['appearance_description'])) {
-                                $appearance = formatAEIData($aei['appearance_description'], 'other');
-                            }
-                            if ($appearance): ?>
-                                <div>
-                                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Appearance</span>
-                                    <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
-                                        <?= htmlspecialchars(strlen($appearance) > 100 ? substr($appearance, 0, 100) . '...' : $appearance) ?>
                                     </p>
                                 </div>
                             <?php endif; ?>
