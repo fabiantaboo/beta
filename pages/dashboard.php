@@ -6,6 +6,41 @@ if (!$userId) {
     redirectTo('home');
 }
 
+// Helper function to format JSON data nicely
+function formatAEIData($jsonString, $type = 'personality') {
+    if (empty($jsonString)) return '';
+    
+    $data = json_decode($jsonString, true);
+    if (!$data || !is_array($data)) {
+        // If it's not JSON, return as-is but clean
+        return trim($jsonString);
+    }
+    
+    if ($type === 'personality') {
+        // For personality traits, show as a nice sentence
+        $traits = array_filter($data, function($trait) {
+            return !empty(trim($trait));
+        });
+        
+        if (empty($traits)) return '';
+        
+        if (count($traits) === 1) {
+            return ucfirst(trim($traits[0]));
+        } else if (count($traits) === 2) {
+            return ucfirst(trim($traits[0])) . ' and ' . strtolower(trim($traits[1]));
+        } else {
+            $lastTrait = array_pop($traits);
+            return ucfirst(implode(', ', array_map('trim', $traits))) . ', and ' . strtolower(trim($lastTrait));
+        }
+    } else {
+        // For other data, just join with commas
+        $items = array_filter($data, function($item) {
+            return !empty(trim($item));
+        });
+        return implode(', ', array_map('trim', $items));
+    }
+}
+
 // Handle AEI deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_aei') {
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
@@ -51,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT id, name, personality, appearance_description, avatar_url, created_at FROM aeis WHERE user_id = ? AND is_active = TRUE ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("SELECT id, name, personality, personality_traits, communication_style, appearance_description, avatar_url, created_at FROM aeis WHERE user_id = ? AND is_active = TRUE ORDER BY created_at DESC");
     $stmt->execute([$userId]);
     $aeis = $stmt->fetchAll();
 } catch (PDOException $e) {
@@ -168,21 +203,45 @@ try {
                         </div>
                         
                         <!-- AEI Details -->
-                        <div class="space-y-2 mb-4">
-                            <?php if ($aei['personality']): ?>
+                        <div class="space-y-3 mb-4">
+                            <?php 
+                            // Format personality traits nicely
+                            $formattedPersonality = '';
+                            if ($aei['personality_traits']) {
+                                $formattedPersonality = formatAEIData($aei['personality_traits'], 'personality');
+                            } elseif ($aei['personality']) {
+                                $formattedPersonality = formatAEIData($aei['personality'], 'personality');
+                            }
+                            
+                            if ($formattedPersonality): ?>
                                 <div>
                                     <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Personality</span>
-                                    <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed line-clamp-2">
-                                        <?= htmlspecialchars(substr($aei['personality'], 0, 100)) ?><?= strlen($aei['personality']) > 100 ? '...' : '' ?>
+                                    <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                                        <?= htmlspecialchars(strlen($formattedPersonality) > 120 ? substr($formattedPersonality, 0, 120) . '...' : $formattedPersonality) ?>
                                     </p>
                                 </div>
                             <?php endif; ?>
                             
-                            <?php if ($aei['appearance_description']): ?>
+                            <?php 
+                            // Format communication style
+                            $communicationStyle = formatAEIData($aei['communication_style'] ?? '', 'other');
+                            if ($communicationStyle): ?>
+                                <div>
+                                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Communication Style</span>
+                                    <p class="text-gray-700 dark:text-gray-300 text-sm">
+                                        <?= htmlspecialchars(ucfirst($communicationStyle)) ?>
+                                    </p>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <?php 
+                            // Format appearance
+                            $appearance = formatAEIData($aei['appearance_description'] ?? '', 'other');
+                            if ($appearance): ?>
                                 <div>
                                     <span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Appearance</span>
-                                    <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed line-clamp-2">
-                                        <?= htmlspecialchars(substr($aei['appearance_description'], 0, 100)) ?><?= strlen($aei['appearance_description']) > 100 ? '...' : '' ?>
+                                    <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
+                                        <?= htmlspecialchars(strlen($appearance) > 100 ? substr($appearance, 0, 100) . '...' : $appearance) ?>
                                     </p>
                                 </div>
                             <?php endif; ?>
