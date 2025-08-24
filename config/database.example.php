@@ -969,7 +969,8 @@ try {
                 // Add social columns if they don't exist
                 $socialColumns = [
                     'social_initialized' => "ALTER TABLE aeis ADD COLUMN social_initialized BOOLEAN DEFAULT FALSE AFTER is_active",
-                    'social_personality_seed' => "ALTER TABLE aeis ADD COLUMN social_personality_seed VARCHAR(32) NULL AFTER social_initialized"
+                    'social_personality_seed' => "ALTER TABLE aeis ADD COLUMN social_personality_seed VARCHAR(32) NULL AFTER social_initialized",
+                    'personality_traits' => "ALTER TABLE aeis ADD COLUMN personality_traits JSON NULL AFTER social_personality_seed"
                 ];
                 
                 foreach ($socialColumns as $columnName => $alterSQL) {

@@ -304,12 +304,15 @@ if ($isCurrentUserAdmin) {
                         <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Personality</h4>
                         <div class="flex flex-wrap gap-2">
                             <?php 
-                            $traits = $aei['personality_traits'] ? json_decode($aei['personality_traits'], true) : [];
-                            foreach ($traits as $trait): ?>
-                                <span class="px-2 py-1 bg-ayuni-blue/10 text-ayuni-blue rounded-full text-xs font-medium">
-                                    <?= htmlspecialchars($trait) ?>
-                                </span>
-                            <?php endforeach; ?>
+                            // Personality traits are stored in the 'personality' field as JSON
+                            $traits = $aei['personality'] ? json_decode($aei['personality'], true) : [];
+                            if (is_array($traits)) {
+                                foreach ($traits as $trait): ?>
+                                    <span class="px-2 py-1 bg-ayuni-blue/10 text-ayuni-blue rounded-full text-xs font-medium">
+                                        <?= htmlspecialchars($trait) ?>
+                                    </span>
+                                <?php endforeach;
+                            } ?>
                         </div>
                     </div>
 
