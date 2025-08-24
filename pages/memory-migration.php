@@ -152,7 +152,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         $totalExtracted += $aeiExtractedCount;
                         
                         // Warn about potential duplicates if too many facts extracted
-                        if ($aeiExtractedCount > ($session_count * 10)) {
+                        $sessionCount = count($sessions);
+                        if ($aeiExtractedCount > ($sessionCount * 10)) {
                             $migrationResults[] = "⚠️ {$aei['name']}: $aeiExtractedCount facts extracted (possibly contains duplicates due to overlapping batches)";
                         } else {
                             $migrationResults[] = "✅ {$aei['name']}: $aeiExtractedCount facts extracted";

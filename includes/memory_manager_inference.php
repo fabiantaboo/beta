@@ -12,6 +12,7 @@ class MemoryManagerInference {
     private $defaultModel;
     private $qualityModel;
     private $collectionPrefix;
+    private $factsPrefix;
     private $debugCallback;
     
     // Model selection based on importance
