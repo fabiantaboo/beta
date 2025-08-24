@@ -566,10 +566,11 @@ class MemoryManagerInference {
                 }
             }
             
-            // Create context-aware extraction prompt for AEI memory building
-            $extractionPrompt = "You are building a PERSONAL MEMORY BANK for an AEI (Artificial Emotional Intelligence) to remember this specific USER in future conversations.
+            // Create context-aware extraction prompt for AEI memory building  
+            $extractionPrompt = <<<EOT
+You are building a PERSONAL MEMORY BANK for an AEI (Artificial Emotional Intelligence) to remember this specific USER in future conversations.
 
-LANGUAGE RULE: Extract facts in the SAME LANGUAGE as the conversation. If the user speaks German, extract German facts. If English, extract English facts. If mixed languages, use the user's primary language from the conversation."
+LANGUAGE RULE: Extract facts in the SAME LANGUAGE as the conversation. If the user speaks German, extract German facts. If English, extract English facts. If mixed languages, use the user's primary language from the conversation.
 
 CONTEXT: These facts will be used MONTHS later when the AEI chats with this USER again. The AEI needs to:
 - Remember personal details to show genuine care and connection
@@ -710,7 +711,8 @@ Return as JSON:
 }
 
 Conversation to analyze:
-$conversationText";
+$conversationText
+EOT;
             
             // Use existing Anthropic API for extraction
             $messages = [['role' => 'user', 'content' => $extractionPrompt]];
