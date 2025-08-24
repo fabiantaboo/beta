@@ -460,12 +460,12 @@ class MemoryManagerInference {
                         continue; // Skip memories outside time range
                     }
                     
-                    // Calculate time-decay boost
+                    // Use pure similarity score without time-based boost
                     $daysSince = ($currentTime - $timestamp) / 86400;
-                    $recencyBoost = exp(-$daysSince / 10); // 10-day half-life
+                    $recencyBoost = 1.0; // No recency boost - pure similarity ranking
                     
-                    // Calculate final score with recency boost
-                    $finalScore = $similarity * $recencyBoost;
+                    // Use pure similarity as final score
+                    $finalScore = $similarity;
                     
                     // Apply minimum threshold
                     if ($finalScore >= $minSimilarity) {
@@ -484,9 +484,9 @@ class MemoryManagerInference {
                 }
             }
             
-            // Sort by final score (similarity * recency)
+            // Sort by similarity score only (no recency boost)
             usort($memories, function($a, $b) {
-                return $b['final_score'] <=> $a['final_score'];
+                return $b['similarity_score'] <=> $a['similarity_score'];
             });
             
             return array_slice($memories, 0, $limit);
@@ -501,6 +501,11 @@ class MemoryManagerInference {
      * Remove duplicate memories based on content similarity
      */
     private function deduplicateMemories($memories) {
+        // First sort by similarity score descending (best matches first)
+        usort($memories, function($a, $b) {
+            return $b['similarity_score'] <=> $a['similarity_score'];
+        });
+        
         $unique = [];
         $seen = [];
         

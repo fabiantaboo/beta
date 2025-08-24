@@ -25,7 +25,8 @@
       "WebFetch(domain:replicate.com)",
       "Bash(where php)",
       "WebFetch(domain:docs.anthropic.com)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Read(/C:\\c\\Users\\Shadow\\Documents/**)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
