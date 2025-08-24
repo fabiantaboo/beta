@@ -573,7 +573,7 @@ LANGUAGE RULE: Extract facts in the SAME LANGUAGE as the conversation. If the us
 
 CONTEXT: These facts will be used MONTHS later when the AEI chats with this USER again. The AEI needs to:
 - Remember personal details to show genuine care and connection
-- Reference past conversations naturally (\"How did your job interview go?\")
+- Reference past conversations naturally (\\\"How did your job interview go?\\\")
 - Understand the USER's personality, preferences, and life situation
 - Build a deeper, more personal relationship over time
 - Avoid asking questions about things the USER already shared
@@ -590,7 +590,7 @@ IMPORTANT TERMINOLOGY:
 EXTRACT FACTS THAT MAKE THE AEI A BETTER COMPANION:
 
 🏠 PERSONAL LIFE & IDENTITY:
-- Job, career, workplace details (for \"How's work?\" conversations)
+- Job, career, workplace details (for \\\"How's work?\\\" conversations)
 - Family members, friends, pets (names, relationships, dynamics)
 - Living situation, location, hometown
 - Age, birthday, important dates to remember
@@ -619,92 +619,92 @@ EXTRACT FACTS THAT MAKE THE AEI A BETTER COMPANION:
 
 🎯 ACTIONABLE DETAILS:
 - Specific names, dates, places, numbers
-- Exact preferences with reasons (\"prefers X because Y\")
-- Future plans with timelines (\"starts new job in March\")
-- Past events with context (\"graduated from UCLA in 2020\")
-- Relationships with full context (\"sister Sarah, nurse, calls weekly\")
+- Exact preferences with reasons (\\\"prefers X because Y\\\")
+- Future plans with timelines (\\\"starts new job in March\\\")
+- Past events with context (\\\"graduated from UCLA in 2020\\\")
+- Relationships with full context (\\\"sister Sarah, nurse, calls weekly\\\")
 
 CRITICAL: PRESERVE EXACT USER LANGUAGE!
 
-🎯 If user says \"I love salami pizza\" → Write: \"User loves salami pizza\" (EXACT)
-🎯 If user says \"My dog Rex is 5\" → Write: \"User's dog Rex is 5 years old\" (EXACT + context)
-🎯 If user says \"I hate my job\" → Write: \"User hates his current job at [company]\" (EXACT feeling)
-🎯 If user says \"My sister calls me every Tuesday\" → Write: \"User's sister calls him every Tuesday\" (EXACT timing)
+🎯 If user says \\\"I love salami pizza\\\" → Write: \\\"User loves salami pizza\\\" (EXACT)
+🎯 If user says \\\"My dog Rex is 5\\\" → Write: \\\"User's dog Rex is 5 years old\\\" (EXACT + context)
+🎯 If user says \\\"I hate my job\\\" → Write: \\\"User hates his current job at [company]\\\" (EXACT feeling)
+🎯 If user says \\\"My sister calls me every Tuesday\\\" → Write: \\\"User's sister calls him every Tuesday\\\" (EXACT timing)
 
 SPECIFICITY REQUIREMENTS:
 - NEVER paraphrase or generalize what the user said
 - Preserve the user's EXACT words and feelings  
 - Add context but keep the original meaning
 - Include precise details: names, dates, places, numbers
-- Note emotional tone: \"loves\", \"hates\", \"excited\", \"worried\"
+- Note emotional tone: \\\"loves\\\", \\\"hates\\\", \\\"excited\\\", \\\"worried\\\"
 - Include frequency/timing exactly as mentioned
 
 QUALITY CHECK - Ask yourself:
-- \"Did I capture what the user ACTUALLY said?\"  
-- \"Will the AEI remember this EXACTLY how the user expressed it?\"  
-- \"Can the AEI reference this naturally without sounding generic?\"
+- \\\"Did I capture what the user ACTUALLY said?\\\"  
+- \\\"Will the AEI remember this EXACTLY how the user expressed it?\\\"  
+- \\\"Can the AEI reference this naturally without sounding generic?\\\"
 
 FORMAT: Write facts preserving the user's exact language and emotional tone.
 
 PERFECT EXAMPLES - PRESERVING EXACT USER LANGUAGE & SAME LANGUAGE:
 
-✅ User says (English): \"I love salami pizza\"  
-→ Extract (English): \"User loves salami pizza\"  
-→ AEI can reference: \"Want to order some salami pizza tonight?\"
+✅ User says (English): \\\"I love salami pizza\\\"  
+→ Extract (English): \\\"User loves salami pizza\\\"  
+→ AEI can reference: \\\"Want to order some salami pizza tonight?\\\"
 
-✅ User says (German): \"Ich liebe Salami-Pizza\"  
-→ Extract (German): \"User liebt Salami-Pizza\"  
-→ AEI can reference: \"Soll ich Salami-Pizza bestellen?\"
+✅ User says (German): \\\"Ich liebe Salami-Pizza\\\"  
+→ Extract (German): \\\"User liebt Salami-Pizza\\\"  
+→ AEI can reference: \\\"Soll ich Salami-Pizza bestellen?\\\"
 
-✅ User says (English): \"My dog Buddy died last year, I still miss him\"  
-→ Extract (English): \"User's dog Buddy died last year, user still misses him\"  
+✅ User says (English): \\\"My dog Buddy died last year, I still miss him\\\"  
+→ Extract (English): \\\"User's dog Buddy died last year, user still misses him\\\"  
 
-✅ User says (German): \"Mein Hund Buddy ist letztes Jahr gestorben, ich vermisse ihn noch\"  
-→ Extract (German): \"User's Hund Buddy ist letztes Jahr gestorben, User vermisst ihn noch\"  
+✅ User says (German): \\\"Mein Hund Buddy ist letztes Jahr gestorben, ich vermisse ihn noch\\\"  
+→ Extract (German): \\\"User's Hund Buddy ist letztes Jahr gestorben, User vermisst ihn noch\\\"  
 
-✅ User says (Spanish): \"Trabajo en Google como gerente de producto\"  
-→ Extract (Spanish): \"User trabaja en Google como gerente de producto\"  
+✅ User says (Spanish): \\\"Trabajo en Google como gerente de producto\\\"  
+→ Extract (Spanish): \\\"User trabaja en Google como gerente de producto\\\"  
 
-✅ User says (French): \"Ma sœur Emma m'appelle chaque mardi à 20h\"  
-→ Extract (French): \"La sœur d'User Emma l'appelle chaque mardi à 20h\"  
+✅ User says (French): \\\"Ma sœur Emma m'appelle chaque mardi à 20h\\\"  
+→ Extract (French): \\\"La sœur d'User Emma l'appelle chaque mardi à 20h\\\"  
 
 ✅ Mixed conversation - User primarily German with some English:  
-User: \"Ich arbeite bei Google, but I hate the commute\"  
-→ Extract (German): \"User arbeitet bei Google, hasst aber den Arbeitsweg\"
+User: \\\"Ich arbeite bei Google, but I hate the commute\\\"  
+→ Extract (German): \\\"User arbeitet bei Google, hasst aber den Arbeitsweg\\\"
 
 BAD EXAMPLES - NEVER DO THIS:
 
 ❌ WRONG LANGUAGE (loses authenticity):
-- User says (German): \"Ich liebe Pizza\" → DON'T extract: \"User loves pizza\" (English)
-- User says (Spanish): \"Mi gato se llama Luna\" → DON'T extract: \"User's cat is named Luna\" (English)  
-- User says (French): \"Je déteste mon travail\" → DON'T extract: \"User hates his job\" (English)
+- User says (German): \\\"Ich liebe Pizza\\\" → DON'T extract: \\\"User loves pizza\\\" (English)
+- User says (Spanish): \\\"Mi gato se llama Luna\\\" → DON'T extract: \\\"User's cat is named Luna\\\" (English)  
+- User says (French): \\\"Je déteste mon travail\\\" → DON'T extract: \\\"User hates his job\\\" (English)
 
 ❌ VAGUE/GENERAL (loses the specific detail):
-- \"User likes food\" → Should be: \"User loves Thai food, especially green curry from Bangkok Garden\"
-- \"User mentioned pizza\" → Should be: \"User specifically said he loves salami pizza\"
-- \"User discussed work\" → Should be: \"User works as marketing manager at Adobe, started 6 months ago\"
-- \"User talked about family\" → Should be: \"User's dad Mike is a retired firefighter in Chicago, they talk monthly\"
+- \\\"User likes food\\\" → Should be: \\\"User loves Thai food, especially green curry from Bangkok Garden\\\"
+- \\\"User mentioned pizza\\\" → Should be: \\\"User specifically said he loves salami pizza\\\"
+- \\\"User discussed work\\\" → Should be: \\\"User works as marketing manager at Adobe, started 6 months ago\\\"
+- \\\"User talked about family\\\" → Should be: \\\"User's dad Mike is a retired firefighter in Chicago, they talk monthly\\\"
 
 ❌ PARAPHRASING (changes what user actually said):
-- If user says \"I love salami pizza\" → DON'T write \"User enjoys Italian cuisine\"
-- If user says \"My cat Luna is 3 years old\" → DON'T write \"User has a pet\"
-- If user says \"I hate mornings\" → DON'T write \"User prefers evenings\"
-- If user says \"I work at Google\" → DON'T write \"User works in tech\"
+- If user says \\\"I love salami pizza\\\" → DON'T write \\\"User enjoys Italian cuisine\\\"
+- If user says \\\"My cat Luna is 3 years old\\\" → DON'T write \\\"User has a pet\\\"
+- If user says \\\"I hate mornings\\\" → DON'T write \\\"User prefers evenings\\\"
+- If user says \\\"I work at Google\\\" → DON'T write \\\"User works in tech\\\"
 
 ❌ WRONG TERMINOLOGY:
-- \"The AI suggested...\" → Use 'AEI' not 'AI'
-- \"Assistant helped user\" → Focus on USER facts only
+- \\\"The AI suggested...\\\" → Use 'AEI' not 'AI'
+- \\\"Assistant helped user\\\" → Focus on USER facts only
 
 ❌ MISSING CONTEXT:
-- \"User seems happy\" → Should be: \"User felt excited about getting promoted to senior developer last Friday\"
+- \\\"User seems happy\\\" → Should be: \\\"User felt excited about getting promoted to senior developer last Friday\\\"
 
 Return as JSON:
 {
-    \"memories\": [
+    \\\"memories\\\": [
         {
-            \"content\": \"detailed factual statement with context\",
-            \"type\": \"fact|event|emotion|preference|relationship|goal|concern|habit|opinion\",
-            \"importance\": 0.1-1.0
+            \\\"content\\\": \\\"detailed factual statement with context\\\",
+            \\\"type\\\": \\\"fact|event|emotion|preference|relationship|goal|concern|habit|opinion\\\",
+            \\\"importance\\\": 0.1-1.0
         }
     ]
 }
