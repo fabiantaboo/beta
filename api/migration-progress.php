@@ -50,7 +50,7 @@ if (!$jobId) {
 }
 
 try {
-    // Get job status from database
+    // Get job status from database (main job + workers)
     $stmt = $pdo->prepare("
         SELECT status, message, progress_current, progress_total, created_at, updated_at, completed_at
         FROM migration_jobs 
@@ -63,6 +63,40 @@ try {
         http_response_code(404);
         echo json_encode(['error' => 'Job not found']);
         exit;
+    }
+    
+    // Also check worker jobs if this is a parallel migration
+    $workerJobs = [];
+    $stmt = $pdo->prepare("
+        SELECT job_id, status, message, progress_current, progress_total, completed_at
+        FROM migration_jobs 
+        WHERE job_id LIKE ? AND user_id = ?
+    ");
+    $stmt->execute([$jobId . '_worker_%', getUserSession()]);
+    $workerJobs = $stmt->fetchAll();
+    
+    // If we have worker jobs, aggregate their progress
+    if (!empty($workerJobs)) {
+        $completedWorkers = 0;
+        $totalWorkers = count($workerJobs);
+        $overallMessage = "Running $totalWorkers parallel workers...";
+        
+        foreach ($workerJobs as $worker) {
+            if ($worker['status'] === 'completed' || $worker['status'] === 'completed_with_errors') {
+                $completedWorkers++;
+            }
+        }
+        
+        // Update main job progress based on worker completion
+        $job['progress_current'] = $completedWorkers;
+        $job['progress_total'] = $totalWorkers;
+        $job['message'] = "$completedWorkers of $totalWorkers workers completed";
+        
+        // If all workers are done, mark main job as completed
+        if ($completedWorkers === $totalWorkers) {
+            $job['status'] = 'completed';
+            $job['message'] = "All $totalWorkers parallel workers completed successfully";
+        }
     }
     
     // Calculate elapsed time

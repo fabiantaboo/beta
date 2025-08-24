@@ -240,11 +240,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         count($aeiJobData)
                     ]);
                     
+                    // Create worker batches
+                    $workerBatches = array_chunk($aeiJobData, max(1, ceil(count($aeiJobData) / $parallelJobs)));
+                    
+                    // Start parallel workers immediately using cURL
+                    $migrationResults[] = "🚀 Starting $parallelJobs parallel workers...";
+                    $workerCount = 0;
+                    
+                    foreach ($workerBatches as $batchIndex => $batch) {
+                        $workerJobId = $jobId . '_worker_' . $batchIndex;
+                        $workerCount++;
+                        
+                        // Prepare worker data
+                        $workerData = [
+                            'job_id' => $workerJobId,
+                            'batch_data' => $batch,
+                            'csrf_token' => generateCSRFToken()
+                        ];
+                        
+                        // Start worker using background cURL request
+                        $ch = curl_init();
+                        curl_setopt($ch, CURLOPT_URL, (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/api/memory-migration-worker.php');
+                        curl_setopt($ch, CURLOPT_POST, true);
+                        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($workerData));
+                        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                            'Content-Type: application/json',
+                            'Content-Length: ' . strlen(json_encode($workerData))
+                        ]);
+                        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                        curl_setopt($ch, CURLOPT_TIMEOUT, 1); // Quick timeout since we don't wait for response
+                        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
+                        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                        
+                        // Execute in background (fire and forget)
+                        $response = curl_exec($ch);
+                        curl_close($ch);
+                        
+                        $migrationResults[] = "✅ Worker $workerCount started (processing " . count($batch) . " AEIs)";
+                    }
+                    
                     $migrationStatus = 'parallel_started';
-                    $migrationResults[] = "🚀 Parallel migration started with $parallelJobs workers";
+                    $migrationResults[] = "";
+                    $migrationResults[] = "🎉 All $workerCount workers started successfully!";
                     $migrationResults[] = "Job ID: $jobId";
-                    $migrationResults[] = "Processing " . count($aeiJobData) . " AEIs in parallel";
-                    $migrationResults[] = "Check progress below or refresh the page";
+                    $migrationResults[] = "Total AEIs being processed: " . count($aeiJobData);
+                    $migrationResults[] = "Check progress below - page will auto-refresh when complete";
                     
                     // Store job ID for progress tracking
                     $_SESSION['current_migration_job'] = $jobId;

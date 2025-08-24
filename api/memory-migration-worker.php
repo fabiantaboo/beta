@@ -79,15 +79,25 @@ try {
     
     $memoryManager = new MemoryManagerInference(QDRANT_URL, QDRANT_API_KEY, $pdo, $memoryOptions);
     
-    // Update job status to processing
-    updateJobStatus($pdo, $jobId, 'processing', 'Processing batch...');
+    // Create worker job in database
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO migration_jobs (job_id, user_id, job_type, status, message, progress_total) 
+            VALUES (?, ?, 'memory_migration_worker', 'processing', 'Processing batch...', ?)
+        ");
+        $stmt->execute([$jobId, getUserSession(), count($batchData)]);
+    } catch (Exception $e) {
+        // Job might already exist, just update status
+        updateJobStatus($pdo, $jobId, 'processing', 'Processing batch...');
+    }
     
     $results = [];
     $totalExtracted = 0;
     $errors = [];
+    $processedCount = 0;
     
     // Process each AEI in the batch
-    foreach ($batchData as $aeiData) {
+    foreach ($batchData as $aeiIndex => $aeiData) {
         $aeiId = $aeiData['aei_id'];
         $aeiName = $aeiData['aei_name'];
         $userId = $aeiData['user_id'];
@@ -145,6 +155,8 @@ try {
             }
             
             $totalExtracted += $aeiExtractedCount;
+            $processedCount++;
+            
             $results[] = [
                 'aei_id' => $aeiId,
                 'aei_name' => $aeiName,
@@ -152,7 +164,11 @@ try {
                 'status' => 'completed'
             ];
             
+            // Update progress
+            updateJobProgress($pdo, $jobId, $processedCount, count($batchData), "Processed {$aeiName} - extracted {$aeiExtractedCount} facts");
+            
         } catch (Exception $aeiError) {
+            $processedCount++;
             $errors[] = "AEI error for {$aeiName}: " . $aeiError->getMessage();
             $results[] = [
                 'aei_id' => $aeiId,
@@ -161,6 +177,9 @@ try {
                 'status' => 'failed',
                 'error' => $aeiError->getMessage()
             ];
+            
+            // Update progress even for failed AEI
+            updateJobProgress($pdo, $jobId, $processedCount, count($batchData), "Failed processing {$aeiName}: " . $aeiError->getMessage());
         }
     }
     
@@ -208,6 +227,22 @@ function updateJobStatus($pdo, $jobId, $status, $message) {
         $stmt->execute([$status, $message, $jobId]);
     } catch (Exception $e) {
         error_log("Failed to update job status: " . $e->getMessage());
+    }
+}
+
+/**
+ * Update job progress in database
+ */
+function updateJobProgress($pdo, $jobId, $current, $total, $message) {
+    try {
+        $stmt = $pdo->prepare("
+            UPDATE migration_jobs 
+            SET progress_current = ?, progress_total = ?, message = ?, updated_at = NOW() 
+            WHERE job_id = ?
+        ");
+        $stmt->execute([$current, $total, $message, $jobId]);
+    } catch (Exception $e) {
+        error_log("Failed to update job progress: " . $e->getMessage());
     }
 }
 ?>
