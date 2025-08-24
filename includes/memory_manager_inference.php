@@ -569,6 +569,8 @@ class MemoryManagerInference {
             // Create context-aware extraction prompt for AEI memory building
             $extractionPrompt = "You are building a PERSONAL MEMORY BANK for an AEI (Artificial Emotional Intelligence) to remember this specific USER in future conversations.
 
+LANGUAGE RULE: Extract facts in the SAME LANGUAGE as the conversation. If the user speaks German, extract German facts. If English, extract English facts. If mixed languages, use the user's primary language from the conversation."
+
 CONTEXT: These facts will be used MONTHS later when the AEI chats with this USER again. The AEI needs to:
 - Remember personal details to show genuine care and connection
 - Reference past conversations naturally (\"How did your job interview go?\")
@@ -644,37 +646,38 @@ QUALITY CHECK - Ask yourself:
 
 FORMAT: Write facts preserving the user's exact language and emotional tone.
 
-PERFECT EXAMPLES - PRESERVING EXACT USER LANGUAGE:
+PERFECT EXAMPLES - PRESERVING EXACT USER LANGUAGE & SAME LANGUAGE:
 
-✅ User says: \"I love salami pizza\"  
-→ Extract: \"User loves salami pizza\" (NOT \"User enjoys Italian food\")  
+✅ User says (English): \"I love salami pizza\"  
+→ Extract (English): \"User loves salami pizza\"  
 → AEI can reference: \"Want to order some salami pizza tonight?\"
 
-✅ User says: \"I hate my morning commute, it takes 45 minutes\"  
-→ Extract: \"User hates his morning commute, which takes 45 minutes\"  
-→ AEI can ask: \"How was your commute this morning?\"
+✅ User says (German): \"Ich liebe Salami-Pizza\"  
+→ Extract (German): \"User liebt Salami-Pizza\"  
+→ AEI can reference: \"Soll ich Salami-Pizza bestellen?\"
 
-✅ User says: \"My dog Buddy died last year, I still miss him\"  
-→ Extract: \"User's dog Buddy died last year, user still misses him\"  
-→ AEI knows to be sensitive: \"I know you still think about Buddy\"
+✅ User says (English): \"My dog Buddy died last year, I still miss him\"  
+→ Extract (English): \"User's dog Buddy died last year, user still misses him\"  
 
-✅ User says: \"I work at Google as a product manager\"  
-→ Extract: \"User works at Google as a product manager\" (NOT \"User works in tech\")  
-→ AEI can ask: \"How are things at Google?\"
+✅ User says (German): \"Mein Hund Buddy ist letztes Jahr gestorben, ich vermisse ihn noch\"  
+→ Extract (German): \"User's Hund Buddy ist letztes Jahr gestorben, User vermisst ihn noch\"  
 
-✅ User says: \"My sister Emma calls me every Tuesday at 8pm\"  
-→ Extract: \"User's sister Emma calls him every Tuesday at 8pm\"  
-→ AEI can remember: \"Did Emma call you last Tuesday?\"
+✅ User says (Spanish): \"Trabajo en Google como gerente de producto\"  
+→ Extract (Spanish): \"User trabaja en Google como gerente de producto\"  
 
-✅ User says: \"I'm training for the Boston Marathon, my goal is under 4 hours\"  
-→ Extract: \"User is training for Boston Marathon with goal time under 4 hours\"  
-→ AEI can track: \"How's your Boston Marathon training going?\"
+✅ User says (French): \"Ma sœur Emma m'appelle chaque mardi à 20h\"  
+→ Extract (French): \"La sœur d'User Emma l'appelle chaque mardi à 20h\"  
 
-✅ User says: \"I adopted a black cat named Luna from the SPCA last month\"  
-→ Extract: \"User adopted black cat named Luna from SPCA last month\"  
-→ AEI can check: \"How is Luna doing?\"
+✅ Mixed conversation - User primarily German with some English:  
+User: \"Ich arbeite bei Google, but I hate the commute\"  
+→ Extract (German): \"User arbeitet bei Google, hasst aber den Arbeitsweg\"
 
 BAD EXAMPLES - NEVER DO THIS:
+
+❌ WRONG LANGUAGE (loses authenticity):
+- User says (German): \"Ich liebe Pizza\" → DON'T extract: \"User loves pizza\" (English)
+- User says (Spanish): \"Mi gato se llama Luna\" → DON'T extract: \"User's cat is named Luna\" (English)  
+- User says (French): \"Je déteste mon travail\" → DON'T extract: \"User hates his job\" (English)
 
 ❌ VAGUE/GENERAL (loses the specific detail):
 - \"User likes food\" → Should be: \"User loves Thai food, especially green curry from Bangkok Garden\"
@@ -711,7 +714,7 @@ $conversationText";
             
             // Use existing Anthropic API for extraction
             $messages = [['role' => 'user', 'content' => $extractionPrompt]];
-            $systemPrompt = "You are an AEI Memory Architect building a personal knowledge base for an AEI companion. CRITICAL RULE: Preserve the user's EXACT words and feelings - never paraphrase or generalize. If the user says 'I love salami pizza', write exactly that, not 'User enjoys Italian food'. Your extracted facts determine whether the AEI feels like a close friend who remembers exactly what was said, or someone who gives generic responses. The AEI must be able to reference the user's exact preferences, feelings, and situations naturally. When the user mentioned 'salami pizza', the AEI should remember 'salami pizza' specifically, not just 'pizza' or 'Italian food'. Preserve emotional tone, specific names, exact preferences, and precise details. The user should feel 'wow, my AEI remembers exactly what I told them' when these facts are referenced. Use 'AEI' terminology only.";
+            $systemPrompt = "You are an AEI Memory Architect building a personal knowledge base for an AEI companion. CRITICAL RULES: 1) Extract facts in the SAME LANGUAGE as the user's conversation. If they speak German, write German facts. If English, write English facts. 2) Preserve the user's EXACT words and feelings - never paraphrase or generalize. If the user says 'Ich liebe Salami-Pizza', write exactly that in German, not 'User enjoys Italian food' in English. Your extracted facts determine whether the AEI feels like a close friend who remembers exactly what was said in their language, or someone who gives generic responses in the wrong language. The AEI must be able to reference the user's exact preferences, feelings, and situations naturally in their preferred language. Language consistency is crucial for authentic, personal conversations. Use 'AEI' terminology only.";
             
             $response = callAnthropicAPI($messages, $systemPrompt, 4000);
             $memoryData = json_decode($response, true);
