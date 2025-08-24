@@ -566,54 +566,134 @@ class MemoryManagerInference {
                 }
             }
             
-            // Create comprehensive extraction prompt for batch analysis
-            $extractionPrompt = "Analyze this conversation between a USER and an AEI (Artificial Emotional Intelligence). Extract ALL important facts, preferences, and details about the USER only.
+            // Create context-aware extraction prompt for AEI memory building
+            $extractionPrompt = "You are building a PERSONAL MEMORY BANK for an AEI (Artificial Emotional Intelligence) to remember this specific USER in future conversations.
+
+CONTEXT: These facts will be used MONTHS later when the AEI chats with this USER again. The AEI needs to:
+- Remember personal details to show genuine care and connection
+- Reference past conversations naturally (\"How did your job interview go?\")
+- Understand the USER's personality, preferences, and life situation
+- Build a deeper, more personal relationship over time
+- Avoid asking questions about things the USER already shared
+
+YOUR MISSION: Extract facts that will help the AEI be a better, more personal companion.
+
+Analyze this conversation between the USER and their AEI companion:
 
 IMPORTANT TERMINOLOGY:
 - Use 'AEI' (not 'AI', 'Assistant', or 'Bot') when referring to the artificial companion
 - Focus ONLY on USER information - ignore AEI responses except as context
 - Write facts from neutral perspective about the USER
 
-EXTRACT EVERYTHING RELEVANT ABOUT THE USER:
-- User preferences, likes, dislikes (food, activities, hobbies, music, movies, etc.)
-- Personal facts (job, family, location, age, education, background, etc.)
-- Important events, experiences, stories mentioned by user
-- User's emotional states, feelings, reactions
-- People in user's life (names, relationships, details)
-- User's goals, aspirations, plans, dreams
-- User's concerns, worries, problems, fears
-- User's habits, routines, lifestyle details
-- User's opinions, beliefs, values
-- Past experiences, memories shared by user
-- User's future plans or intentions
+EXTRACT FACTS THAT MAKE THE AEI A BETTER COMPANION:
 
-BE COMPREHENSIVE AND SPECIFIC: Extract EVERY meaningful detail about the USER with FULL SPECIFICITY. Include:
-- Exact names, places, times, quantities, dates
-- Specific brands, companies, locations mentioned
-- Precise emotions and their contexts
-- Detailed relationships (names, roles, frequencies)
-- Specific preferences with reasons/contexts
-- Exact goals with timelines or details
+🏠 PERSONAL LIFE & IDENTITY:
+- Job, career, workplace details (for \"How's work?\" conversations)
+- Family members, friends, pets (names, relationships, dynamics)
+- Living situation, location, hometown
+- Age, birthday, important dates to remember
+- Education, background, life history
 
-FORMAT: Write detailed, specific factual statements about the USER. ALWAYS include specific details, numbers, names, places, times when available. Never be vague.
+❤️ PREFERENCES & PERSONALITY:
+- Food preferences, favorite restaurants, dietary restrictions
+- Hobbies, interests, activities they enjoy
+- Music, movies, books, entertainment preferences
+- Personal style, values, beliefs, opinions
+- Communication style, humor, personality traits
 
-GOOD EXAMPLES (Always include specific details):
-- \"User prefers salami pizza specifically from Mario's Pizzeria because they make handmade dough\"
-- \"User works as senior software engineer at TechCorp in San Francisco, been there 3 years\"
-- \"User felt anxious about upcoming job interview at Google next Thursday, worried about technical coding questions\"
-- \"User's mother Linda calls every Sunday evening at 7pm, they have close relationship and discuss weekly events\"
-- \"User enjoys hiking on weekends, favorite trail is Mount Tamalpais in Marin County, goes there monthly\"
-- \"User had a childhood Golden Retriever named Max who died 2 years ago, still feels emotional when discussing pets with AEI\"
-- \"User started learning acoustic guitar last month, practices 30 minutes daily, wants to play Beatles songs\"
+📅 ONGOING SITUATIONS:
+- Current projects, goals, aspirations they're working on
+- Upcoming events, plans, important dates
+- Ongoing concerns, worries, challenges they face
+- Health situations, treatments, medical info
+- Relationship status, dating situation
 
-BAD EXAMPLES (Too vague or incorrect):
-- \"User likes food\" (too general - what specific food? how much? where?)
-- \"User discussed work\" (too vague - what job? what company? what specific work topics?)
-- \"User mentioned family\" (too general - who specifically? what relationship? what details?)
-- \"User talked about hobbies\" (too vague - which hobbies? how often? what level?)
-- \"The AI suggested pizza\" (wrong terminology - use 'AEI')
-- \"Assistant helped user\" (wrong terminology - use 'AEI', focus on user facts)
-- \"User seems happy\" (too general - happy about what specifically? when? why?)
+💭 EMOTIONAL CONTEXT:
+- How they feel about different topics
+- Past traumas, sensitive subjects to handle carefully
+- What makes them happy, stressed, excited, worried
+- Their coping mechanisms and support systems
+- Emotional patterns and triggers
+
+🎯 ACTIONABLE DETAILS:
+- Specific names, dates, places, numbers
+- Exact preferences with reasons (\"prefers X because Y\")
+- Future plans with timelines (\"starts new job in March\")
+- Past events with context (\"graduated from UCLA in 2020\")
+- Relationships with full context (\"sister Sarah, nurse, calls weekly\")
+
+CRITICAL: PRESERVE EXACT USER LANGUAGE!
+
+🎯 If user says \"I love salami pizza\" → Write: \"User loves salami pizza\" (EXACT)
+🎯 If user says \"My dog Rex is 5\" → Write: \"User's dog Rex is 5 years old\" (EXACT + context)
+🎯 If user says \"I hate my job\" → Write: \"User hates his current job at [company]\" (EXACT feeling)
+🎯 If user says \"My sister calls me every Tuesday\" → Write: \"User's sister calls him every Tuesday\" (EXACT timing)
+
+SPECIFICITY REQUIREMENTS:
+- NEVER paraphrase or generalize what the user said
+- Preserve the user's EXACT words and feelings  
+- Add context but keep the original meaning
+- Include precise details: names, dates, places, numbers
+- Note emotional tone: \"loves\", \"hates\", \"excited\", \"worried\"
+- Include frequency/timing exactly as mentioned
+
+QUALITY CHECK - Ask yourself:
+- \"Did I capture what the user ACTUALLY said?\"  
+- \"Will the AEI remember this EXACTLY how the user expressed it?\"  
+- \"Can the AEI reference this naturally without sounding generic?\"
+
+FORMAT: Write facts preserving the user's exact language and emotional tone.
+
+PERFECT EXAMPLES - PRESERVING EXACT USER LANGUAGE:
+
+✅ User says: \"I love salami pizza\"  
+→ Extract: \"User loves salami pizza\" (NOT \"User enjoys Italian food\")  
+→ AEI can reference: \"Want to order some salami pizza tonight?\"
+
+✅ User says: \"I hate my morning commute, it takes 45 minutes\"  
+→ Extract: \"User hates his morning commute, which takes 45 minutes\"  
+→ AEI can ask: \"How was your commute this morning?\"
+
+✅ User says: \"My dog Buddy died last year, I still miss him\"  
+→ Extract: \"User's dog Buddy died last year, user still misses him\"  
+→ AEI knows to be sensitive: \"I know you still think about Buddy\"
+
+✅ User says: \"I work at Google as a product manager\"  
+→ Extract: \"User works at Google as a product manager\" (NOT \"User works in tech\")  
+→ AEI can ask: \"How are things at Google?\"
+
+✅ User says: \"My sister Emma calls me every Tuesday at 8pm\"  
+→ Extract: \"User's sister Emma calls him every Tuesday at 8pm\"  
+→ AEI can remember: \"Did Emma call you last Tuesday?\"
+
+✅ User says: \"I'm training for the Boston Marathon, my goal is under 4 hours\"  
+→ Extract: \"User is training for Boston Marathon with goal time under 4 hours\"  
+→ AEI can track: \"How's your Boston Marathon training going?\"
+
+✅ User says: \"I adopted a black cat named Luna from the SPCA last month\"  
+→ Extract: \"User adopted black cat named Luna from SPCA last month\"  
+→ AEI can check: \"How is Luna doing?\"
+
+BAD EXAMPLES - NEVER DO THIS:
+
+❌ VAGUE/GENERAL (loses the specific detail):
+- \"User likes food\" → Should be: \"User loves Thai food, especially green curry from Bangkok Garden\"
+- \"User mentioned pizza\" → Should be: \"User specifically said he loves salami pizza\"
+- \"User discussed work\" → Should be: \"User works as marketing manager at Adobe, started 6 months ago\"
+- \"User talked about family\" → Should be: \"User's dad Mike is a retired firefighter in Chicago, they talk monthly\"
+
+❌ PARAPHRASING (changes what user actually said):
+- If user says \"I love salami pizza\" → DON'T write \"User enjoys Italian cuisine\"
+- If user says \"My cat Luna is 3 years old\" → DON'T write \"User has a pet\"
+- If user says \"I hate mornings\" → DON'T write \"User prefers evenings\"
+- If user says \"I work at Google\" → DON'T write \"User works in tech\"
+
+❌ WRONG TERMINOLOGY:
+- \"The AI suggested...\" → Use 'AEI' not 'AI'
+- \"Assistant helped user\" → Focus on USER facts only
+
+❌ MISSING CONTEXT:
+- \"User seems happy\" → Should be: \"User felt excited about getting promoted to senior developer last Friday\"
 
 Return as JSON:
 {
@@ -631,7 +711,7 @@ $conversationText";
             
             // Use existing Anthropic API for extraction
             $messages = [['role' => 'user', 'content' => $extractionPrompt]];
-            $systemPrompt = "You are a precision memory extraction specialist for AEI (Artificial Emotional Intelligence) conversations. Extract EVERY specific detail about the USER with maximum precision and specificity. Never be vague or general. Always include exact names, numbers, dates, places, quantities, brands, and specific contexts when mentioned. Think like you're building a detailed user database for the AEI to reference months later - every specific detail matters for personalized conversations. CRITICAL: Use 'AEI' terminology only (not AI/Assistant/Bot) and extract USER facts exclusively. Specificity is more important than brevity.";
+            $systemPrompt = "You are an AEI Memory Architect building a personal knowledge base for an AEI companion. CRITICAL RULE: Preserve the user's EXACT words and feelings - never paraphrase or generalize. If the user says 'I love salami pizza', write exactly that, not 'User enjoys Italian food'. Your extracted facts determine whether the AEI feels like a close friend who remembers exactly what was said, or someone who gives generic responses. The AEI must be able to reference the user's exact preferences, feelings, and situations naturally. When the user mentioned 'salami pizza', the AEI should remember 'salami pizza' specifically, not just 'pizza' or 'Italian food'. Preserve emotional tone, specific names, exact preferences, and precise details. The user should feel 'wow, my AEI remembers exactly what I told them' when these facts are referenced. Use 'AEI' terminology only.";
             
             $response = callAnthropicAPI($messages, $systemPrompt, 4000);
             $memoryData = json_decode($response, true);
