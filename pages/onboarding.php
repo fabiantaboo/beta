@@ -77,14 +77,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updates[] = "beliefs = ?";
                 array_unshift($params, $beliefs, $lifeGoals, $dailyRituals, $sexualOrientation);
             } elseif ($step === 4) {
-                // Relationship & Additional
+                // Relationship, Additional & Feedback Contact
                 $partnerQualities = sanitizeInput($_POST['partner_qualities'] ?? '');
                 $additionalInfo = sanitizeInput($_POST['additional_info'] ?? '');
+                $feedbackChannel = sanitizeInput($_POST['feedback_channel'] ?? '');
+                $feedbackContact = sanitizeInput($_POST['feedback_contact'] ?? '');
                 
-                $updates[] = "partner_qualities = ?";
-                $updates[] = "additional_info = ?";
-                $updates[] = "is_onboarded = TRUE";
-                array_unshift($params, $additionalInfo, $partnerQualities);
+                // Validate feedback channel and contact if provided
+                if (!empty($feedbackChannel) && empty($feedbackContact)) {
+                    $error = "Please provide your contact information for the selected feedback channel.";
+                } elseif (!empty($feedbackChannel) && !in_array($feedbackChannel, ['email', 'whatsapp', 'discord', 'x'])) {
+                    $error = "Please select a valid feedback channel.";
+                } else {
+                    $updates[] = "partner_qualities = ?";
+                    $updates[] = "additional_info = ?";
+                    $updates[] = "feedback_channel = ?";
+                    $updates[] = "feedback_contact = ?";
+                    $updates[] = "is_onboarded = TRUE";
+                    array_unshift($params, $feedbackContact, $feedbackChannel, $additionalInfo, $partnerQualities);
+                }
             }
             
             if (!isset($error) && !empty($updates)) {
@@ -371,6 +382,52 @@ try {
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Share anything that makes you unique!</p>
                     </div>
 
+                    <!-- Feedback Contact Preference -->
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                            <i class="fas fa-comment-dots text-ayuni-blue mr-2"></i>
+                            Feedback & Communication
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="feedback_channel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    How would you prefer us to contact you for feedback? <span class="text-gray-500 text-xs">(Optional)</span>
+                                </label>
+                                <select 
+                                    id="feedback_channel" 
+                                    name="feedback_channel"
+                                    class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all"
+                                    onchange="toggleContactField(this.value)"
+                                >
+                                    <option value="">No preference / Don't contact me</option>
+                                    <option value="email" <?= ($userData['feedback_channel'] ?? '') === 'email' ? 'selected' : '' ?>>📧 Email</option>
+                                    <option value="whatsapp" <?= ($userData['feedback_channel'] ?? '') === 'whatsapp' ? 'selected' : '' ?>>📱 WhatsApp</option>
+                                    <option value="discord" <?= ($userData['feedback_channel'] ?? '') === 'discord' ? 'selected' : '' ?>>🎮 Discord</option>
+                                    <option value="x" <?= ($userData['feedback_channel'] ?? '') === 'x' ? 'selected' : '' ?>>🐦 X (Twitter)</option>
+                                </select>
+                            </div>
+
+                            <div id="contact_field" style="display: <?= !empty($userData['feedback_channel'] ?? '') ? 'block' : 'none' ?>;">
+                                <label for="feedback_contact" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    <span id="contact_label">Contact Information</span> <span class="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="feedback_contact" 
+                                    name="feedback_contact" 
+                                    maxlength="255"
+                                    value="<?= htmlspecialchars($userData['feedback_contact'] ?? '') ?>"
+                                    class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all"
+                                    placeholder="Enter your contact information"
+                                >
+                                <p id="contact_help" class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    We'll only use this to reach out for important feedback or product updates.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                         <div class="flex items-start">
                             <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-1 mr-3"></i>
@@ -415,3 +472,56 @@ try {
         </div>
     </div>
 </div>
+
+<script>
+// Dynamic feedback contact field
+function toggleContactField(channel) {
+    const contactField = document.getElementById('contact_field');
+    const contactLabel = document.getElementById('contact_label');
+    const contactInput = document.getElementById('feedback_contact');
+    const contactHelp = document.getElementById('contact_help');
+    
+    if (channel) {
+        contactField.style.display = 'block';
+        
+        // Update label and placeholder based on channel
+        switch(channel) {
+            case 'email':
+                contactLabel.textContent = 'Email Address';
+                contactInput.placeholder = 'your.email@example.com';
+                contactInput.type = 'email';
+                contactHelp.textContent = 'We\'ll send you occasional feedback requests and product updates.';
+                break;
+            case 'whatsapp':
+                contactLabel.textContent = 'WhatsApp Phone Number';
+                contactInput.placeholder = '+1234567890';
+                contactInput.type = 'tel';
+                contactHelp.textContent = 'Please include country code (e.g., +1 for US, +49 for Germany).';
+                break;
+            case 'discord':
+                contactLabel.textContent = 'Discord Username';
+                contactInput.placeholder = 'username#1234 or @username';
+                contactInput.type = 'text';
+                contactHelp.textContent = 'Your Discord username (with or without discriminator).';
+                break;
+            case 'x':
+                contactLabel.textContent = 'X (Twitter) Handle';
+                contactInput.placeholder = '@yourusername';
+                contactInput.type = 'text';
+                contactHelp.textContent = 'Your X/Twitter handle (with or without @).';
+                break;
+        }
+    } else {
+        contactField.style.display = 'none';
+        contactInput.value = '';
+    }
+}
+
+// Initialize field on page load if channel is already selected
+document.addEventListener('DOMContentLoaded', function() {
+    const channelSelect = document.getElementById('feedback_channel');
+    if (channelSelect && channelSelect.value) {
+        toggleContactField(channelSelect.value);
+    }
+});
+</script>

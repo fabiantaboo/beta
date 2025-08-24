@@ -910,6 +910,12 @@ try {
                 case 'timezone':
                     $pdo->exec("ALTER TABLE users ADD COLUMN timezone VARCHAR(100) DEFAULT 'UTC'");
                     break;
+                case 'feedback_channel':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN feedback_channel ENUM('email', 'whatsapp', 'discord', 'x') NULL");
+                    break;
+                case 'feedback_contact':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN feedback_contact VARCHAR(255) NULL");
+                    break;
             }
         }
         
