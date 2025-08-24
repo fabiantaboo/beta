@@ -567,35 +567,53 @@ class MemoryManagerInference {
             }
             
             // Create comprehensive extraction prompt for batch analysis
-            $extractionPrompt = "Analyze this conversation batch and extract ALL important facts, preferences, and details about the user.
+            $extractionPrompt = "Analyze this conversation between a USER and an AEI (Artificial Emotional Intelligence). Extract ALL important facts, preferences, and details about the USER only.
 
-EXTRACT EVERYTHING RELEVANT:
+IMPORTANT TERMINOLOGY:
+- Use 'AEI' (not 'AI', 'Assistant', or 'Bot') when referring to the artificial companion
+- Focus ONLY on USER information - ignore AEI responses except as context
+- Write facts from neutral perspective about the USER
+
+EXTRACT EVERYTHING RELEVANT ABOUT THE USER:
 - User preferences, likes, dislikes (food, activities, hobbies, music, movies, etc.)
 - Personal facts (job, family, location, age, education, background, etc.)
-- Important events, experiences, stories mentioned
-- Emotional states, feelings, reactions
+- Important events, experiences, stories mentioned by user
+- User's emotional states, feelings, reactions
 - People in user's life (names, relationships, details)
-- Goals, aspirations, plans, dreams
-- Concerns, worries, problems, fears
-- Habits, routines, lifestyle details
-- Opinions, beliefs, values
-- Past experiences, memories shared
-- Future plans or intentions
+- User's goals, aspirations, plans, dreams
+- User's concerns, worries, problems, fears
+- User's habits, routines, lifestyle details
+- User's opinions, beliefs, values
+- Past experiences, memories shared by user
+- User's future plans or intentions
 
-BE COMPREHENSIVE: Extract EVERY meaningful detail, no matter how small. Look for nuances and subtle information.
+BE COMPREHENSIVE AND SPECIFIC: Extract EVERY meaningful detail about the USER with FULL SPECIFICITY. Include:
+- Exact names, places, times, quantities, dates
+- Specific brands, companies, locations mentioned
+- Precise emotions and their contexts
+- Detailed relationships (names, roles, frequencies)
+- Specific preferences with reasons/contexts
+- Exact goals with timelines or details
 
-FORMAT: Write detailed, specific factual statements. Include context and specifics.
+FORMAT: Write detailed, specific factual statements about the USER. ALWAYS include specific details, numbers, names, places, times when available. Never be vague.
 
-GOOD EXAMPLES:
+GOOD EXAMPLES (Always include specific details):
 - \"User prefers salami pizza specifically from Mario's Pizzeria because they make handmade dough\"
 - \"User works as senior software engineer at TechCorp in San Francisco, been there 3 years\"
-- \"User felt anxious about job interview next week, worried about technical questions\"
-- \"User's mother calls every Sunday evening, they have close relationship\"
-- \"User enjoys hiking on weekends, favorite trail is Mount Tamalpais\"
+- \"User felt anxious about upcoming job interview at Google next Thursday, worried about technical coding questions\"
+- \"User's mother Linda calls every Sunday evening at 7pm, they have close relationship and discuss weekly events\"
+- \"User enjoys hiking on weekends, favorite trail is Mount Tamalpais in Marin County, goes there monthly\"
+- \"User had a childhood Golden Retriever named Max who died 2 years ago, still feels emotional when discussing pets with AEI\"
+- \"User started learning acoustic guitar last month, practices 30 minutes daily, wants to play Beatles songs\"
 
-BAD EXAMPLES:
-- \"User likes food\" (too general)
-- \"The conversation was about work\" (not factual about user)
+BAD EXAMPLES (Too vague or incorrect):
+- \"User likes food\" (too general - what specific food? how much? where?)
+- \"User discussed work\" (too vague - what job? what company? what specific work topics?)
+- \"User mentioned family\" (too general - who specifically? what relationship? what details?)
+- \"User talked about hobbies\" (too vague - which hobbies? how often? what level?)
+- \"The AI suggested pizza\" (wrong terminology - use 'AEI')
+- \"Assistant helped user\" (wrong terminology - use 'AEI', focus on user facts)
+- \"User seems happy\" (too general - happy about what specifically? when? why?)
 
 Return as JSON:
 {
@@ -613,7 +631,7 @@ $conversationText";
             
             // Use existing Anthropic API for extraction
             $messages = [['role' => 'user', 'content' => $extractionPrompt]];
-            $systemPrompt = "You are a comprehensive memory extraction specialist. Your goal is to extract EVERY meaningful piece of information about the user from this conversation batch. Be thorough and detailed - capture ALL facts, preferences, emotions, relationships, and context. Think of building a complete user profile. Don't miss any details, no matter how small they seem. Quality AND quantity both matter.";
+            $systemPrompt = "You are a precision memory extraction specialist for AEI (Artificial Emotional Intelligence) conversations. Extract EVERY specific detail about the USER with maximum precision and specificity. Never be vague or general. Always include exact names, numbers, dates, places, quantities, brands, and specific contexts when mentioned. Think like you're building a detailed user database for the AEI to reference months later - every specific detail matters for personalized conversations. CRITICAL: Use 'AEI' terminology only (not AI/Assistant/Bot) and extract USER facts exclusively. Specificity is more important than brevity.";
             
             $response = callAnthropicAPI($messages, $systemPrompt, 4000);
             $memoryData = json_decode($response, true);

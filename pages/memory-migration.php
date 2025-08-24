@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $memoryManager = new MemoryManagerInference(QDRANT_URL, QDRANT_API_KEY, $pdo, $memoryOptions);
             
             $selectedAeis = $_POST['selected_aeis'] ?? [];
-            $batchSize = max(1, min(20, (int)($_POST['batch_size'] ?? 10))); // Limit batch size
+            $batchSize = max(10, min(50, (int)($_POST['batch_size'] ?? 25))); // Larger batches to reduce duplicates
             
             if (empty($selectedAeis)) {
                 $migrationStatus = 'error';
@@ -150,7 +150,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         }
                         
                         $totalExtracted += $aeiExtractedCount;
-                        $migrationResults[] = "✅ {$aei['name']}: $aeiExtractedCount facts extracted";
+                        
+                        // Warn about potential duplicates if too many facts extracted
+                        if ($aeiExtractedCount > ($session_count * 10)) {
+                            $migrationResults[] = "⚠️ {$aei['name']}: $aeiExtractedCount facts extracted (possibly contains duplicates due to overlapping batches)";
+                        } else {
+                            $migrationResults[] = "✅ {$aei['name']}: $aeiExtractedCount facts extracted";
+                        }
                         
                     } catch (Exception $aeiError) {
                         $migrationResults[] = "❌ Error processing AEI $aeiId: " . $aeiError->getMessage();
@@ -239,10 +245,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Batch Size (messages per extraction)
                         </label>
-                        <input type="number" name="batch_size" value="10" min="5" max="20"
+                        <input type="number" name="batch_size" value="25" min="10" max="50"
                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Larger batches = better context, but more expensive API calls
+                            Larger batches = less duplicates, better context, but more expensive API calls
                         </p>
                     </div>
 
