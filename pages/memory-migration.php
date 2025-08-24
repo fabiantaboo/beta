@@ -175,7 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $migrationStatus = 'error';
             $migrationResults[] = 'Migration failed: ' . $e->getMessage();
         }
-    } elseif ($_POST['action'] === 'parallel_migrate') {
+    }
+} elseif ($_POST['action'] === 'parallel_migrate') {
         // Handle parallel migration request
         if (!verifyCSRFToken($_POST['csrf_token'])) {
             $migrationStatus = 'error';
