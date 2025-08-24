@@ -779,6 +779,23 @@ function createTablesIfNotExist($pdo) {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             INDEX idx_user_expires (user_id, expires_at),
             INDEX idx_expires (expires_at)
+        )",
+        'migration_jobs' => "CREATE TABLE IF NOT EXISTS migration_jobs (
+            job_id VARCHAR(32) PRIMARY KEY,
+            user_id VARCHAR(32) NOT NULL,
+            job_type ENUM('memory_migration') NOT NULL DEFAULT 'memory_migration',
+            status ENUM('pending', 'processing', 'completed', 'failed', 'completed_with_errors') NOT NULL DEFAULT 'pending',
+            message TEXT NULL,
+            job_data JSON NULL,
+            progress_current INT DEFAULT 0,
+            progress_total INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            completed_at TIMESTAMP NULL,
+            
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_user_jobs (user_id, created_at),
+            INDEX idx_status (status, created_at)
         )"
     ];
 

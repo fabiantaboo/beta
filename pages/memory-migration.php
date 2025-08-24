@@ -46,7 +46,8 @@ if ($memoryConfigured && defined('QDRANT_URL') && defined('QDRANT_API_KEY')) {
 }
 
 // Handle migration request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'migrate') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'migrate') {
     if (!verifyCSRFToken($_POST['csrf_token'])) {
         $migrationStatus = 'error';
         $migrationResults[] = 'Invalid CSRF token';
@@ -174,6 +175,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $migrationStatus = 'error';
             $migrationResults[] = 'Migration failed: ' . $e->getMessage();
         }
+    } elseif ($_POST['action'] === 'parallel_migrate') {
+        // Handle parallel migration request
+        if (!verifyCSRFToken($_POST['csrf_token'])) {
+            $migrationStatus = 'error';
+            $migrationResults[] = 'Invalid CSRF token';
+        } elseif (!$memoryConfigured) {
+            $migrationStatus = 'error';
+            $migrationResults[] = 'Memory system not configured';
+        } else {
+            try {
+                $selectedAeis = $_POST['selected_aeis'] ?? [];
+                $batchSize = max(10, min(50, (int)($_POST['batch_size'] ?? 25)));
+                $parallelJobs = min(20, max(1, (int)($_POST['parallel_jobs'] ?? 10))); // 1-20 parallel jobs
+                
+                if (empty($selectedAeis)) {
+                    $migrationStatus = 'error';
+                    $migrationResults[] = 'No AEIs selected for migration';
+                } else {
+                    // Create parallel migration jobs
+                    $jobId = bin2hex(random_bytes(16));
+                    
+                    // Prepare AEI data for parallel processing
+                    $aeiJobData = [];
+                    foreach ($selectedAeis as $aeiId) {
+                        $stmt = $pdo->prepare("SELECT name, user_id FROM aeis WHERE id = ? AND is_active = TRUE");
+                        $stmt->execute([$aeiId]);
+                        $aei = $stmt->fetch();
+                        
+                        if ($aei) {
+                            // Get sessions for this AEI
+                            $stmt = $pdo->prepare("
+                                SELECT DISTINCT cs.id as session_id, COUNT(cm.id) as session_messages
+                                FROM chat_sessions cs
+                                INNER JOIN chat_messages cm ON cs.id = cm.session_id  
+                                WHERE cs.aei_id = ?
+                                GROUP BY cs.id
+                                HAVING session_messages >= 3
+                                ORDER BY cs.created_at DESC
+                            ");
+                            $stmt->execute([$aeiId]);
+                            $sessions = $stmt->fetchAll();
+                            
+                            $aeiJobData[] = [
+                                'aei_id' => $aeiId,
+                                'aei_name' => $aei['name'],
+                                'user_id' => $aei['user_id'],
+                                'sessions' => $sessions,
+                                'batch_size' => $batchSize
+                            ];
+                        }
+                    }
+                    
+                    // Create job in database
+                    $stmt = $pdo->prepare("
+                        INSERT INTO migration_jobs (job_id, user_id, job_type, status, job_data, progress_total) 
+                        VALUES (?, ?, 'memory_migration', 'pending', ?, ?)
+                    ");
+                    $stmt->execute([
+                        $jobId, 
+                        getUserSession(), 
+                        json_encode(['aeis' => $aeiJobData, 'parallel_jobs' => $parallelJobs]),
+                        count($aeiJobData)
+                    ]);
+                    
+                    $migrationStatus = 'parallel_started';
+                    $migrationResults[] = "🚀 Parallel migration started with $parallelJobs workers";
+                    $migrationResults[] = "Job ID: $jobId";
+                    $migrationResults[] = "Processing " . count($aeiJobData) . " AEIs in parallel";
+                    $migrationResults[] = "Check progress below or refresh the page";
+                    
+                    // Store job ID for progress tracking
+                    $_SESSION['current_migration_job'] = $jobId;
+                }
+            } catch (Exception $e) {
+                $migrationStatus = 'error';
+                $migrationResults[] = 'Parallel migration setup failed: ' . $e->getMessage();
+            }
+        }
     }
 }
 ?>
@@ -241,6 +320,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                     <input type="hidden" name="action" value="migrate">
 
+                    <!-- Migration Mode -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            Migration Mode
+                        </label>
+                        <div class="space-y-3">
+                            <label class="flex items-center">
+                                <input type="radio" name="migration_mode" value="sequential" class="mr-2" checked>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">Sequential (slower, safer)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="migration_mode" value="parallel" class="mr-2">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">🚀 Parallel (much faster, up to 20x speed)</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- Batch Size -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -250,6 +346,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             Larger batches = less duplicates, better context, but more expensive API calls
+                        </p>
+                    </div>
+
+                    <!-- Parallel Workers (only shown when parallel mode selected) -->
+                    <div id="parallel_settings" style="display: none;">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Parallel Workers (1-20)
+                        </label>
+                        <input type="number" name="parallel_jobs" value="10" min="1" max="20"
+                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            More workers = faster processing, but higher server load
                         </p>
                     </div>
 
@@ -357,6 +465,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             </div>
         </div>
 
+    <?php elseif ($migrationStatus === 'parallel_started'): ?>
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 mb-6">
+            <div class="flex items-center gap-3 mb-4">
+                <i class="fas fa-rocket text-blue-600 dark:text-blue-400"></i>
+                <h2 class="text-lg font-semibold text-blue-800 dark:text-blue-300">Parallel Migration Started!</h2>
+            </div>
+            <div class="bg-blue-100 dark:bg-blue-800/30 p-4 rounded-lg mb-4">
+                <pre class="text-sm text-blue-800 dark:text-blue-300 font-mono whitespace-pre-wrap"><?= htmlspecialchars(implode("\n", $migrationResults)) ?></pre>
+            </div>
+            <!-- Progress Tracking -->
+            <div id="migration_progress" class="mt-4">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-blue-700 dark:text-blue-300">Progress</span>
+                    <span id="progress_text" class="text-sm text-blue-600 dark:text-blue-400">Starting...</span>
+                </div>
+                <div class="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                    <div id="progress_bar" class="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
     <?php elseif ($migrationStatus === 'error'): ?>
         <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 mb-6">
             <div class="flex items-center gap-3 mb-4">
@@ -371,6 +500,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </div>
 
 <script>
+// Migration mode handling
+document.querySelectorAll('input[name="migration_mode"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const parallelSettings = document.getElementById('parallel_settings');
+        const actionInput = document.querySelector('input[name="action"]');
+        
+        if (this.value === 'parallel') {
+            parallelSettings.style.display = 'block';
+            actionInput.value = 'parallel_migrate';
+        } else {
+            parallelSettings.style.display = 'none';
+            actionInput.value = 'migrate';
+        }
+    });
+});
+
 // Select all functionality
 document.getElementById('select_all')?.addEventListener('change', function() {
     const checkboxes = document.querySelectorAll('.aei-checkbox');
@@ -391,4 +536,90 @@ document.querySelectorAll('.aei-checkbox').forEach(checkbox => {
         }
     });
 });
+
+// Parallel migration progress tracking
+<?php if (isset($_SESSION['current_migration_job'])): ?>
+let jobId = '<?= $_SESSION['current_migration_job'] ?>';
+let progressInterval;
+
+function updateProgress() {
+    fetch('/api/migration-progress.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            job_id: jobId,
+            csrf_token: '<?= generateCSRFToken() ?>'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const progressBar = document.getElementById('progress_bar');
+            const progressText = document.getElementById('progress_text');
+            
+            if (progressBar && progressText) {
+                const percent = data.progress_total > 0 ? 
+                    Math.round((data.progress_current / data.progress_total) * 100) : 0;
+                
+                progressBar.style.width = percent + '%';
+                progressText.textContent = `${data.progress_current}/${data.progress_total} (${percent}%) - ${data.status}`;
+                
+                // Stop polling if completed
+                if (data.status === 'completed' || data.status === 'failed' || data.status === 'completed_with_errors') {
+                    clearInterval(progressInterval);
+                    
+                    // Show completion message
+                    setTimeout(() => {
+                        location.reload(); // Refresh to show final results
+                    }, 2000);
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Progress tracking error:', error);
+        clearInterval(progressInterval);
+    });
+}
+
+// Start progress tracking if migration is running
+if (document.getElementById('migration_progress')) {
+    progressInterval = setInterval(updateProgress, 2000); // Check every 2 seconds
+    updateProgress(); // Initial check
+}
+<?php endif; ?>
+
+// Start parallel workers when migration starts
+function startParallelWorkers(jobId, parallelJobs, aeiData) {
+    const workerPromises = [];
+    const chunkedData = chunkArray(aeiData, Math.ceil(aeiData.length / parallelJobs));
+    
+    chunkedData.forEach((chunk, index) => {
+        const workerPromise = fetch('/api/memory-migration-worker.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                job_id: jobId + '_worker_' + index,
+                batch_data: chunk,
+                csrf_token: '<?= generateCSRFToken() ?>'
+            })
+        });
+        
+        workerPromises.push(workerPromise);
+    });
+    
+    return Promise.all(workerPromises);
+}
+
+function chunkArray(array, chunkSize) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+}
 </script>
