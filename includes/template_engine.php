@@ -269,6 +269,15 @@ class TemplateEngine {
             'user_age' => $user_age,
             'user_timezone' => $user['timezone'] ?? '',
             
+            // User appearance
+            'user_hair_color' => $user['user_hair_color'] ?? '',
+            'user_eye_color' => $user['user_eye_color'] ?? '',
+            'user_height' => $user['user_height'] ?? '',
+            'user_build' => $user['user_build'] ?? '',
+            'user_style' => $user['user_style'] ?? '',
+            'user_appearance_custom' => $user['user_appearance_custom'] ?? '',
+            'user_appearance_description' => self::buildUserAppearanceDescription($user),
+            
             // Response preferences
             'response_length' => $responseLengthText,
         ];
@@ -316,6 +325,53 @@ class TemplateEngine {
         // Custom details
         if (!empty($appearanceData['custom'])) {
             $parts[] = $appearanceData['custom'];
+        }
+        
+        return !empty($parts) ? implode('. ', $parts) : '';
+    }
+    
+    /**
+     * Build human-readable user appearance description from user data
+     */
+    private static function buildUserAppearanceDescription($user) {
+        if (empty($user)) {
+            return '';
+        }
+        
+        $parts = [];
+        
+        // Physical features
+        $features = [];
+        if (!empty($user['user_hair_color'])) {
+            $features[] = $user['user_hair_color'] . ' hair';
+        }
+        if (!empty($user['user_eye_color'])) {
+            $features[] = $user['user_eye_color'] . ' eyes';
+        }
+        if (!empty($features)) {
+            $parts[] = implode(', ', $features);
+        }
+        
+        // Build and height
+        $physical = [];
+        if (!empty($user['user_height'])) {
+            $physical[] = strtolower($user['user_height']) . ' height';
+        }
+        if (!empty($user['user_build'])) {
+            $physical[] = strtolower($user['user_build']) . ' build';
+        }
+        if (!empty($physical)) {
+            $parts[] = implode(', ', $physical);
+        }
+        
+        // Style
+        if (!empty($user['user_style'])) {
+            $parts[] = strtolower($user['user_style']) . ' style';
+        }
+        
+        // Custom details
+        if (!empty($user['user_appearance_custom'])) {
+            $parts[] = $user['user_appearance_custom'];
         }
         
         return !empty($parts) ? implode('. ', $parts) : '';

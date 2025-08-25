@@ -59,6 +59,14 @@ function createTablesIfNotExist($pdo) {
             additional_info TEXT NULL,
             timezone VARCHAR(100) DEFAULT 'UTC',
             
+            -- User appearance fields (optional)
+            user_hair_color VARCHAR(50) NULL,
+            user_eye_color VARCHAR(50) NULL,
+            user_height VARCHAR(50) NULL,
+            user_build VARCHAR(50) NULL,
+            user_style VARCHAR(50) NULL,
+            user_appearance_custom TEXT NULL,
+            
             FOREIGN KEY (beta_code) REFERENCES beta_codes(code)
         )",
         'aeis' => "CREATE TABLE IF NOT EXISTS aeis (
@@ -915,6 +923,24 @@ try {
                     break;
                 case 'feedback_contact':
                     $pdo->exec("ALTER TABLE users ADD COLUMN feedback_contact VARCHAR(255) NULL");
+                    break;
+                case 'user_hair_color':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN user_hair_color VARCHAR(50) NULL");
+                    break;
+                case 'user_eye_color':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN user_eye_color VARCHAR(50) NULL");
+                    break;
+                case 'user_height':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN user_height VARCHAR(50) NULL");
+                    break;
+                case 'user_build':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN user_build VARCHAR(50) NULL");
+                    break;
+                case 'user_style':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN user_style VARCHAR(50) NULL");
+                    break;
+                case 'user_appearance_custom':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN user_appearance_custom TEXT NULL");
                     break;
             }
         }

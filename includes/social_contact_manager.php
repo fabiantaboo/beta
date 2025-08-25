@@ -66,13 +66,12 @@ class SocialContactManager {
             
             IMPORTANT REQUIREMENTS:
             - Generate a REALISTIC, UNIQUE name (not generic names like 'Chen' or 'Alex')
-            - Use diverse ethnic backgrounds and cultures for variety
             - Make the personality traits SPECIFIC and interesting
             - Create believable life situations that could lead to interesting conversations
             - Match relationship strength to relationship type (family=70-90, friends=60-85, colleagues=40-70)
             - Consider the AEI's interests and background for natural connections
             
-            Examples of good diverse names: Marcus Thompson, Priya Sharma, Sofia Rodriguez, Kenji Nakamura, Fatima Al-Zahra, Emma O'Connor, etc.
+            Examples of good diverse names: Marcus Thompson, Priya Sharma, Sofia Rodriguez, Kenji Nakamura, Emma O'Connor, etc.
             
             Respond with JSON only:
             {

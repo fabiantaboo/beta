@@ -21,7 +21,7 @@ try {
 }
 
 $step = $_GET['step'] ?? '1';
-$maxSteps = 4;
+$maxSteps = 5;
 
 // Validate step
 if (!is_numeric($step) || $step < 1 || $step > $maxSteps) {
@@ -93,9 +93,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updates[] = "additional_info = ?";
                     $updates[] = "feedback_channel = ?";
                     $updates[] = "feedback_contact = ?";
-                    $updates[] = "is_onboarded = TRUE";
                     array_unshift($params, $feedbackContact, $feedbackChannel, $additionalInfo, $partnerQualities);
                 }
+            } elseif ($step === 5) {
+                // Optional User Appearance
+                $userHairColor = sanitizeInput($_POST['user_hair_color'] ?? '');
+                $userEyeColor = sanitizeInput($_POST['user_eye_color'] ?? '');
+                $userHeight = sanitizeInput($_POST['user_height'] ?? '');
+                $userBuild = sanitizeInput($_POST['user_build'] ?? '');
+                $userStyle = sanitizeInput($_POST['user_style'] ?? '');
+                $userAppearanceCustom = sanitizeInput($_POST['user_appearance_custom'] ?? '');
+                
+                // All appearance fields are optional, so no validation needed
+                $updates[] = "user_hair_color = ?";
+                $updates[] = "user_eye_color = ?";
+                $updates[] = "user_height = ?";
+                $updates[] = "user_build = ?";
+                $updates[] = "user_style = ?";
+                $updates[] = "user_appearance_custom = ?";
+                $updates[] = "is_onboarded = TRUE";
+                array_unshift($params, $userAppearanceCustom, $userStyle, $userBuild, $userHeight, $userEyeColor, $userHairColor);
             }
             
             if (!isset($error) && !empty($updates)) {
@@ -186,7 +203,8 @@ try {
                         1 => "Essential details for personalized interactions",
                         2 => "Your interests shape meaningful conversations", 
                         3 => "Values create deeper understanding",
-                        4 => "Final touches for perfect compatibility"
+                        4 => "Final touches for perfect compatibility",
+                        5 => "Optional appearance details for enhanced interactions"
                     ];
                     echo $stepDescriptions[$step];
                     ?>
@@ -350,7 +368,7 @@ try {
                         ><?= htmlspecialchars($userData['beliefs'] ?? '') ?></textarea>
                     </div>
 
-                <?php else: ?>
+                <?php elseif ($step === 4): ?>
 
                     <div>
                         <label for="partner_qualities" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
@@ -440,6 +458,115 @@ try {
                             </div>
                         </div>
                     </div>
+
+                <?php else: // Step 5 - Optional User Appearance ?>
+
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                            <i class="fas fa-user text-2xl text-white"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Your Appearance</h3>
+                        <p class="text-gray-600 dark:text-gray-400 text-sm">
+                            All fields are optional. This helps your AEI understand and relate to you better during conversations.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Hair Color <span class="text-gray-500 text-xs">(Optional)</span></label>
+                            <select name="user_hair_color" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                <option value="">Select hair color...</option>
+                                <option value="Black" <?= ($userData['user_hair_color'] ?? '') === 'Black' ? 'selected' : '' ?>>Black</option>
+                                <option value="Brown" <?= ($userData['user_hair_color'] ?? '') === 'Brown' ? 'selected' : '' ?>>Brown</option>
+                                <option value="Blonde" <?= ($userData['user_hair_color'] ?? '') === 'Blonde' ? 'selected' : '' ?>>Blonde</option>
+                                <option value="Red" <?= ($userData['user_hair_color'] ?? '') === 'Red' ? 'selected' : '' ?>>Red</option>
+                                <option value="Auburn" <?= ($userData['user_hair_color'] ?? '') === 'Auburn' ? 'selected' : '' ?>>Auburn</option>
+                                <option value="Silver" <?= ($userData['user_hair_color'] ?? '') === 'Silver' ? 'selected' : '' ?>>Silver</option>
+                                <option value="White" <?= ($userData['user_hair_color'] ?? '') === 'White' ? 'selected' : '' ?>>White</option>
+                                <option value="Colorful" <?= ($userData['user_hair_color'] ?? '') === 'Colorful' ? 'selected' : '' ?>>Colorful/Dyed</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Eye Color <span class="text-gray-500 text-xs">(Optional)</span></label>
+                            <select name="user_eye_color" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                <option value="">Select eye color...</option>
+                                <option value="Brown" <?= ($userData['user_eye_color'] ?? '') === 'Brown' ? 'selected' : '' ?>>Brown</option>
+                                <option value="Blue" <?= ($userData['user_eye_color'] ?? '') === 'Blue' ? 'selected' : '' ?>>Blue</option>
+                                <option value="Green" <?= ($userData['user_eye_color'] ?? '') === 'Green' ? 'selected' : '' ?>>Green</option>
+                                <option value="Hazel" <?= ($userData['user_eye_color'] ?? '') === 'Hazel' ? 'selected' : '' ?>>Hazel</option>
+                                <option value="Gray" <?= ($userData['user_eye_color'] ?? '') === 'Gray' ? 'selected' : '' ?>>Gray</option>
+                                <option value="Amber" <?= ($userData['user_eye_color'] ?? '') === 'Amber' ? 'selected' : '' ?>>Amber</option>
+                                <option value="Violet" <?= ($userData['user_eye_color'] ?? '') === 'Violet' ? 'selected' : '' ?>>Violet</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Height <span class="text-gray-500 text-xs">(Optional)</span></label>
+                            <select name="user_height" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                <option value="">Select height...</option>
+                                <option value="Short" <?= ($userData['user_height'] ?? '') === 'Short' ? 'selected' : '' ?>>Short (under 5'4")</option>
+                                <option value="Average" <?= ($userData['user_height'] ?? '') === 'Average' ? 'selected' : '' ?>>Average (5'4" - 5'9")</option>
+                                <option value="Tall" <?= ($userData['user_height'] ?? '') === 'Tall' ? 'selected' : '' ?>>Tall (over 5'9")</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Build <span class="text-gray-500 text-xs">(Optional)</span></label>
+                            <select name="user_build" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                <option value="">Select build...</option>
+                                <option value="Slim" <?= ($userData['user_build'] ?? '') === 'Slim' ? 'selected' : '' ?>>Slim</option>
+                                <option value="Average" <?= ($userData['user_build'] ?? '') === 'Average' ? 'selected' : '' ?>>Average</option>
+                                <option value="Athletic" <?= ($userData['user_build'] ?? '') === 'Athletic' ? 'selected' : '' ?>>Athletic</option>
+                                <option value="Curvy" <?= ($userData['user_build'] ?? '') === 'Curvy' ? 'selected' : '' ?>>Curvy</option>
+                                <option value="Muscular" <?= ($userData['user_build'] ?? '') === 'Muscular' ? 'selected' : '' ?>>Muscular</option>
+                            </select>
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Style <span class="text-gray-500 text-xs">(Optional)</span></label>
+                            <select name="user_style" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                <option value="">Select style...</option>
+                                <option value="Casual" <?= ($userData['user_style'] ?? '') === 'Casual' ? 'selected' : '' ?>>Casual</option>
+                                <option value="Elegant" <?= ($userData['user_style'] ?? '') === 'Elegant' ? 'selected' : '' ?>>Elegant</option>
+                                <option value="Sporty" <?= ($userData['user_style'] ?? '') === 'Sporty' ? 'selected' : '' ?>>Sporty</option>
+                                <option value="Gothic" <?= ($userData['user_style'] ?? '') === 'Gothic' ? 'selected' : '' ?>>Gothic</option>
+                                <option value="Vintage" <?= ($userData['user_style'] ?? '') === 'Vintage' ? 'selected' : '' ?>>Vintage</option>
+                                <option value="Modern" <?= ($userData['user_style'] ?? '') === 'Modern' ? 'selected' : '' ?>>Modern</option>
+                                <option value="Bohemian" <?= ($userData['user_style'] ?? '') === 'Bohemian' ? 'selected' : '' ?>>Bohemian</option>
+                                <option value="Professional" <?= ($userData['user_style'] ?? '') === 'Professional' ? 'selected' : '' ?>>Professional</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label for="user_appearance_custom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            Additional Details <span class="text-gray-500 text-xs">(Optional)</span>
+                        </label>
+                        <textarea 
+                            id="user_appearance_custom" 
+                            name="user_appearance_custom" 
+                            rows="3"
+                            maxlength="500"
+                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
+                            placeholder="Any other distinctive features, accessories, or appearance details you'd like to share..."
+                        ><?= htmlspecialchars($userData['user_appearance_custom'] ?? '') ?></textarea>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">e.g., glasses, tattoos, beard, unique accessories, etc.</p>
+                    </div>
+
+                    <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mt-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-magic text-purple-600 dark:text-purple-400 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="text-sm font-semibold text-purple-800 dark:text-purple-300 mb-1">Profile Complete!</h4>
+                                <p class="text-sm text-purple-700 dark:text-purple-400">
+                                    Your appearance details will help your AEI companions understand and relate to you better. 
+                                    You can skip this step or update these details anytime in your profile settings.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                 <?php endif; ?>
 
                     <!-- Navigation Buttons -->
