@@ -341,6 +341,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                 </form>
+                
+                <!-- Forgot Password Link -->
+                <div class="text-center pt-4">
+                    <a href="/forgot-password" class="text-sm text-gray-600 dark:text-gray-400 hover:text-ayuni-blue transition-colors">
+                        Forgot your password?
+                    </a>
+                </div>
             </div>
             
             <!-- Prominent Beta Access Button -->

@@ -101,22 +101,12 @@ $isConfigured = $mailgun->isConfigured();
 
 <div class="min-h-screen bg-gray-50 dark:bg-ayuni-dark">
     <?php 
-    include_once __DIR__ . '/../includes/header.php';
-    renderHeader([
-        'show_back_button' => true,
-        'back_url' => '/admin'
-    ]);
+    include_once __DIR__ . '/../includes/admin_layout.php';
+    renderAdminNavigation('admin-mailgun');
     ?>
 
     <div class="max-w-4xl mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <i class="fas fa-envelope text-2xl text-white"></i>
-            </div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Mailgun Configuration</h1>
-            <p class="text-gray-600 dark:text-gray-400">Configure email settings for password resets and notifications</p>
-        </div>
+        <?php renderAdminPageHeader('Mailgun Configuration', 'Configure email settings for password resets and notifications'); ?>
 
         <!-- Status Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -158,24 +148,7 @@ $isConfigured = $mailgun->isConfigured();
             </div>
         </div>
 
-        <!-- Error/Success Messages -->
-        <?php if ($error): ?>
-            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-6">
-                <div class="flex items-center">
-                    <i class="fas fa-exclamation-circle mr-2"></i>
-                    <span><?= htmlspecialchars($error) ?></span>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <?php if ($success): ?>
-            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg mb-6">
-                <div class="flex items-center">
-                    <i class="fas fa-check-circle mr-2"></i>
-                    <span><?= htmlspecialchars($success) ?></span>
-                </div>
-            </div>
-        <?php endif; ?>
+        <?php renderAdminAlerts($error, $success); ?>
 
         <!-- Mailgun Settings Form -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">

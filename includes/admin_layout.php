@@ -13,6 +13,7 @@ function renderAdminNavigation($currentPage = '') {
             'icon' => 'fas fa-cogs',
             'items' => [
                 'admin-api' => ['name' => 'API Settings', 'icon' => 'fas fa-key', 'url' => '/admin/api'],
+                'admin-mailgun' => ['name' => 'Email Settings', 'icon' => 'fas fa-envelope', 'url' => '/admin/mailgun'],
                 'admin-prompts' => ['name' => 'System Prompts', 'icon' => 'fas fa-code', 'url' => '/admin/prompts'],
                 'admin-logs' => ['name' => 'Error Logs', 'icon' => 'fas fa-file-alt', 'url' => '/admin/logs']
             ]
