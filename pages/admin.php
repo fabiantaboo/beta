@@ -168,6 +168,10 @@ try {
                         <i class="fas fa-comment-dots text-blue-500 mr-3"></i>
                         <span class="text-sm font-medium text-gray-900 dark:text-white">User Feedback</span>
                     </a>
+                    <a href="/admin/mailgun" class="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-envelope text-pink-500 mr-3"></i>
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">Email Settings</span>
+                    </a>
                 </div>
             </div>
             

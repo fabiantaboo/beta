@@ -812,6 +812,33 @@ function createTablesIfNotExist($pdo) {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             INDEX idx_user_jobs (user_id, created_at),
             INDEX idx_status (status, created_at)
+        )",
+        'password_resets' => "CREATE TABLE IF NOT EXISTS password_resets (
+            id VARCHAR(32) PRIMARY KEY,
+            user_id VARCHAR(32) NOT NULL,
+            token VARCHAR(64) NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP NOT NULL,
+            used_at TIMESTAMP NULL,
+            ip_address VARCHAR(45) NULL,
+            user_agent TEXT NULL,
+            
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            INDEX idx_token (token),
+            INDEX idx_expires (expires_at),
+            INDEX idx_user_created (user_id, created_at)
+        )",
+        'admin_settings' => "CREATE TABLE IF NOT EXISTS admin_settings (
+            setting_key VARCHAR(100) PRIMARY KEY,
+            setting_value TEXT NULL,
+            setting_category VARCHAR(50) DEFAULT 'general',
+            is_encrypted BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            updated_by VARCHAR(32) NULL,
+            
+            INDEX idx_category (setting_category),
+            FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
         )"
     ];
 
