@@ -321,9 +321,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 id="login_password" 
                                 name="password" 
                                 required
-                                class="relative block w-full px-6 py-5 border border-white/20 dark:border-white/10 rounded-3xl bg-white/80 dark:bg-black/40 backdrop-blur-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue/50 focus:border-ayuni-blue/50 transition-all duration-500 text-lg shadow-2xl hover:shadow-ayuni-blue/10 focus:shadow-ayuni-blue/20"
+                                class="relative block w-full px-6 py-5 pr-14 border border-white/20 dark:border-white/10 rounded-3xl bg-white/80 dark:bg-black/40 backdrop-blur-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue/50 focus:border-ayuni-blue/50 transition-all duration-500 text-lg shadow-2xl hover:shadow-ayuni-blue/10 focus:shadow-ayuni-blue/20"
                                 placeholder="Password"
                             />
+                            <button type="button" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="togglePassword('login_password')">
+                                <i id="login_password_icon" class="fas fa-eye"></i>
+                            </button>
                         </div>
                         
                         <!-- Premium sign in button -->
@@ -416,15 +419,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                             Password *
                         </label>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            required
-                            minlength="6"
-                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all"
-                            placeholder="Create a secure password"
-                        />
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                required
+                                minlength="6"
+                                class="block w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all"
+                                placeholder="Create a secure password"
+                            />
+                            <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="togglePassword('password')">
+                                <i id="password_icon" class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             At least 6 characters
                         </p>
@@ -434,15 +442,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label for="confirm_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                             Confirm Password *
                         </label>
-                        <input 
-                            type="password" 
-                            id="confirm_password" 
-                            name="confirm_password" 
-                            required
-                            minlength="6"
-                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all"
-                            placeholder="Confirm your password"
-                        />
+                        <div class="relative">
+                            <input 
+                                type="password" 
+                                id="confirm_password" 
+                                name="confirm_password" 
+                                required
+                                minlength="6"
+                                class="block w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all"
+                                placeholder="Confirm your password"
+                            />
+                            <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="togglePassword('confirm_password')">
+                                <i id="confirm_password_icon" class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="flex space-x-4 pt-4">
@@ -472,3 +485,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
     </div>
 </div>
+
+<script>
+function togglePassword(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '_icon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        passwordField.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+</script>

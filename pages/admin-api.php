@@ -62,22 +62,19 @@ try {
                             Anthropic API Key
                         </label>
                         <div class="flex space-x-3">
-                            <input 
-                                type="password" 
-                                id="api_key" 
-                                name="api_key" 
-                                value="<?= htmlspecialchars($currentApiKey) ?>"
-                                class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent"
-                                placeholder="sk-ant-api03-..."
-                            />
-                            <button 
-                                type="button" 
-                                onclick="toggleApiKeyVisibility()"
-                                class="px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
-                                title="Toggle visibility"
-                            >
-                                <i class="fas fa-eye" id="eye-icon"></i>
-                            </button>
+                            <div class="relative flex-1">
+                                <input 
+                                    type="password" 
+                                    id="api_key" 
+                                    name="api_key" 
+                                    value="<?= htmlspecialchars($currentApiKey) ?>"
+                                    class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent"
+                                    placeholder="sk-ant-api03-..."
+                                />
+                                <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="togglePassword('api_key')">
+                                    <i id="api_key_icon" class="fas fa-eye"></i>
+                                </button>
+                            </div>
                             <button 
                                 type="submit" 
                                 class="px-6 py-2 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white rounded-lg font-medium hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-colors"
@@ -152,18 +149,16 @@ try {
 </div>
 
 <script>
-function toggleApiKeyVisibility() {
-    const input = document.getElementById('api_key');
-    const icon = document.getElementById('eye-icon');
+function togglePassword(fieldId) {
+    const passwordField = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '_icon');
     
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.remove('fa-eye');
-        icon.classList.add('fa-eye-slash');
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        icon.className = 'fas fa-eye-slash';
     } else {
-        input.type = 'password';
-        icon.classList.remove('fa-eye-slash');
-        icon.classList.add('fa-eye');
+        passwordField.type = 'password';
+        icon.className = 'fas fa-eye';
     }
 }
 </script>
