@@ -1717,7 +1717,7 @@ document.addEventListener('DOMContentLoaded', function() {
         { name: 'gender', selector: 'input[name="gender"]:checked', errorMsg: 'Gender is required' },
         { name: 'personality_traits', selector: 'input[name="personality_traits[]"]:checked', errorMsg: 'At least 3 personality traits are required', minCount: 3 },
         { name: 'communication_style', selector: 'input[name="communication_style"]:checked', errorMsg: 'Communication style is required' },
-        { name: 'interests', selector: 'input[name="interests[]"]:checked', errorMsg: 'At least 3 interests are required', minCount: 3 },
+        { name: 'interests', selector: 'input[name="interest_tags[]"]:checked', errorMsg: 'At least 3 interests are required', minCount: 3 },
         { name: 'relationship', selector: 'input[name="relationship"]:checked', errorMsg: 'Relationship type is required' }
     ];
     
@@ -1810,8 +1810,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const styleElement = document.querySelector('[name="communication_style"]');
             container = styleElement ? styleElement.closest('.space-y-3') : null;
         } else if (fieldConfig.name === 'interests') {
-            const interestsElement = document.getElementById('interests-grid');
-            container = interestsElement ? interestsElement.parentNode : null;
+            const interestsElement = document.querySelector('input[name="interest_tags[]"]');
+            container = interestsElement ? interestsElement.closest('.space-y-6') : null;
         } else {
             const relationshipElement = document.querySelector('[name="relationship"]');
             container = relationshipElement ? relationshipElement.closest('.space-y-3') : null;
@@ -1931,10 +1931,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.name === 'gender' || 
             e.target.name === 'personality_traits[]' || 
             e.target.name === 'communication_style' || 
-            e.target.name === 'interests[]' || 
+            e.target.name === 'interest_tags[]' || 
             e.target.name === 'relationship') {
             
-            const fieldConfig = requiredComplexFields.find(f => f.name === e.target.name.replace('[]', ''));
+            let fieldName = e.target.name.replace('[]', '');
+            // Map interest_tags to interests for the validator
+            if (fieldName === 'interest_tags') fieldName = 'interests';
+            
+            const fieldConfig = requiredComplexFields.find(f => f.name === fieldName);
             if (fieldConfig) {
                 validateComplexField(fieldConfig);
             }
