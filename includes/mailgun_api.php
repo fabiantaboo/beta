@@ -171,6 +171,10 @@ If you have questions, please contact our support team.";
             return ['success' => false, 'error' => 'Mailgun not configured'];
         }
         
+        // Debug: Log the API key format (first 10 chars + asterisks for security)
+        $keyPreview = substr($this->apiKey, 0, 10) . str_repeat('*', max(0, strlen($this->apiKey) - 10));
+        error_log("Testing Mailgun connection with API key: " . $keyPreview . " for domain: " . $this->domain);
+        
         // Use the correct Mailgun API v4 domains endpoint to get domain info
         $url = "https://api.mailgun.net/v4/domains/{$this->domain}";
         
@@ -189,6 +193,9 @@ If you have questions, please contact our support team.";
         $curlError = curl_error($ch);
         curl_close($ch);
         
+        // Debug: Log the response details
+        error_log("Mailgun API response - HTTP Code: $httpCode, Response: " . substr($response, 0, 200));
+        
         if ($curlError) {
             return ['success' => false, 'error' => 'Connection failed: ' . $curlError];
         }
@@ -199,7 +206,7 @@ If you have questions, please contact our support team.";
             $domainState = $result['domain']['state'] ?? 'Unknown';
             return ['success' => true, 'message' => "Connection successful! Domain: {$domainName} (Status: {$domainState})"];
         } elseif ($httpCode === 401) {
-            return ['success' => false, 'error' => 'Authentication failed: Invalid API key'];
+            return ['success' => false, 'error' => 'Authentication failed: Invalid API key. Check that your key starts with "key-" and is a private API key.'];
         } elseif ($httpCode === 404) {
             return ['success' => false, 'error' => 'Domain not found: ' . $this->domain];
         } else {
