@@ -220,11 +220,13 @@ if ($selectedSessionId) {
                                             <?php if ($message['message_text']): ?>
                                                 <div class="text-sm">
                                                     <?php
-                                                    // Safely display message preserving emojis
+                                                    // Safely display message preserving emojis and formatting
                                                     $text = $message['message_text'];
                                                     // Only escape dangerous HTML, preserve emojis
                                                     $text = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8', false);
                                                     $text = str_replace(["'", '"'], ['&#039;', '&quot;'], $text);
+                                                    // Add markdown-style italic formatting
+                                                    $text = preg_replace('/\*([^*]+)\*/', '<em>$1</em>', $text);
                                                     echo nl2br($text);
                                                     ?>
                                                 </div>

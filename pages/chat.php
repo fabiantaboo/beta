@@ -21,6 +21,9 @@ function safeDisplayMessage($text) {
     // Manually escape quotes to prevent XSS while keeping emojis
     $text = str_replace(["'", '"'], ['&#039;', '&quot;'], $text);
     
+    // Add markdown-style italic formatting: *text* becomes <em>text</em>
+    $text = preg_replace('/\*([^*]+)\*/', '<em>$1</em>', $text);
+    
     return $text;
 }
 
