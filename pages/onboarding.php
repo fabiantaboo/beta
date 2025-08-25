@@ -55,7 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updates[] = "birth_date = ?";
                     $updates[] = "timezone = ?";
                     // Add parameters in correct order (SQL field order)
-                    $params = array_merge([$gender, $birthDate, $timezone], $params);
+                    // $params currently contains [$userId], we need [$gender, $birthDate, $timezone, $userId]
+                    $params = [$gender, $birthDate, $timezone, $userId];
                 }
             } elseif ($step === 2) {
                 // Professional & Personal
@@ -65,20 +66,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updates[] = "profession = ?";
                 $updates[] = "hobbies = ?";
                 // Add parameters in correct order (SQL field order)
-                $params = array_merge([$profession, $hobbies], $params);
+                // $params currently contains [$userId], we need [$profession, $hobbies, $userId]
+                $params = [$profession, $hobbies, $userId];
             } elseif ($step === 3) {
                 // Lifestyle & Values
-                $sexualOrientation = sanitizeInput($_POST['sexual_orientation'] ?? '');
+                $sexualOrientation = $_POST['sexual_orientation'] ?? '';
                 $dailyRituals = sanitizeInput($_POST['daily_rituals'] ?? '');
                 $lifeGoals = sanitizeInput($_POST['life_goals'] ?? '');
                 $beliefs = sanitizeInput($_POST['beliefs'] ?? '');
                 
+                // Don't sanitize sexual_orientation as it's a select dropdown with predefined values
+                $sexualOrientation = sanitizeInput($sexualOrientation);
                 $updates[] = "sexual_orientation = ?";
                 $updates[] = "daily_rituals = ?";
                 $updates[] = "life_goals = ?";
                 $updates[] = "beliefs = ?";
-                // Add parameters in correct order (SQL field order)
-                $params = array_merge([$sexualOrientation, $dailyRituals, $lifeGoals, $beliefs], $params);
+                // Add parameters in correct order (SQL field order) 
+                // $params currently contains [$userId], we need [$sexualOrientation, $dailyRituals, $lifeGoals, $beliefs, $userId]
+                $params = [$sexualOrientation, $dailyRituals, $lifeGoals, $beliefs, $userId];
             } elseif ($step === 4) {
                 // Relationship, Additional & Feedback Contact
                 $partnerQualities = sanitizeInput($_POST['partner_qualities'] ?? '');
@@ -97,7 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updates[] = "feedback_channel = ?";
                     $updates[] = "feedback_contact = ?";
                     // Add parameters in correct order (SQL field order)
-                    $params = array_merge([$partnerQualities, $additionalInfo, $feedbackChannel, $feedbackContact], $params);
+                    // $params currently contains [$userId], we need [$partnerQualities, $additionalInfo, $feedbackChannel, $feedbackContact, $userId]
+                    $params = [$partnerQualities, $additionalInfo, $feedbackChannel, $feedbackContact, $userId];
                 }
             } elseif ($step === 5) {
                 // Optional User Appearance
@@ -116,8 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updates[] = "user_style = ?";
                 $updates[] = "user_appearance_custom = ?";
                 $updates[] = "is_onboarded = TRUE";
-                // Add parameters in correct order (SQL field order) 
-                $params = array_merge([$userHairColor, $userEyeColor, $userHeight, $userBuild, $userStyle, $userAppearanceCustom], $params);
+                // Add parameters in correct order (SQL field order)
+                // $params currently contains [$userId], we need [$userHairColor, $userEyeColor, $userHeight, $userBuild, $userStyle, $userAppearanceCustom, $userId]
+                $params = [$userHairColor, $userEyeColor, $userHeight, $userBuild, $userStyle, $userAppearanceCustom, $userId];
             }
             
             if (!isset($error) && !empty($updates)) {
