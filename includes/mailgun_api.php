@@ -242,7 +242,7 @@ If you have questions, please contact our support team.";
                             
                             <!-- Simple Link -->
                             <p style="margin: 0 0 30px 0; text-align: center;">
-                                <a href="' . htmlspecialchars($registrationUrl) . '" style="color: #39D2DF; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; text-decoration: underline;">Meet Your AEI</a>
+                                <a href="' . htmlspecialchars($registrationUrl) . '" style="color: #39D2DF; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; text-decoration: underline;">Meet Your AEI (click here to join)</a>
                             </p>
                             
                             <!-- Beta Code Box -->
