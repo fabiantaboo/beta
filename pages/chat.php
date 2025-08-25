@@ -8,7 +8,14 @@ function safeDisplayMessage($text) {
         $text = mb_convert_encoding($text, 'UTF-8', 'auto');
     }
     
-    // Use htmlspecialchars with UTF-8 and preserve emojis
+    // Check if text is already HTML encoded (for backward compatibility)
+    // If it contains HTML entities but no emojis, it's likely double-encoded
+    if (strpos($text, '&') !== false && !preg_match('/[\x{1F600}-\x{1F64F}]/u', $text)) {
+        // Decode once to fix double encoding
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    
+    // Now safely encode for display (this preserves emojis)
     return htmlspecialchars($text, ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
 }
 

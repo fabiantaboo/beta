@@ -40,7 +40,7 @@ $uploadedImage = null;
 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     // FormData request with image
     $input = [
-        'message' => sanitizeInput($_POST['message'] ?? ''),
+        'message' => sanitizeChatMessage($_POST['message'] ?? ''),
         'aei_id' => sanitizeInput($_POST['aei_id'] ?? ''),
         'csrf_token' => $_POST['csrf_token'] ?? '', // CSRF tokens should not be sanitized
         'action' => sanitizeInput($_POST['action'] ?? '')
@@ -125,7 +125,7 @@ if (!verifyCSRFToken($input['csrf_token'] ?? '')) {
 }
 
 // Validate required fields
-$message = sanitizeInput($input['message'] ?? '');
+$message = sanitizeChatMessage($input['message'] ?? '');
 $aeiId = sanitizeInput($input['aei_id'] ?? '');
 
 if ((empty($message) && !$uploadedImage) || empty($aeiId)) {
