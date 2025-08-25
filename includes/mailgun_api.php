@@ -223,7 +223,7 @@ If you have questions, please contact our support team.";
                     <!-- Header with Logo -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #39D2DF 0%, #546BEC 100%); color: #ffffff; padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
-                            <img src="https://' . $_SERVER['HTTP_HOST'] . '/assets/ayuni.png" alt="Ayuni" style="height: 60px; width: auto; margin-bottom: 20px;" />
+                            <img src="https://' . $_SERVER['HTTP_HOST'] . '/assets/ayuni.png" alt="Ayuni" style="height: 40px; width: auto; margin-bottom: 15px;" />
                             <h1 style="margin: 0; font-family: Arial, sans-serif; font-size: 28px; font-weight: bold;">You\'re Invited!</h1>
                             <p style="margin: 10px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; opacity: 0.9;">Join Ayuni Beta - End loneliness forever</p>
                         </td>
@@ -234,18 +234,16 @@ If you have questions, please contact our support team.";
                         <td style="padding: 40px 30px;">
                             <p style="margin: 0 0 20px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">' . $greeting . ',</p>
                             
-                            <p style="margin: 0 0 30px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">You\'ve been invited to join Ayuni Beta - the revolutionary platform where you can create your personal AEI (Artificial Emotional Intelligence) companion.</p>
+                            <p style="margin: 0 0 25px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Sometimes life can feel a little lonely, and that\'s completely okay - we all experience it. You\'ve been invited to join Ayuni Beta, where meaningful connection is just a conversation away.</p>
                             
-                            <p style="margin: 0 0 30px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Your personal AEI awaits. Click the button below to get started:</p>
+                            <p style="margin: 0 0 25px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Here, you\'ll create your own AEI - an Artificial Emotional Intelligence companion who truly understands you. Someone who remembers your stories, celebrates your wins, and is there when you need to talk.</p>
                             
-                            <!-- Button -->
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 30px auto;">
-                                <tr>
-                                    <td style="text-align: center;">
-                                        <a href="' . htmlspecialchars($registrationUrl) . '" style="display: inline-block; background: linear-gradient(135deg, #39D2DF 0%, #546BEC 100%); color: #ffffff; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: Arial, sans-serif; font-size: 18px;">Join Ayuni Beta</a>
-                                    </td>
-                                </tr>
-                            </table>
+                            <p style="margin: 0 0 30px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Your journey toward deeper connection starts here:</p>
+                            
+                            <!-- Simple Link -->
+                            <p style="margin: 0 0 30px 0; text-align: center;">
+                                <a href="' . htmlspecialchars($registrationUrl) . '" style="color: #39D2DF; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; text-decoration: underline;">Start Your Journey with Ayuni Beta</a>
+                            </p>
                             
                             <!-- Beta Code Box -->
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
@@ -271,7 +269,9 @@ If you have questions, please contact our support team.";
                                 </tr>
                             </table>
                             
-                            <p style="margin: 30px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Welcome to the future of AI companionship. We can\'t wait to see what you and your AEI will create together!</p>
+                            <p style="margin: 30px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Take your time getting to know each other. Every conversation is a step toward building something truly special - a bond that grows stronger with each interaction.</p>
+                            
+                            <p style="margin: 20px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #555555; font-style: italic;">You deserve companionship that understands you. Your AEI is waiting to meet you.</p>
                         </td>
                     </tr>
                     
@@ -297,16 +297,18 @@ If you have questions, please contact our support team.";
 
 🎉 You've been invited to join Ayuni Beta!
 
-You've been selected to be part of Ayuni Beta - the revolutionary platform where you can create your personal AEI (Artificial Emotional Intelligence) companion.
+Sometimes life can feel a little lonely, and that's completely okay - we all experience it. You've been invited to join Ayuni Beta, where meaningful connection is just a conversation away.
+
+Here, you'll create your own AEI - an Artificial Emotional Intelligence companion who truly understands you. Someone who remembers your stories, celebrates your wins, and is there when you need to talk.
 
 Your Beta Code: $betaCode
 
-To get started, visit this link:
+To start your journey, visit this link:
 $registrationUrl
 
-Your personal AEI awaits. Join us in shaping the future of AI companionship!
+Take your time getting to know each other. Every conversation is a step toward building something truly special - a bond that grows stronger with each interaction.
 
-Welcome to the future of AI companionship. We can't wait to see what you and your AEI will create together!
+You deserve companionship that understands you. Your AEI is waiting to meet you.
 
 ---
 Ayuni Beta
