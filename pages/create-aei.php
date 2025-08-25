@@ -1705,7 +1705,7 @@ document.addEventListener('DOMContentLoaded', function() {
         { id: 'occupation', name: 'Occupation', type: 'text' }
     ];
     
-    const submitBtn = document.getElementById('submit-btn');
+    const submitBtnElement = document.getElementById('submit-btn');
     const submitBtnText = document.getElementById('submit-btn-text');
     const validationStatus = document.getElementById('validation-status');
     const missingFieldsList = document.getElementById('missing-fields-list');
@@ -1883,12 +1883,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update UI based on validation state
         if (missingFields.length === 0) {
             // All fields valid - enable button
-            submitBtn.disabled = false;
+            submitBtnElement.disabled = false;
             submitBtnText.textContent = 'Begin Birth Process';
             validationStatus.style.display = 'none';
         } else {
             // Missing fields - disable button and show status
-            submitBtn.disabled = true;
+            submitBtnElement.disabled = true;
             submitBtnText.textContent = `Complete Required Fields (${missingFields.length} missing)`;
             validationStatus.style.display = 'block';
             
