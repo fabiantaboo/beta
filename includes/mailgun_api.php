@@ -171,7 +171,8 @@ If you have questions, please contact our support team.";
             return ['success' => false, 'error' => 'Mailgun not configured'];
         }
         
-        $url = "https://api.mailgun.net/v3/{$this->domain}";
+        // Use the correct Mailgun API v4 domains endpoint to get domain info
+        $url = "https://api.mailgun.net/v4/domains/{$this->domain}";
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -179,6 +180,9 @@ If you have questions, please contact our support team.";
         curl_setopt($ch, CURLOPT_USERPWD, "api:{$this->apiKey}");
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         curl_setopt($ch, CURLOPT_USERAGENT, 'Ayuni-Beta/1.0');
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Accept: application/json'
+        ]);
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -190,9 +194,18 @@ If you have questions, please contact our support team.";
         }
         
         if ($httpCode === 200) {
-            return ['success' => true, 'message' => 'Mailgun connection successful'];
+            $result = json_decode($response, true);
+            $domainName = $result['domain']['name'] ?? 'Unknown';
+            $domainState = $result['domain']['state'] ?? 'Unknown';
+            return ['success' => true, 'message' => "Connection successful! Domain: {$domainName} (Status: {$domainState})"];
+        } elseif ($httpCode === 401) {
+            return ['success' => false, 'error' => 'Authentication failed: Invalid API key'];
+        } elseif ($httpCode === 404) {
+            return ['success' => false, 'error' => 'Domain not found: ' . $this->domain];
         } else {
-            return ['success' => false, 'error' => "HTTP $httpCode: " . substr($response, 0, 200)];
+            $errorResponse = json_decode($response, true);
+            $errorMessage = $errorResponse['message'] ?? substr($response, 0, 100);
+            return ['success' => false, 'error' => "HTTP $httpCode: $errorMessage"];
         }
     }
 }
