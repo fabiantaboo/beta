@@ -34,18 +34,12 @@ try {
 $chatSessions = [];
 if ($selectedUserId) {
     try {
-        // Debug: First check if chat_sessions exist for this user
-        $debugStmt = $pdo->prepare("SELECT COUNT(*) as count FROM chat_sessions WHERE user_id = ?");
-        $debugStmt->execute([$selectedUserId]);
-        $debugCount = $debugStmt->fetchColumn();
-        error_log("DEBUG: Found $debugCount chat sessions for user $selectedUserId");
-        
         $stmt = $pdo->prepare("
             SELECT 
                 cs.*,
                 a.name as aei_name,
                 COUNT(cm.id) as message_count,
-                MAX(cm.timestamp) as last_message
+                MAX(cm.created_at) as last_message
             FROM chat_sessions cs
             JOIN aeis a ON cs.aei_id = a.id AND a.user_id = cs.user_id
             LEFT JOIN chat_messages cm ON cs.id = cm.session_id
@@ -55,7 +49,6 @@ if ($selectedUserId) {
         ");
         $stmt->execute([$selectedUserId]);
         $chatSessions = $stmt->fetchAll();
-        error_log("DEBUG: Retrieved " . count($chatSessions) . " chat sessions after JOIN");
     } catch (PDOException $e) {
         error_log("Database error fetching chat sessions: " . $e->getMessage());
         $chatSessions = [];
@@ -87,7 +80,7 @@ if ($selectedSessionId) {
                 SELECT *
                 FROM chat_messages
                 WHERE session_id = ?
-                ORDER BY timestamp ASC
+                ORDER BY created_at ASC
             ");
             $stmt->execute([$selectedSessionId]);
             $messages = $stmt->fetchAll();
@@ -224,16 +217,16 @@ if ($selectedSessionId) {
                                                 </div>
                                             <?php endif; ?>
                                             
-                                            <?php if ($message['content']): ?>
+                                            <?php if ($message['message_text']): ?>
                                                 <div class="text-sm">
-                                                    <?= nl2br(htmlspecialchars($message['content'])) ?>
+                                                    <?= nl2br(htmlspecialchars($message['message_text'])) ?>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
                                         <div class="flex items-center mt-1 text-xs text-gray-500 <?= $message['sender_type'] === 'user' ? 'justify-end' : 'justify-start' ?>">
                                             <span><?= $message['sender_type'] === 'user' ? $sessionInfo['anonymous_name'] : $sessionInfo['aei_name'] ?></span>
                                             <span class="mx-1">•</span>
-                                            <span><?= date('M j, g:i A', strtotime($message['timestamp'])) ?></span>
+                                            <span><?= date('M j, g:i A', strtotime($message['created_at'])) ?></span>
                                         </div>
                                     </div>
                                 </div>
