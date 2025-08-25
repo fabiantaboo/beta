@@ -131,8 +131,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'dynamics' => $relationshipDynamics
         ]);
         
+        // Validation for required fields
+        $errors = [];
         if (empty($name)) {
-            $error = "AEI name is required";
+            $errors[] = "AEI name is required";
+        }
+        if (empty($gender)) {
+            $errors[] = "Gender is required";
+        }
+        if (empty($personalityTraits) && empty($customTraits)) {
+            $errors[] = "At least 3 personality traits are required";
+        } elseif (count(array_merge($personalityTraits, $customTraits)) < 3) {
+            $errors[] = "Please select at least 3 personality traits";
+        }
+        if (empty($communicationStyle)) {
+            $errors[] = "Communication style is required";
+        }
+        if (empty($occupation)) {
+            $errors[] = "Occupation or role is required";
+        }
+        if (empty($interestTags) && empty($customInterests)) {
+            $errors[] = "At least 3 interests are required";
+        } elseif (count(array_merge($interestTags, $customInterests)) < 3) {
+            $errors[] = "Please select at least 3 interests";
+        }
+        if (empty($relationshipType)) {
+            $errors[] = "Relationship type is required";
+        }
+        if (empty($hairColor)) {
+            $errors[] = "Hair color is required for avatar generation";
+        }
+        if (empty($eyeColor)) {
+            $errors[] = "Eye color is required for avatar generation";
+        }
+        if (empty($height)) {
+            $errors[] = "Height is required for avatar generation";
+        }
+        if (empty($build)) {
+            $errors[] = "Build is required for avatar generation";
+        }
+        if (empty($style)) {
+            $errors[] = "Style is required for avatar generation";
+        }
+        
+        if (!empty($errors)) {
+            $error = implode('. ', $errors);
         } else {
             try {
                 // Store AEI data in session for avatar selection
@@ -352,26 +395,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Gender Identity
+                                Gender Identity *
                             </label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <label class="gender-option flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="gender" value="Female" class="sr-only" <?= ($_POST['gender'] ?? '') === 'Female' ? 'checked' : '' ?>>
+                                    <input type="radio" name="gender" value="Female" class="sr-only" required <?= ($_POST['gender'] ?? '') === 'Female' ? 'checked' : '' ?>>
                                     <i class="fas fa-venus text-pink-500 mr-2"></i>
                                     <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Female</span>
                                 </label>
                                 <label class="gender-option flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="gender" value="Male" class="sr-only" <?= ($_POST['gender'] ?? '') === 'Male' ? 'checked' : '' ?>>
+                                    <input type="radio" name="gender" value="Male" class="sr-only" required <?= ($_POST['gender'] ?? '') === 'Male' ? 'checked' : '' ?>>
                                     <i class="fas fa-mars text-blue-500 mr-2"></i>
                                     <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Male</span>
                                 </label>
                                 <label class="gender-option flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="gender" value="Non-binary" class="sr-only" <?= ($_POST['gender'] ?? '') === 'Non-binary' ? 'checked' : '' ?>>
+                                    <input type="radio" name="gender" value="Non-binary" class="sr-only" required <?= ($_POST['gender'] ?? '') === 'Non-binary' ? 'checked' : '' ?>>
                                     <i class="fas fa-genderless text-purple-500 mr-2"></i>
                                     <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Non-binary</span>
                                 </label>
                                 <label class="gender-option flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="gender" value="Other" class="sr-only" <?= ($_POST['gender'] ?? '') === 'Other' ? 'checked' : '' ?>>
+                                    <input type="radio" name="gender" value="Other" class="sr-only" required <?= ($_POST['gender'] ?? '') === 'Other' ? 'checked' : '' ?>>
                                     <i class="fas fa-question text-gray-500 mr-2"></i>
                                     <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Other</span>
                                 </label>
@@ -410,8 +453,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="space-y-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                                Core Personality Traits
-                                <span class="text-xs text-gray-500 ml-2">(Select 3-6 traits that best describe them)</span>
+                                Core Personality Traits *
+                                <span class="text-xs text-gray-500 ml-2">(Select at least 3 traits that best describe them)</span>
                             </label>
                             <div id="personality-traits" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                 <?php 
@@ -454,25 +497,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">How do they communicate?</h4>
+                            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">How do they communicate? *</h4>
                             <div class="space-y-3">
                                 <label class="comm-style flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="communication_style" value="Formal and polite" class="sr-only">
+                                    <input type="radio" name="communication_style" value="Formal and polite" class="sr-only" required>
                                     <i class="fas fa-user-tie text-blue-500 mr-3"></i>
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Formal and polite</span>
                                 </label>
                                 <label class="comm-style flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="communication_style" value="Casual and friendly" class="sr-only">
+                                    <input type="radio" name="communication_style" value="Casual and friendly" class="sr-only" required>
                                     <i class="fas fa-smile text-yellow-500 mr-3"></i>
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Casual and friendly</span>
                                 </label>
                                 <label class="comm-style flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="communication_style" value="Playful and teasing" class="sr-only">
+                                    <input type="radio" name="communication_style" value="Playful and teasing" class="sr-only" required>
                                     <i class="fas fa-laugh text-pink-500 mr-3"></i>
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Playful and teasing</span>
                                 </label>
                                 <label class="comm-style flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="communication_style" value="Direct and straightforward" class="sr-only">
+                                    <input type="radio" name="communication_style" value="Direct and straightforward" class="sr-only" required>
                                     <i class="fas fa-arrow-right text-red-500 mr-3"></i>
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Direct and straightforward</span>
                                 </label>
@@ -516,8 +559,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Hair Color</label>
-                            <select name="hair_color" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Hair Color *</label>
+                            <select name="hair_color" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
                                 <option value="">Select hair color...</option>
                                 <option value="Black">Black</option>
                                 <option value="Brown">Brown</option>
@@ -531,8 +574,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Eye Color</label>
-                            <select name="eye_color" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Eye Color *</label>
+                            <select name="eye_color" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
                                 <option value="">Select eye color...</option>
                                 <option value="Brown">Brown</option>
                                 <option value="Blue">Blue</option>
@@ -546,8 +589,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Height</label>
-                            <select name="height" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Height *</label>
+                            <select name="height" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
                                 <option value="">Select height...</option>
                                 <option value="Petite">Petite (under 5'4")</option>
                                 <option value="Average">Average (5'4" - 5'7")</option>
@@ -556,8 +599,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Build</label>
-                            <select name="build" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Build *</label>
+                            <select name="build" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
                                 <option value="">Select build...</option>
                                 <option value="Slim">Slim</option>
                                 <option value="Average">Average</option>
@@ -568,8 +611,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Style</label>
-                            <select name="style" class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Style *</label>
+                            <select name="style" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
                                 <option value="">Select style...</option>
                                 <option value="Casual">Casual</option>
                                 <option value="Elegant">Elegant</option>
@@ -610,12 +653,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="occupation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                    Occupation or Role
+                                    Occupation or Role *
                                 </label>
                                 <input 
                                     type="text" 
                                     id="occupation" 
                                     name="occupation" 
+                                    required
                                     maxlength="100"
                                     class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
                                     placeholder="Student, Artist, Scientist, Chef..."
@@ -639,8 +683,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                                Interests & Hobbies
-                                <span class="text-xs text-gray-500 ml-2">(Select what they're passionate about)</span>
+                                Interests & Hobbies *
+                                <span class="text-xs text-gray-500 ml-2">(Select at least 3 things they're passionate about)</span>
                             </label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                 <?php 
@@ -713,12 +757,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="space-y-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                                What is your AEI for you?
+                                What is your AEI for you? *
                             </label>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="relationship-options">
                                 <!-- Friendship -->
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Best Friend" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Best Friend" class="sr-only" required>
                                     <i class="fas fa-user-friends text-blue-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Best Friend</span>
@@ -726,7 +770,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                 </label>
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Close Friend" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Close Friend" class="sr-only" required>
                                     <i class="fas fa-users text-blue-400 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Close Friend</span>
@@ -736,7 +780,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <!-- Family (Gender-aware) -->
                                 <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="female">
-                                    <input type="radio" name="relationship_type" value="Sister" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Sister" class="sr-only" required>
                                     <i class="fas fa-female text-pink-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Sister</span>
@@ -744,7 +788,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                 </label>
                                 <label class="relationship-type family-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="male">
-                                    <input type="radio" name="relationship_type" value="Brother" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Brother" class="sr-only" required>
                                     <i class="fas fa-male text-blue-600 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Brother</span>
@@ -754,7 +798,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <!-- Romantic (Gender-aware) -->
                                 <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="female">
-                                    <input type="radio" name="relationship_type" value="Girlfriend" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Girlfriend" class="sr-only" required>
                                     <i class="fas fa-heart text-red-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Girlfriend</span>
@@ -762,7 +806,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                 </label>
                                 <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="male">
-                                    <input type="radio" name="relationship_type" value="Boyfriend" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Boyfriend" class="sr-only" required>
                                     <i class="fas fa-heart text-red-600 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Boyfriend</span>
@@ -770,7 +814,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                 </label>
                                 <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="female">
-                                    <input type="radio" name="relationship_type" value="Wife" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Wife" class="sr-only" required>
                                     <i class="fas fa-ring text-gold-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Wife</span>
@@ -778,7 +822,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                 </label>
                                 <label class="relationship-type romantic-relation flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" data-aei-gender="male">
-                                    <input type="radio" name="relationship_type" value="Husband" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Husband" class="sr-only" required>
                                     <i class="fas fa-ring text-gold-600 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Husband</span>
@@ -788,7 +832,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <!-- Professional/Other -->
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Mentor" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Mentor" class="sr-only" required>
                                     <i class="fas fa-graduation-cap text-purple-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Mentor</span>
@@ -796,7 +840,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                 </label>
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Colleague" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Colleague" class="sr-only" required>
                                     <i class="fas fa-briefcase text-gray-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Colleague</span>
@@ -804,7 +848,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                 </label>
                                 <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <input type="radio" name="relationship_type" value="Companion" class="sr-only">
+                                    <input type="radio" name="relationship_type" value="Companion" class="sr-only" required>
                                     <i class="fas fa-smile text-yellow-500 mr-3"></i>
                                     <div>
                                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Companion</span>
