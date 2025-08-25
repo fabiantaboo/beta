@@ -19,8 +19,8 @@ function logApiRequest($userId, $aeiId, $sessionId, $messageId, $requestPayload,
         ");
         $stmt->execute([
             $logId, $userId, $aeiId, $sessionId, $messageId,
-            json_encode($requestPayload), 
-            json_encode($responsePayload),
+            json_encode($requestPayload, JSON_UNESCAPED_UNICODE), 
+            json_encode($responsePayload, JSON_UNESCAPED_UNICODE),
             $systemPrompt, $userMessage, $aiResponse,
             $model, $tokensUsed, $processingTime,
             $status, $errorMessage
@@ -264,9 +264,9 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
             CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
+                'Content-Type: application/json; charset=utf-8',
                 'x-api-key: ' . $apiKey,
                 'anthropic-version: 2023-06-01'
             ],
@@ -497,9 +497,9 @@ Do not include any explanation or additional text - ONLY the JSON object.";
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
+            'Content-Type: application/json; charset=utf-8',
             'x-api-key: ' . $apiKey,
             'anthropic-version: 2023-06-01'
         ],
@@ -1003,9 +1003,9 @@ Be creative but realistic. Make sure all selected traits and interests are from 
     curl_setopt($ch, CURLOPT_URL, 'https://api.anthropic.com/v1/messages');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload, JSON_UNESCAPED_UNICODE));
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json',
+        'Content-Type: application/json; charset=utf-8',
         'x-api-key: ' . $apiKey,
         'anthropic-version: 2023-06-01'
     ]);
