@@ -20,7 +20,7 @@ ini_set('session.save_handler', 'files');
 // Try to set a custom session save path if possible (may fail on some hosts)
 $customSessionPath = __DIR__ . '/../temp/sessions';
 if (!is_dir($customSessionPath)) {
-    @mkdir($customSessionPath, 0755, true);
+    @mkdir($customSessionPath, 0700, true);
 }
 if (is_dir($customSessionPath) && is_writable($customSessionPath)) {
     ini_set('session.save_path', $customSessionPath);
@@ -28,7 +28,7 @@ if (is_dir($customSessionPath) && is_writable($customSessionPath)) {
     // Fallback: try system temp directory
     $systemTemp = sys_get_temp_dir() . '/ayuni_sessions';
     if (!is_dir($systemTemp)) {
-        @mkdir($systemTemp, 0755, true);
+        @mkdir($systemTemp, 0700, true);
     }
     if (is_dir($systemTemp) && is_writable($systemTemp)) {
         ini_set('session.save_path', $systemTemp);

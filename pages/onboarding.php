@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updates[] = "gender = ?";
                     $updates[] = "birth_date = ?";
                     $updates[] = "timezone = ?";
-                    array_unshift($params, $timezone, $birthDate, $gender);
+                    array_unshift($params, $gender, $birthDate, $timezone);
                 }
             } elseif ($step === 2) {
                 // Professional & Personal
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $updates[] = "profession = ?";
                 $updates[] = "hobbies = ?";
-                array_unshift($params, $hobbies, $profession);
+                array_unshift($params, $profession, $hobbies);
             } elseif ($step === 3) {
                 // Lifestyle & Values
                 $sexualOrientation = sanitizeInput($_POST['sexual_orientation'] ?? '');
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updates[] = "daily_rituals = ?";
                 $updates[] = "life_goals = ?";
                 $updates[] = "beliefs = ?";
-                array_unshift($params, $beliefs, $lifeGoals, $dailyRituals, $sexualOrientation);
+                array_unshift($params, $sexualOrientation, $dailyRituals, $lifeGoals, $beliefs);
             } elseif ($step === 4) {
                 // Relationship, Additional & Feedback Contact
                 $partnerQualities = sanitizeInput($_POST['partner_qualities'] ?? '');
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updates[] = "additional_info = ?";
                     $updates[] = "feedback_channel = ?";
                     $updates[] = "feedback_contact = ?";
-                    array_unshift($params, $feedbackContact, $feedbackChannel, $additionalInfo, $partnerQualities);
+                    array_unshift($params, $partnerQualities, $additionalInfo, $feedbackChannel, $feedbackContact);
                 }
             } elseif ($step === 5) {
                 // Optional User Appearance
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updates[] = "user_style = ?";
                 $updates[] = "user_appearance_custom = ?";
                 $updates[] = "is_onboarded = TRUE";
-                array_unshift($params, $userAppearanceCustom, $userStyle, $userBuild, $userHeight, $userEyeColor, $userHairColor);
+                array_unshift($params, $userHairColor, $userEyeColor, $userHeight, $userBuild, $userStyle, $userAppearanceCustom);
             }
             
             if (!isset($error) && !empty($updates)) {

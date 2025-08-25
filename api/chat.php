@@ -40,10 +40,10 @@ $uploadedImage = null;
 if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
     // FormData request with image
     $input = [
-        'message' => $_POST['message'] ?? '',
-        'aei_id' => $_POST['aei_id'] ?? '',
-        'csrf_token' => $_POST['csrf_token'] ?? '',
-        'action' => $_POST['action'] ?? ''
+        'message' => sanitizeInput($_POST['message'] ?? ''),
+        'aei_id' => sanitizeInput($_POST['aei_id'] ?? ''),
+        'csrf_token' => $_POST['csrf_token'] ?? '', // CSRF tokens should not be sanitized
+        'action' => sanitizeInput($_POST['action'] ?? '')
     ];
     
     // Handle image upload

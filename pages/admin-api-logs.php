@@ -11,10 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     } else {
         try {
             // Get export parameters
-            $startDate = $_POST['start_date'] ?? '';
-            $endDate = $_POST['end_date'] ?? '';
-            $status = $_POST['status_filter'] ?? '';
-            $format = $_POST['export_format'] ?? 'json';
+            $startDate = sanitizeInput($_POST['start_date'] ?? '');
+            $endDate = sanitizeInput($_POST['end_date'] ?? '');
+            $status = sanitizeInput($_POST['status_filter'] ?? '');
+            $format = sanitizeInput($_POST['export_format'] ?? 'json');
             
             // Build query
             $whereConditions = [];

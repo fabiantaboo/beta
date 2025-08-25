@@ -8,8 +8,7 @@ ini_set('log_errors', 1);
 // Use centralized session configuration
 include_once '../includes/session_config.php';
 
-// Debug logging
-error_log("LOAD_MESSAGES_DEBUG: API called at " . date('Y-m-d H:i:s'));
+// Debug logging - removed for production
 
 include_once '../config/database.php';
 include_once '../includes/functions.php';
@@ -34,13 +33,10 @@ if (!isLoggedIn()) {
 
 // Get JSON input
 $rawInput = file_get_contents('php://input');
-error_log("LOAD_MESSAGES_DEBUG: Raw input: " . $rawInput);
-
 $input = json_decode($rawInput, true);
-error_log("LOAD_MESSAGES_DEBUG: Parsed input: " . print_r($input, true));
 
 if (!$input) {
-    error_log("LOAD_MESSAGES_DEBUG: Failed to parse JSON input");
+    error_log("API Error: Failed to parse JSON input");
     http_response_code(400);
     echo json_encode(['error' => 'Invalid JSON input']);
     exit;

@@ -150,7 +150,7 @@ function generateSystemPrompt($aei, $user, $sessionId = null) {
         return $basePrompt;
     } catch (Exception $e) {
         error_log("System prompt generation error: " . $e->getMessage());
-        error_log("AEI data: " . print_r($aei, true));
+        // AEI data logged for debugging - removed in production
         
         // Return a safe fallback
         return "You are " . ($aei['name'] ?? 'an AEI') . ", an Artificial Emotional Intelligence. Be helpful and conversational.";
@@ -555,19 +555,17 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
         $memoryManager = null;
         $memoryContext = "";
         
-        // DEBUG: Log memory system initialization attempt
-        error_log("MEMORY_DEBUG: === MEMORY SYSTEM INIT START ===");
-        error_log("MEMORY_DEBUG: Checking memory config file...");
+        // Memory system initialization
         
         if (file_exists(__DIR__ . '/../config/memory_config.php')) {
-            error_log("MEMORY_DEBUG: memory_config.php found, loading...");
+            // Memory config found
             require_once __DIR__ . '/../config/memory_config.php';
-            error_log("MEMORY_DEBUG: Config loaded, checking constants...");
+            // Config loaded
             require_once __DIR__ . '/memory_manager_inference.php';
-            error_log("MEMORY_DEBUG: MemoryManagerInference class loaded");
+            // MemoryManagerInference class loaded
             
             if (defined('QDRANT_URL') && defined('QDRANT_API_KEY')) {
-                error_log("MEMORY_DEBUG: QDRANT_URL and QDRANT_API_KEY are defined, initializing MemoryManager...");
+                // QDRANT credentials found, initializing MemoryManager
                 try {
                     $memoryOptions = [
                         'default_model' => defined('MEMORY_DEFAULT_MODEL') ? MEMORY_DEFAULT_MODEL : 'sentence-transformers/all-MiniLM-L6-v2',
@@ -581,7 +579,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                         $pdo,
                         $memoryOptions
                     );
-                    error_log("MEMORY_DEBUG: MemoryManager created successfully");
+                    // MemoryManager created successfully
                     
                     // Get relevant memories with smart context retrieval
                     $memoryLimit = defined('MEMORY_CONTEXT_LIMIT') ? MEMORY_CONTEXT_LIMIT : 60; // Increased for maximum memory context
@@ -609,19 +607,14 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                     $contextualQuery .= 'User: ' . $userMessage;
                     $contextualQuery = trim($contextualQuery);
                     
-                    if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
-                        error_log("MEMORY_DEBUG: Last AEI message: " . substr($lastAEIMessage, 0, 100));
-                        error_log("MEMORY_DEBUG: User message: " . substr($userMessage, 0, 100));
-                        error_log("MEMORY_DEBUG: Combined query: " . substr($contextualQuery, 0, 200));
-                    }
+                    // Memory query processing - debug removed
                     
                     $memoryContext = $memoryManager->getSmartMemoryContext(
                         $aei['id'], 
                         $contextualQuery, 
                         $memoryLimit
                     );
-                    error_log("MEMORY_DEBUG: Smart memory context retrieved: " . strlen($memoryContext) . " chars");
-                    error_log("MEMORY_DEBUG: Memory context content preview: " . substr($memoryContext, 0, 200));
+                    // Memory context retrieved successfully
                     
                     if ($includeDebugData) {
                         $debugData['memory_enabled'] = true;
@@ -634,32 +627,28 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                     }
                     
                 } catch (Exception $memoryError) {
-                    error_log("MEMORY_DEBUG: Memory system error: " . $memoryError->getMessage());
-                    error_log("MEMORY_DEBUG: Error trace: " . $memoryError->getTraceAsString());
+                    error_log("Memory system error: " . $memoryError->getMessage());
                     if ($includeDebugData) {
                         $debugData['memory_error'] = $memoryError->getMessage();
                         $debugData['memory_system'] = 'failed_to_initialize';
                     }
                 }
             } else {
-                error_log("MEMORY_DEBUG: Missing QDRANT_URL or QDRANT_API_KEY - URL defined: " . (defined('QDRANT_URL') ? 'YES' : 'NO') . ", KEY defined: " . (defined('QDRANT_API_KEY') ? 'YES' : 'NO'));
+                error_log("Missing QDRANT configuration - memory system disabled");
                 if ($includeDebugData) {
                     $debugData['memory_enabled'] = false;
                     $debugData['memory_error'] = 'Missing QDRANT_URL or QDRANT_API_KEY in config';
                 }
             }
         } else {
-            error_log("MEMORY_DEBUG: memory_config.php NOT FOUND at: " . __DIR__ . '/../config/memory_config.php');
-            error_log("MEMORY_DEBUG: === MEMORY SYSTEM DISABLED ===");
+            // Memory config not found - memory system disabled
             if ($includeDebugData) {
                 $debugData['memory_enabled'] = false;
                 $debugData['memory_note'] = 'Memory config not found - copy memory_config.example.php to memory_config.php';
             }
         }
         
-        error_log("MEMORY_DEBUG: === MEMORY SYSTEM FINAL STATUS ===");
-        error_log("MEMORY_DEBUG: Memory Manager: " . ($memoryManager ? 'INITIALIZED' : 'NULL'));
-        error_log("MEMORY_DEBUG: Memory Context Length: " . strlen($memoryContext) . " chars");
+        // Memory system initialization complete
         
         // Get recent chat history (including the current message that was just saved)
         $chatHistory = getChatHistory($sessionId, 40, $userTimezone);
@@ -818,7 +807,7 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                 
                 // Extract memories every 5 messages for better context
                 if ($messageCount % 5 == 0) {
-                    error_log("MEMORY_DEBUG: Batch extracting memories from last 10 messages (message count: $messageCount)...");
+                    // Batch extracting memories
                     
                     // Get last 10 messages for rich context analysis
                     $recentHistory = getChatHistory($sessionId, 10, $user['timezone'] ?? 'UTC');
@@ -832,18 +821,14 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                             $sessionId
                         );
                         
-                        if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
-                            error_log("MEMORY_DEBUG: Batch extraction completed - extracted " . count($extractedMemories) . " memories");
-                        }
+                        // Batch extraction completed
                     } else {
                         $extractedMemories = [];
-                        error_log("MEMORY_DEBUG: No recent history available for batch extraction");
+                        // No recent history for batch extraction
                     }
                 } else {
                     $extractedMemories = [];
-                    if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
-                        error_log("MEMORY_DEBUG: Skipping extraction (message $messageCount, waiting for batch at multiple of 5)");
-                    }
+                    // Skipping extraction until batch threshold
                 }
                 
                 if ($includeDebugData) {
@@ -855,12 +840,10 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
                     ];
                 }
                 
-                if (defined('MEMORY_DEBUG') && MEMORY_DEBUG) {
-                    error_log("MEMORY_DEBUG: Extracted " . count($extractedMemories) . " memories from conversation");
-                }
+                // Memory extraction completed
                 
             } catch (Exception $memoryError) {
-                error_log("MEMORY_DEBUG: Memory extraction error: " . $memoryError->getMessage());
+                error_log("Memory extraction error: " . $memoryError->getMessage());
                 if ($includeDebugData) {
                     $debugData['memory_storage_error'] = $memoryError->getMessage();
                 }

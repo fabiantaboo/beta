@@ -1,13 +1,21 @@
 <?php
-// Enable error reporting for debugging
+// SECURITY WARNING: This is a template file. Copy to database.php and configure with your actual database credentials.
+// NEVER use these default values in production!
+
+// For production: disable error reporting and use secure credentials
+// error_reporting(0);
+// ini_set('display_errors', 0);
+
+// For development only - remove these lines in production:
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
+// CHANGE THESE VALUES - Default values are insecure
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'ayuni_beta');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_USER', 'root');          // SECURITY: Use a dedicated database user with limited privileges
+define('DB_PASS', '');              // SECURITY: Set a strong password
 
 function createDatabaseIfNotExists() {
     try {
