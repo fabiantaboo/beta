@@ -171,30 +171,31 @@ If you have questions, please contact our support team.";
             return ['success' => false, 'error' => 'Mailgun not configured'];
         }
         
-        // Debug: Log the API key format (first 10 chars + asterisks for security)
-        $keyPreview = substr($this->apiKey, 0, 10) . str_repeat('*', max(0, strlen($this->apiKey) - 10));
-        error_log("Testing Mailgun connection with API key: " . $keyPreview . " for domain: " . $this->domain);
+        // Domain Sending Keys can only be used with /messages endpoint
+        // So we'll test by doing a dry-run message send in test mode
+        $url = "https://api.mailgun.net/v3/{$this->domain}/messages";
         
-        // Use the correct Mailgun API v4 domains endpoint to get domain info
-        $url = "https://api.mailgun.net/v4/domains/{$this->domain}";
+        $postData = [
+            'from' => "{$this->fromName} <{$this->fromEmail}>",
+            'to' => 'test@example.com', // This won't actually be sent due to test mode
+            'subject' => 'Mailgun Connection Test',
+            'text' => 'This is a connection test.',
+            'o:testmode' => 'true' // Test mode - won't actually send
+        ];
         
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
         curl_setopt($ch, CURLOPT_USERPWD, "api:{$this->apiKey}");
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
         curl_setopt($ch, CURLOPT_USERAGENT, 'Ayuni-Beta/1.0');
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Accept: application/json'
-        ]);
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
-        
-        // Debug: Log the response details
-        error_log("Mailgun API response - HTTP Code: $httpCode, Response: " . substr($response, 0, 200));
         
         if ($curlError) {
             return ['success' => false, 'error' => 'Connection failed: ' . $curlError];
@@ -202,13 +203,14 @@ If you have questions, please contact our support team.";
         
         if ($httpCode === 200) {
             $result = json_decode($response, true);
-            $domainName = $result['domain']['name'] ?? 'Unknown';
-            $domainState = $result['domain']['state'] ?? 'Unknown';
-            return ['success' => true, 'message' => "Connection successful! Domain: {$domainName} (Status: {$domainState})"];
+            $messageId = $result['id'] ?? 'Unknown';
+            return ['success' => true, 'message' => "Connection successful! Domain Sending Key is working. Test message ID: $messageId"];
         } elseif ($httpCode === 401) {
-            return ['success' => false, 'error' => 'Authentication failed: Invalid API key. Check that your key starts with "key-" and is a private API key.'];
-        } elseif ($httpCode === 404) {
-            return ['success' => false, 'error' => 'Domain not found: ' . $this->domain];
+            return ['success' => false, 'error' => 'Authentication failed: Invalid Domain Sending Key'];
+        } elseif ($httpCode === 400) {
+            $errorResponse = json_decode($response, true);
+            $errorMessage = $errorResponse['message'] ?? 'Bad request';
+            return ['success' => false, 'error' => "Bad request: $errorMessage"];
         } else {
             $errorResponse = json_decode($response, true);
             $errorMessage = $errorResponse['message'] ?? substr($response, 0, 100);
