@@ -140,9 +140,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = "Gender is required";
         }
         if (empty($personalityTraits) && empty($customTraits)) {
-            $errors[] = "At least 3 personality traits are required";
-        } elseif (count(array_merge($personalityTraits, $customTraits)) < 3) {
-            $errors[] = "Please select at least 3 personality traits";
+            $errors[] = "At least 1 personality trait is required";
+        } elseif (count(array_merge($personalityTraits, $customTraits)) < 1) {
+            $errors[] = "Please select at least 1 personality trait";
         }
         if (empty($communicationStyle)) {
             $errors[] = "Communication style is required";
@@ -151,9 +151,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = "Occupation or role is required";
         }
         if (empty($interestTags) && empty($customInterests)) {
-            $errors[] = "At least 3 interests are required";
-        } elseif (count(array_merge($interestTags, $customInterests)) < 3) {
-            $errors[] = "Please select at least 3 interests";
+            $errors[] = "At least 1 interest is required";
+        } elseif (count(array_merge($interestTags, $customInterests)) < 1) {
+            $errors[] = "Please select at least 1 interest";
         }
         if (empty($relationshipType)) {
             $errors[] = "Relationship type is required";
@@ -391,7 +391,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                                 Core Personality Traits *
-                                <span class="text-xs text-gray-500 ml-2">(Select at least 3 traits that best describe them)</span>
+                                <span class="text-xs text-gray-500 ml-2">(Select at least 1 trait that best describes them)</span>
                             </label>
                             <div id="personality-traits" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                 <?php 
@@ -621,7 +621,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
                                 Interests & Hobbies *
-                                <span class="text-xs text-gray-500 ml-2">(Select at least 3 things they're passionate about)</span>
+                                <span class="text-xs text-gray-500 ml-2">(Select at least 1 thing they're passionate about)</span>
                             </label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                 <?php 
@@ -1715,7 +1715,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Special validation for complex fields
     const requiredComplexFields = [
         { name: 'gender', selector: 'input[name="gender"]:checked', errorMsg: 'Gender is required' },
-        { name: 'personality_traits', selector: 'input[name="personality_traits[]"]:checked', errorMsg: 'At least 3 personality traits are required', minCount: 3 },
+        { name: 'personality_traits', selector: 'input[name="personality_traits[]"]:checked', errorMsg: 'At least 1 personality trait is required', minCount: 1 },
         { name: 'communication_style', selector: 'input[name="communication_style"]:checked', errorMsg: 'Communication style is required' },
         { name: 'interests', selector: 'input[name="interest_tags[]"]:checked', errorMsg: 'At least 1 interest is required', minCount: 1 },
         { name: 'relationship', selector: 'input[name="relationship_type"]:checked', errorMsg: 'Relationship type is required' }
