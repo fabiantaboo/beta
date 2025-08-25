@@ -1741,6 +1741,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showComplexError(container, message) {
+        if (!container) return; // Skip if container is null
+        
         // Remove existing error
         const existingError = container.querySelector('.validation-error');
         if (existingError) {
@@ -1796,15 +1798,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const count = elements.length;
         const minCount = fieldConfig.minCount || 1;
         
-        const container = fieldConfig.name === 'gender' ? 
-            document.querySelector('[name="gender"]').closest('.space-y-3') :
-            fieldConfig.name === 'personality_traits' ?
-            document.getElementById('personality-traits').parentNode :
-            fieldConfig.name === 'communication_style' ?
-            document.querySelector('[name="communication_style"]').closest('.space-y-3') :
-            fieldConfig.name === 'interests' ?
-            document.getElementById('interests-grid').parentNode :
-            document.querySelector('[name="relationship"]').closest('.space-y-3');
+        let container = null;
+        
+        if (fieldConfig.name === 'gender') {
+            const genderElement = document.querySelector('[name="gender"]');
+            container = genderElement ? genderElement.closest('.space-y-3') : null;
+        } else if (fieldConfig.name === 'personality_traits') {
+            const traitsElement = document.getElementById('personality-traits');
+            container = traitsElement ? traitsElement.parentNode : null;
+        } else if (fieldConfig.name === 'communication_style') {
+            const styleElement = document.querySelector('[name="communication_style"]');
+            container = styleElement ? styleElement.closest('.space-y-3') : null;
+        } else if (fieldConfig.name === 'interests') {
+            const interestsElement = document.getElementById('interests-grid');
+            container = interestsElement ? interestsElement.parentNode : null;
+        } else {
+            const relationshipElement = document.querySelector('[name="relationship"]');
+            container = relationshipElement ? relationshipElement.closest('.space-y-3') : null;
+        }
         
         if (count < minCount) {
             showComplexError(container, fieldConfig.errorMsg);
@@ -1812,9 +1823,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Clear error
-        const existingError = container.querySelector('.validation-error');
-        if (existingError) {
-            existingError.remove();
+        if (container) {
+            const existingError = container.querySelector('.validation-error');
+            if (existingError) {
+                existingError.remove();
+            }
         }
         
         return true;
