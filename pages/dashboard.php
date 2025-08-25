@@ -89,9 +89,16 @@ try {
     $stmt = $pdo->prepare("SELECT id, name, personality, appearance_description, avatar_url, created_at FROM aeis WHERE user_id = ? AND is_active = TRUE ORDER BY created_at DESC");
     $stmt->execute([$userId]);
     $aeis = $stmt->fetchAll();
+    
+    // If user has no AEIs, redirect to AEI creator
+    if (empty($aeis)) {
+        redirectTo('create-aei');
+    }
 } catch (PDOException $e) {
     error_log("Database error fetching AEIs: " . $e->getMessage());
     $aeis = [];
+    // Still redirect if database error results in no AEIs
+    redirectTo('create-aei');
 }
 ?>
 
