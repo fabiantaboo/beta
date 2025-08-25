@@ -54,7 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updates[] = "gender = ?";
                     $updates[] = "birth_date = ?";
                     $updates[] = "timezone = ?";
-                    array_unshift($params, $gender, $birthDate, $timezone);
+                    // Add parameters in correct order (SQL field order)
+                    $params = array_merge([$gender, $birthDate, $timezone], $params);
                 }
             } elseif ($step === 2) {
                 // Professional & Personal
@@ -63,7 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $updates[] = "profession = ?";
                 $updates[] = "hobbies = ?";
-                array_unshift($params, $profession, $hobbies);
+                // Add parameters in correct order (SQL field order)
+                $params = array_merge([$profession, $hobbies], $params);
             } elseif ($step === 3) {
                 // Lifestyle & Values
                 $sexualOrientation = sanitizeInput($_POST['sexual_orientation'] ?? '');
@@ -75,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updates[] = "daily_rituals = ?";
                 $updates[] = "life_goals = ?";
                 $updates[] = "beliefs = ?";
-                array_unshift($params, $sexualOrientation, $dailyRituals, $lifeGoals, $beliefs);
+                // Add parameters in correct order (SQL field order)
+                $params = array_merge([$sexualOrientation, $dailyRituals, $lifeGoals, $beliefs], $params);
             } elseif ($step === 4) {
                 // Relationship, Additional & Feedback Contact
                 $partnerQualities = sanitizeInput($_POST['partner_qualities'] ?? '');
@@ -93,7 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updates[] = "additional_info = ?";
                     $updates[] = "feedback_channel = ?";
                     $updates[] = "feedback_contact = ?";
-                    array_unshift($params, $partnerQualities, $additionalInfo, $feedbackChannel, $feedbackContact);
+                    // Add parameters in correct order (SQL field order)
+                    $params = array_merge([$partnerQualities, $additionalInfo, $feedbackChannel, $feedbackContact], $params);
                 }
             } elseif ($step === 5) {
                 // Optional User Appearance
@@ -112,7 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updates[] = "user_style = ?";
                 $updates[] = "user_appearance_custom = ?";
                 $updates[] = "is_onboarded = TRUE";
-                array_unshift($params, $userHairColor, $userEyeColor, $userHeight, $userBuild, $userStyle, $userAppearanceCustom);
+                // Add parameters in correct order (SQL field order) 
+                $params = array_merge([$userHairColor, $userEyeColor, $userHeight, $userBuild, $userStyle, $userAppearanceCustom], $params);
             }
             
             if (!isset($error) && !empty($updates)) {
