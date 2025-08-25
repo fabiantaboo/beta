@@ -15,8 +15,13 @@ function safeDisplayMessage($text) {
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
     
-    // Now safely encode for display (this preserves emojis)
-    return htmlspecialchars($text, ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
+    // Only escape dangerous HTML characters, preserve UTF-8 emojis
+    // ENT_NOQUOTES preserves emojis, we manually handle quotes
+    $text = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8', false);
+    // Manually escape quotes to prevent XSS while keeping emojis
+    $text = str_replace(["'", '"'], ['&#039;', '&quot;'], $text);
+    
+    return $text;
 }
 
 $aeiId = $_GET['aei'] ?? '';

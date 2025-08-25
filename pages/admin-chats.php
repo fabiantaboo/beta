@@ -219,7 +219,14 @@ if ($selectedSessionId) {
                                             
                                             <?php if ($message['message_text']): ?>
                                                 <div class="text-sm">
-                                                    <?= nl2br(htmlspecialchars($message['message_text'])) ?>
+                                                    <?php
+                                                    // Safely display message preserving emojis
+                                                    $text = $message['message_text'];
+                                                    // Only escape dangerous HTML, preserve emojis
+                                                    $text = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8', false);
+                                                    $text = str_replace(["'", '"'], ['&#039;', '&quot;'], $text);
+                                                    echo nl2br($text);
+                                                    ?>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
