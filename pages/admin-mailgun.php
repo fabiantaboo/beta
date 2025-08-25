@@ -137,7 +137,7 @@ $isConfigured = $mailgun->isConfigured();
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                 <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
                 <div class="space-y-3">
-                    <form method="POST" class="inline">
+                    <form method="POST" action="/admin/mailgun" class="inline">
                         <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                         <input type="hidden" name="action" value="test_connection">
                         <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors" <?= !$isConfigured ? 'disabled' : '' ?>>
@@ -157,7 +157,7 @@ $isConfigured = $mailgun->isConfigured();
                 Mailgun API Settings
             </h2>
 
-            <form method="POST" class="space-y-6">
+            <form method="POST" action="/admin/mailgun" class="space-y-6">
                 <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 <input type="hidden" name="action" value="save_settings">
 
@@ -266,7 +266,7 @@ $isConfigured = $mailgun->isConfigured();
                 Send Test Email
             </h2>
 
-            <form method="POST" class="space-y-4">
+            <form method="POST" action="/admin/mailgun" class="space-y-4">
                 <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
                 <input type="hidden" name="action" value="send_test_email">
 
