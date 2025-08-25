@@ -864,7 +864,9 @@ try {
             'email', 'password_hash', 'first_name', 'beta_code', 'is_admin',
             'gender', 'birth_date', 'profession', 'hobbies', 'sexual_orientation',
             'daily_rituals', 'life_goals', 'beliefs', 'partner_qualities', 
-            'additional_info', 'timezone'
+            'additional_info', 'timezone', 'feedback_channel', 'feedback_contact',
+            'user_hair_color', 'user_eye_color', 'user_height', 'user_build', 
+            'user_style', 'user_appearance_custom'
         ];
         $missingUserColumns = array_diff($requiredUserColumns, $userColumns);
         
