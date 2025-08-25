@@ -1457,24 +1457,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const system = tagSystems[type];
         if (!system.input) return;
 
-        system.input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
+        if (system.input) {
+            system.input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const value = this.value.trim();
+                    if (value && !system.tags.includes(value)) {
+                        addTag(type, value);
+                        this.value = '';
+                    }
+                }
+            });
+
+            system.input.addEventListener('blur', function() {
                 const value = this.value.trim();
                 if (value && !system.tags.includes(value)) {
                     addTag(type, value);
                     this.value = '';
                 }
-            }
-        });
-
-        system.input.addEventListener('blur', function() {
-            const value = this.value.trim();
-            if (value && !system.tags.includes(value)) {
-                addTag(type, value);
-                this.value = '';
-            }
-        });
+            });
+        }
     });
 
     function addTag(type, tagText) {
