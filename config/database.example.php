@@ -134,7 +134,7 @@ function createTablesIfNotExist($pdo) {
             id VARCHAR(32) PRIMARY KEY,
             session_id VARCHAR(32) NOT NULL,
             sender_type ENUM('user', 'aei') NOT NULL,
-            message_text TEXT NOT NULL,
+            message_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             
             -- Image Upload Support
@@ -1081,11 +1081,11 @@ try {
                 id VARCHAR(32) PRIMARY KEY,
                 session_id VARCHAR(32) NOT NULL,
                 sender_type ENUM('user', 'aei') NOT NULL,
-                message_text TEXT NOT NULL,
+                message_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
                 INDEX idx_session_time (session_id, created_at)
-            )");
+            ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
         }
         
         // Add emotion columns to chat_messages if they don't exist
@@ -1111,6 +1111,22 @@ try {
             }
         } catch (PDOException $e) {
             // Error reading columns, ignore
+        }
+        
+        // Fix charset for existing text columns to support emojis
+        try {
+            // Chat messages - most important for emoji support
+            $pdo->exec("ALTER TABLE chat_messages MODIFY message_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL");
+            
+            // API logs - for proper logging of emoji messages
+            $pdo->exec("ALTER TABLE api_request_logs MODIFY user_message TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $pdo->exec("ALTER TABLE api_request_logs MODIFY ai_response TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            
+            // Proactive messages - in case AEI sends emojis in proactive messages  
+            $pdo->exec("ALTER TABLE proactive_messages MODIFY message_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL");
+            
+        } catch (PDOException $e) {
+            error_log("Error fixing text column charset: " . $e->getMessage());
         }
         
         // Add emotion columns to chat_sessions if they don't exist
