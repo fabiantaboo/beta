@@ -268,14 +268,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 name="sexual_orientation"
                                 class="w-full px-3 py-3 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent text-base sm:text-sm min-h-[44px]"
                             >
-                                <option value="">Select orientation</option>
-                                <option value="heterosexual" <?= $user['sexual_orientation'] === 'heterosexual' ? 'selected' : '' ?>>Heterosexual</option>
-                                <option value="homosexual" <?= $user['sexual_orientation'] === 'homosexual' ? 'selected' : '' ?>>Homosexual</option>
+                                <option value="">Prefer not to specify</option>
+                                <option value="straight" <?= $user['sexual_orientation'] === 'straight' ? 'selected' : '' ?>>Straight</option>
+                                <option value="gay" <?= $user['sexual_orientation'] === 'gay' ? 'selected' : '' ?>>Gay</option>
+                                <option value="lesbian" <?= $user['sexual_orientation'] === 'lesbian' ? 'selected' : '' ?>>Lesbian</option>
                                 <option value="bisexual" <?= $user['sexual_orientation'] === 'bisexual' ? 'selected' : '' ?>>Bisexual</option>
                                 <option value="pansexual" <?= $user['sexual_orientation'] === 'pansexual' ? 'selected' : '' ?>>Pansexual</option>
                                 <option value="asexual" <?= $user['sexual_orientation'] === 'asexual' ? 'selected' : '' ?>>Asexual</option>
+                                <option value="questioning" <?= $user['sexual_orientation'] === 'questioning' ? 'selected' : '' ?>>Questioning</option>
                                 <option value="other" <?= $user['sexual_orientation'] === 'other' ? 'selected' : '' ?>>Other</option>
-                                <option value="prefer-not-to-say" <?= $user['sexual_orientation'] === 'prefer-not-to-say' ? 'selected' : '' ?>>Prefer not to say</option>
                             </select>
                         </div>
 
