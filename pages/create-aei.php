@@ -891,10 +891,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a href="/dashboard" class="flex-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-4 px-6 rounded-lg text-center hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors">
                         Cancel
                     </a>
-                    <button type="submit" id="submit-btn" class="flex-1 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-4 px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
+                    <button type="submit" id="submit-btn" class="flex-1 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-4 px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:from-gray-400 disabled:to-gray-500" disabled>
                         <i class="fas fa-heart mr-2"></i>
-                        Begin Birth
+                        <span id="submit-btn-text">Complete Required Fields</span>
                     </button>
+                </div>
+                
+                <!-- Validation Status -->
+                <div id="validation-status" class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-amber-600 dark:text-amber-400 mr-3 mt-0.5"></i>
+                        <div>
+                            <h4 class="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">Required Fields Missing</h4>
+                            <ul id="missing-fields-list" class="text-sm text-amber-700 dark:text-amber-300 space-y-1">
+                                <!-- Missing fields will be populated here -->
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1673,5 +1686,279 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add smooth opacity transition for fun facts
     funFact.style.transition = 'opacity 0.3s ease';
+    
+    // Required fields validation
+    const requiredFields = [
+        { id: 'name', name: 'Name', type: 'text' },
+        { id: 'age', name: 'Age', type: 'number' },
+        { id: 'hair_color', name: 'Hair Color', type: 'select' },
+        { id: 'eye_color', name: 'Eye Color', type: 'select' },
+        { id: 'height', name: 'Height', type: 'select' },
+        { id: 'build', name: 'Build', type: 'select' },
+        { id: 'style', name: 'Style', type: 'select' },
+        { id: 'occupation', name: 'Occupation', type: 'text' }
+    ];
+    
+    const submitBtn = document.getElementById('submit-btn');
+    const submitBtnText = document.getElementById('submit-btn-text');
+    const validationStatus = document.getElementById('validation-status');
+    const missingFieldsList = document.getElementById('missing-fields-list');
+    
+    // Special validation for complex fields
+    const requiredComplexFields = [
+        { name: 'gender', selector: 'input[name="gender"]:checked', errorMsg: 'Gender is required' },
+        { name: 'personality_traits', selector: 'input[name="personality_traits[]"]:checked', errorMsg: 'At least 3 personality traits are required', minCount: 3 },
+        { name: 'communication_style', selector: 'input[name="communication_style"]:checked', errorMsg: 'Communication style is required' },
+        { name: 'interests', selector: 'input[name="interests[]"]:checked', errorMsg: 'At least 3 interests are required', minCount: 3 },
+        { name: 'relationship', selector: 'input[name="relationship"]:checked', errorMsg: 'Relationship type is required' }
+    ];
+    
+    function showError(field, message) {
+        // Remove existing error
+        const parent = field.closest('.space-y-6, .grid, .border-b, div') || field.parentNode;
+        const existingError = parent.querySelector('.validation-error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Add error styling
+        field.classList.add('border-red-500', 'dark:border-red-400');
+        field.classList.remove('border-gray-300', 'dark:border-gray-600');
+        
+        // Create error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'validation-error text-red-600 dark:text-red-400 text-sm mt-2 flex items-center';
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
+        parent.appendChild(errorDiv);
+    }
+    
+    function showComplexError(container, message) {
+        // Remove existing error
+        const existingError = container.querySelector('.validation-error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Create error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'validation-error text-red-600 dark:text-red-400 text-sm mt-2 flex items-center';
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
+        container.appendChild(errorDiv);
+    }
+    
+    function clearError(field) {
+        // Remove error styling
+        field.classList.remove('border-red-500', 'dark:border-red-400');
+        field.classList.add('border-gray-300', 'dark:border-gray-600');
+        
+        // Remove error message
+        const parent = field.closest('.space-y-6, .grid, .border-b, div') || field.parentNode;
+        const existingError = parent.querySelector('.validation-error');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+    
+    function validateSimpleField(fieldConfig) {
+        const field = document.getElementById(fieldConfig.id);
+        if (!field) return true;
+        
+        const value = field.value.trim();
+        
+        if (!value) {
+            showError(field, `${fieldConfig.name} is required`);
+            return false;
+        }
+        
+        // Special validation for age
+        if (fieldConfig.id === 'age') {
+            const age = parseInt(value);
+            if (age < 18 || age > 100) {
+                showError(field, 'Age must be between 18 and 100');
+                return false;
+            }
+        }
+        
+        clearError(field);
+        return true;
+    }
+    
+    function validateComplexField(fieldConfig) {
+        const elements = document.querySelectorAll(fieldConfig.selector);
+        const count = elements.length;
+        const minCount = fieldConfig.minCount || 1;
+        
+        const container = fieldConfig.name === 'gender' ? 
+            document.querySelector('[name="gender"]').closest('.space-y-3') :
+            fieldConfig.name === 'personality_traits' ?
+            document.getElementById('personality-traits').parentNode :
+            fieldConfig.name === 'communication_style' ?
+            document.querySelector('[name="communication_style"]').closest('.space-y-3') :
+            fieldConfig.name === 'interests' ?
+            document.getElementById('interests-grid').parentNode :
+            document.querySelector('[name="relationship"]').closest('.space-y-3');
+        
+        if (count < minCount) {
+            showComplexError(container, fieldConfig.errorMsg);
+            return false;
+        }
+        
+        // Clear error
+        const existingError = container.querySelector('.validation-error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        return true;
+    }
+    
+    function validateForm() {
+        let isValid = true;
+        
+        // Clear all previous errors
+        document.querySelectorAll('.validation-error').forEach(error => error.remove());
+        document.querySelectorAll('.border-red-500, .border-red-400').forEach(field => {
+            field.classList.remove('border-red-500', 'dark:border-red-400');
+            field.classList.add('border-gray-300', 'dark:border-gray-600');
+        });
+        
+        // Validate simple fields
+        requiredFields.forEach(fieldConfig => {
+            if (!validateSimpleField(fieldConfig)) {
+                isValid = false;
+            }
+        });
+        
+        // Validate complex fields
+        requiredComplexFields.forEach(fieldConfig => {
+            if (!validateComplexField(fieldConfig)) {
+                isValid = false;
+            }
+        });
+        
+        return isValid;
+    }
+    
+    function updateSubmitButtonState() {
+        const missingFields = [];
+        
+        // Check simple fields
+        requiredFields.forEach(fieldConfig => {
+            const field = document.getElementById(fieldConfig.id);
+            if (field) {
+                const value = field.value.trim();
+                if (!value || (fieldConfig.id === 'age' && (parseInt(value) < 18 || parseInt(value) > 100))) {
+                    missingFields.push(fieldConfig.name);
+                }
+            }
+        });
+        
+        // Check complex fields
+        requiredComplexFields.forEach(fieldConfig => {
+            const elements = document.querySelectorAll(fieldConfig.selector);
+            const count = elements.length;
+            const minCount = fieldConfig.minCount || 1;
+            
+            if (count < minCount) {
+                if (fieldConfig.name === 'gender') {
+                    missingFields.push('Gender');
+                } else if (fieldConfig.name === 'personality_traits') {
+                    missingFields.push(`Personality Traits (${count}/3 selected)`);
+                } else if (fieldConfig.name === 'communication_style') {
+                    missingFields.push('Communication Style');
+                } else if (fieldConfig.name === 'interests') {
+                    missingFields.push(`Interests (${count}/3 selected)`);
+                } else if (fieldConfig.name === 'relationship') {
+                    missingFields.push('Relationship Type');
+                }
+            }
+        });
+        
+        // Update UI based on validation state
+        if (missingFields.length === 0) {
+            // All fields valid - enable button
+            submitBtn.disabled = false;
+            submitBtnText.textContent = 'Begin Birth Process';
+            validationStatus.style.display = 'none';
+        } else {
+            // Missing fields - disable button and show status
+            submitBtn.disabled = true;
+            submitBtnText.textContent = `Complete Required Fields (${missingFields.length} missing)`;
+            validationStatus.style.display = 'block';
+            
+            // Update missing fields list
+            missingFieldsList.innerHTML = missingFields.map(field => 
+                `<li class="flex items-center"><i class="fas fa-exclamation-triangle text-xs mr-2"></i>${field}</li>`
+            ).join('');
+        }
+    }
+    
+    // Real-time validation and button state update
+    requiredFields.forEach(fieldConfig => {
+        const field = document.getElementById(fieldConfig.id);
+        if (field) {
+            const eventType = fieldConfig.type === 'select' ? 'change' : 'input';
+            field.addEventListener(eventType, () => {
+                validateSimpleField(fieldConfig);
+                updateSubmitButtonState();
+            });
+        }
+    });
+    
+    // Real-time validation for complex fields
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'gender' || 
+            e.target.name === 'personality_traits[]' || 
+            e.target.name === 'communication_style' || 
+            e.target.name === 'interests[]' || 
+            e.target.name === 'relationship') {
+            
+            const fieldConfig = requiredComplexFields.find(f => f.name === e.target.name.replace('[]', ''));
+            if (fieldConfig) {
+                validateComplexField(fieldConfig);
+            }
+            updateSubmitButtonState();
+        }
+    });
+    
+    // Initial button state update
+    updateSubmitButtonState();
+    
+    // Override form submission
+    const originalSubmitHandler = form.onsubmit;
+    form.addEventListener('submit', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+            
+            // Scroll to first error
+            const firstError = document.querySelector('.validation-error');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Show notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+            notification.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>Please fill in all required fields correctly';
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+            
+            return false;
+        }
+    }, true); // Use capture phase to run before existing handlers
 });
 </script>
