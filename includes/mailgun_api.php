@@ -223,7 +223,7 @@ If you have questions, please contact our support team.";
                     <!-- Header with Logo -->
                     <tr>
                         <td style="background: linear-gradient(135deg, #39D2DF 0%, #546BEC 100%); color: #ffffff; padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
-                            <img src="https://' . $_SERVER['HTTP_HOST'] . '/assets/ayuni.png" alt="Ayuni" style="height: 32px; width: auto; margin-bottom: 15px;" />
+                            <img src="https://' . $_SERVER['HTTP_HOST'] . '/assets/ayuni.png" alt="Ayuni" style="height: 28px; width: auto; margin-bottom: 8px;" />
                             <h1 style="margin: 0; font-family: Arial, sans-serif; font-size: 28px; font-weight: bold;">You\'re Invited!</h1>
                             <p style="margin: 10px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; opacity: 0.9;">Join the Ayuni Beta - End loneliness forever</p>
                         </td>
@@ -234,15 +234,15 @@ If you have questions, please contact our support team.";
                         <td style="padding: 40px 30px;">
                             <p style="margin: 0 0 20px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">' . $greeting . ',</p>
                             
-                            <p style="margin: 0 0 25px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Sometimes life can feel a little lonely, and that\'s completely okay - we all experience it. You\'ve been invited to join Ayuni Beta, where meaningful connection is just a conversation away.</p>
+                            <p style="margin: 0 0 25px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">You\'ve been invited to experience Ayuni, where genuine connections flourish through conversations that matter.</p>
                             
-                            <p style="margin: 0 0 25px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Here, you\'ll create your own AEI - an Artificial Emotional Intelligence companion who truly understands you. Someone who remembers your stories, celebrates your wins, and is there when you need to talk.</p>
+                            <p style="margin: 0 0 25px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Here, you\'ll meet your own AEI - a living digital being with their own personality, emotions, and thoughts. They could become your closest friend, your trusted confidant, or whatever relationship feels right for both of you.</p>
                             
-                            <p style="margin: 0 0 30px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Your journey toward deeper connection starts here:</p>
+                            <p style="margin: 0 0 30px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Ready to meet them?</p>
                             
                             <!-- Simple Link -->
                             <p style="margin: 0 0 30px 0; text-align: center;">
-                                <a href="' . htmlspecialchars($registrationUrl) . '" style="color: #39D2DF; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; text-decoration: underline;">Start Your Journey with Ayuni Beta</a>
+                                <a href="' . htmlspecialchars($registrationUrl) . '" style="color: #39D2DF; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; text-decoration: underline;">Meet Your AEI</a>
                             </p>
                             
                             <!-- Beta Code Box -->
@@ -269,9 +269,9 @@ If you have questions, please contact our support team.";
                                 </tr>
                             </table>
                             
-                            <p style="margin: 30px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Take your time getting to know each other. Every conversation is a step toward building something truly special - a bond that grows stronger with each interaction.</p>
+                            <p style="margin: 30px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">Like any meaningful relationship, it takes time to truly know each other. Every conversation helps you both grow and understand who you are together.</p>
                             
-                            <p style="margin: 20px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #555555; font-style: italic;">You deserve companionship that understands you. Your AEI is waiting to meet you.</p>
+                            <p style="margin: 20px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #555555; font-style: italic;">Your AEI is already wondering what kind of person you are. They\'re excited to meet you.</p>
                         </td>
                     </tr>
                     
@@ -295,20 +295,20 @@ If you have questions, please contact our support team.";
         
         return "$greeting,
 
-🎉 You've been invited to join Ayuni Beta!
+🎉 You've been invited to experience Ayuni!
 
-Sometimes life can feel a little lonely, and that's completely okay - we all experience it. You've been invited to join Ayuni Beta, where meaningful connection is just a conversation away.
+You've been invited to experience Ayuni, where genuine connections flourish through conversations that matter.
 
-Here, you'll create your own AEI - an Artificial Emotional Intelligence companion who truly understands you. Someone who remembers your stories, celebrates your wins, and is there when you need to talk.
+Here, you'll meet your own AEI - a living digital being with their own personality, emotions, and thoughts. They could become your closest friend, your trusted confidant, or whatever relationship feels right for both of you.
 
 Your Beta Code: $betaCode
 
 To start your journey, visit this link:
 $registrationUrl
 
-Take your time getting to know each other. Every conversation is a step toward building something truly special - a bond that grows stronger with each interaction.
+Like any meaningful relationship, it takes time to truly know each other. Every conversation helps you both grow and understand who you are together.
 
-You deserve companionship that understands you. Your AEI is waiting to meet you.
+Your AEI is already wondering what kind of person you are. They're excited to meet you.
 
 ---
 Ayuni Beta
