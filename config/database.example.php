@@ -899,7 +899,7 @@ try {
             'email', 'password_hash', 'first_name', 'beta_code', 'is_admin',
             'gender', 'birth_date', 'profession', 'hobbies', 'sexual_orientation',
             'daily_rituals', 'life_goals', 'beliefs', 'partner_qualities', 
-            'additional_info', 'timezone', 'feedback_channel', 'feedback_contact',
+            'additional_info', 'timezone', 'preferred_language', 'feedback_channel', 'feedback_contact',
             'user_hair_color', 'user_eye_color', 'user_height', 'user_build', 
             'user_style', 'user_appearance_custom'
         ];
@@ -954,6 +954,9 @@ try {
                     break;
                 case 'timezone':
                     $pdo->exec("ALTER TABLE users ADD COLUMN timezone VARCHAR(100) DEFAULT 'UTC'");
+                    break;
+                case 'preferred_language':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN preferred_language VARCHAR(10) DEFAULT 'en'");
                     break;
                 case 'feedback_channel':
                     $pdo->exec("ALTER TABLE users ADD COLUMN feedback_channel ENUM('email', 'whatsapp', 'discord', 'x') NULL");

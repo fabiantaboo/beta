@@ -267,6 +267,10 @@ try {
                                             <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{user_timezone}}</code>
                                             <span class="text-gray-500 dark:text-gray-400 text-xs">User's timezone</span>
                                         </div>
+                                        <div class="flex items-center justify-between text-sm">
+                                            <code class="bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded text-xs">{{user_preferred_language}}</code>
+                                            <span class="text-gray-500 dark:text-gray-400 text-xs">User's preferred language</span>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -324,6 +328,7 @@ try {
                                         <button type="button" onclick="insertTag('{{user_age}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Age</button>
                                         <button type="button" onclick="insertTag('{{user_profession}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Prof</button>
                                         <button type="button" onclick="insertTag('{{user_timezone}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Timezone</button>
+                                        <button type="button" onclick="insertTag('{{user_preferred_language}}')" class="text-xs bg-ayuni-aqua text-white px-2 py-1 rounded hover:bg-ayuni-aqua/90">User Language</button>
                                         
                                         <!-- Relationships -->
                                         <button type="button" onclick="insertTag('{{relationship_context}}')" class="text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">Relationship</button>

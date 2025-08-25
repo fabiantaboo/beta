@@ -43,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $gender = sanitizeInput($_POST['gender'] ?? '');
                 $birthDate = $_POST['birth_date'] ?? '';
                 $timezone = sanitizeInput($_POST['timezone'] ?? '');
+                $preferredLanguage = sanitizeInput($_POST['preferred_language'] ?? 'en');
                 
                 if (empty($gender) || empty($birthDate) || empty($timezone)) {
                     $error = "Please fill in all required fields.";
@@ -51,12 +52,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (empty($timezone)) {
                         $timezone = 'UTC';
                     }
+                    // Safety fallback: ensure preferred language is valid, default to English if somehow empty
+                    if (empty($preferredLanguage)) {
+                        $preferredLanguage = 'en';
+                    }
                     $updates[] = "gender = ?";
                     $updates[] = "birth_date = ?";
                     $updates[] = "timezone = ?";
+                    $updates[] = "preferred_language = ?";
                     // Add parameters in correct order (SQL field order)
-                    // $params currently contains [$userId], we need [$gender, $birthDate, $timezone, $userId]
-                    $params = [$gender, $birthDate, $timezone, $userId];
+                    // $params currently contains [$userId], we need [$gender, $birthDate, $timezone, $preferredLanguage, $userId]
+                    $params = [$gender, $birthDate, $timezone, $preferredLanguage, $userId];
                 }
             } elseif ($step === 2) {
                 // Professional & Personal
@@ -281,6 +287,30 @@ try {
                             Timezone *
                         </label>
                         <?php renderTimezoneSelect('timezone', $userData['timezone'] ?? '', true, true); ?>
+                    </div>
+
+                    <div>
+                        <label for="preferred_language" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            Preferred Language *
+                        </label>
+                        <select 
+                            id="preferred_language" 
+                            name="preferred_language" 
+                            required
+                            class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all"
+                        >
+                            <option value="en" <?= ($userData['preferred_language'] ?? 'en') === 'en' ? 'selected' : '' ?>>🇺🇸 English</option>
+                            <option value="de" <?= ($userData['preferred_language'] ?? '') === 'de' ? 'selected' : '' ?>>🇩🇪 Deutsch</option>
+                            <option value="es" <?= ($userData['preferred_language'] ?? '') === 'es' ? 'selected' : '' ?>>🇪🇸 Español</option>
+                            <option value="fr" <?= ($userData['preferred_language'] ?? '') === 'fr' ? 'selected' : '' ?>>🇫🇷 Français</option>
+                            <option value="it" <?= ($userData['preferred_language'] ?? '') === 'it' ? 'selected' : '' ?>>🇮🇹 Italiano</option>
+                            <option value="pt" <?= ($userData['preferred_language'] ?? '') === 'pt' ? 'selected' : '' ?>>🇵🇹 Português</option>
+                            <option value="ru" <?= ($userData['preferred_language'] ?? '') === 'ru' ? 'selected' : '' ?>>🇷🇺 Русский</option>
+                            <option value="ja" <?= ($userData['preferred_language'] ?? '') === 'ja' ? 'selected' : '' ?>>🇯🇵 日本語</option>
+                            <option value="ko" <?= ($userData['preferred_language'] ?? '') === 'ko' ? 'selected' : '' ?>>🇰🇷 한국어</option>
+                            <option value="zh" <?= ($userData['preferred_language'] ?? '') === 'zh' ? 'selected' : '' ?>>🇨🇳 中文</option>
+                        </select>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">This will be the language your AEI uses during conversations</p>
                     </div>
 
                 <?php elseif ($step === 2): ?>

@@ -268,6 +268,7 @@ class TemplateEngine {
             'user_birth_date' => $user['birth_date'] ?? '',
             'user_age' => $user_age,
             'user_timezone' => $user['timezone'] ?? '',
+            'user_preferred_language' => $user['preferred_language'] ?? 'en',
             
             // User appearance
             'user_hair_color' => $user['user_hair_color'] ?? '',

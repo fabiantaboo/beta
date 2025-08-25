@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $partnerQualities = sanitizeInput($_POST['partner_qualities'] ?? '');
         $additionalInfo = sanitizeInput($_POST['additional_info'] ?? '');
         $timezone = sanitizeInput($_POST['timezone'] ?? 'UTC');
+        $preferredLanguage = sanitizeInput($_POST['preferred_language'] ?? 'en');
         
         // User appearance fields
         $userHairColor = sanitizeInput($_POST['user_hair_color'] ?? '');
@@ -67,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         partner_qualities = ?, 
                         additional_info = ?, 
                         timezone = ?,
+                        preferred_language = ?,
                         user_hair_color = ?,
                         user_eye_color = ?,
                         user_height = ?,
@@ -89,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $partnerQualities,
                     $additionalInfo,
                     $timezone,
+                    $preferredLanguage,
                     $userHairColor,
                     $userEyeColor,
                     $userHeight,
@@ -281,11 +284,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <!-- Timezone -->
-                        <div class="md:col-span-2">
+                        <div>
                             <label for="timezone_select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Timezone
                             </label>
                             <?php renderTimezoneSelect('timezone', $user['timezone'] ?? 'UTC', false, true); ?>
+                        </div>
+                        
+                        <!-- Preferred Language -->
+                        <div>
+                            <label for="preferred_language" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Preferred Language
+                            </label>
+                            <select 
+                                id="preferred_language" 
+                                name="preferred_language" 
+                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent"
+                            >
+                                <option value="en" <?= ($user['preferred_language'] ?? 'en') === 'en' ? 'selected' : '' ?>>🇺🇸 English</option>
+                                <option value="de" <?= ($user['preferred_language'] ?? '') === 'de' ? 'selected' : '' ?>>🇩🇪 Deutsch</option>
+                                <option value="es" <?= ($user['preferred_language'] ?? '') === 'es' ? 'selected' : '' ?>>🇪🇸 Español</option>
+                                <option value="fr" <?= ($user['preferred_language'] ?? '') === 'fr' ? 'selected' : '' ?>>🇫🇷 Français</option>
+                                <option value="it" <?= ($user['preferred_language'] ?? '') === 'it' ? 'selected' : '' ?>>🇮🇹 Italiano</option>
+                                <option value="pt" <?= ($user['preferred_language'] ?? '') === 'pt' ? 'selected' : '' ?>>🇵🇹 Português</option>
+                                <option value="ru" <?= ($user['preferred_language'] ?? '') === 'ru' ? 'selected' : '' ?>>🇷🇺 Русский</option>
+                                <option value="ja" <?= ($user['preferred_language'] ?? '') === 'ja' ? 'selected' : '' ?>>🇯🇵 日本語</option>
+                                <option value="ko" <?= ($user['preferred_language'] ?? '') === 'ko' ? 'selected' : '' ?>>🇰🇷 한국어</option>
+                                <option value="zh" <?= ($user['preferred_language'] ?? '') === 'zh' ? 'selected' : '' ?>>🇨🇳 中文</option>
+                            </select>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Language your AEI will use in conversations</p>
                         </div>
                     </div>
                 </div>
