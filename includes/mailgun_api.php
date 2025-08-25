@@ -92,55 +92,81 @@ class MailgunAPI {
     private function generatePasswordResetHTML($resetUrl, $firstName) {
         $greeting = !empty($firstName) ? "Hi " . htmlspecialchars($firstName) : "Hello";
         
-        return '
-<!DOCTYPE html>
-<html>
+        return '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Password Reset - Ayuni Beta</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #39D2DF 0%, #546BEC 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: white; padding: 30px; border: 1px solid #e1e5e9; border-top: none; border-radius: 0 0 8px 8px; }
-        .button { display: inline-block; background: linear-gradient(135deg, #39D2DF 0%, #546BEC 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
-        .footer { color: #666; font-size: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
-        .warning { background: #fef3cd; border: 1px solid #fecf41; padding: 15px; border-radius: 6px; margin: 20px 0; }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1 style="margin: 0; font-size: 28px;">🔐 Password Reset</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">Ayuni Beta</p>
-        </div>
-        <div class="content">
-            <p>' . $greeting . ',</p>
-            
-            <p>You requested a password reset for your Ayuni Beta account. Click the button below to create a new password:</p>
-            
-            <div style="text-align: center;">
-                <a href="' . htmlspecialchars($resetUrl) . '" class="button">Reset My Password</a>
-            </div>
-            
-            <div class="warning">
-                <strong>⏰ This link expires in 1 hour</strong><br>
-                For security reasons, this password reset link will only work for 1 hour from now.
-            </div>
-            
-            <p>If you didn\'t request this password reset, you can safely ignore this email. Your password will remain unchanged.</p>
-            
-            <p>If the button above doesn\'t work, copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 14px;">
-                ' . htmlspecialchars($resetUrl) . '
-            </p>
-        </div>
-        <div class="footer">
-            <p>This email was sent by Ayuni Beta. If you have questions, please contact our support team.</p>
-            <p>© ' . date('Y') . ' Ayuni Beta. All rights reserved.</p>
-        </div>
-    </div>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+        <tr>
+            <td style="padding: 20px 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: #39D2DF; background: linear-gradient(135deg, #39D2DF 0%, #546BEC 100%); color: #ffffff; padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; font-family: Arial, sans-serif; font-size: 28px; font-weight: bold;">🔐 Password Reset</h1>
+                            <p style="margin: 10px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; opacity: 0.9;">Ayuni Beta</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">' . $greeting . ',</p>
+                            
+                            <p style="margin: 0 0 30px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">You requested a password reset for your Ayuni Beta account. Click the button below to create a new password:</p>
+                            
+                            <!-- Button -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="text-align: center;">
+                                        <a href="' . htmlspecialchars($resetUrl) . '" style="display: inline-block; background: #39D2DF; background: linear-gradient(135deg, #39D2DF 0%, #546BEC 100%); color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: Arial, sans-serif; font-size: 16px;">Reset My Password</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Warning Box -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 30px 0;">
+                                <tr>
+                                    <td style="background-color: #fff3cd; border: 1px solid #fecf41; padding: 20px; border-radius: 6px;">
+                                        <p style="margin: 0; font-family: Arial, sans-serif; font-size: 14px; color: #856404;">
+                                            <strong>⏰ This link expires in 1 hour</strong><br>
+                                            For security reasons, this password reset link will only work for 1 hour from now.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin: 0 0 20px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">If you didn\'t request this password reset, you can safely ignore this email. Your password will remain unchanged.</p>
+                            
+                            <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #333333;">If the button above doesn\'t work, copy and paste this link into your browser:</p>
+                            
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td style="background-color: #f8f9fa; padding: 15px; border-radius: 4px;">
+                                        <p style="margin: 0; font-family: Courier, monospace; font-size: 14px; color: #333333; word-break: break-all;">
+                                            ' . htmlspecialchars($resetUrl) . '
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; border-top: 1px solid #eeeeee;">
+                            <p style="margin: 0 0 10px 0; font-family: Arial, sans-serif; font-size: 12px; color: #666666; text-align: center;">This email was sent by Ayuni Beta. If you have questions, please contact our support team.</p>
+                            <p style="margin: 0; font-family: Arial, sans-serif; font-size: 12px; color: #666666; text-align: center;">© ' . date('Y') . ' Ayuni Beta. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>';
     }
