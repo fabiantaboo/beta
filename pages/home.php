@@ -12,6 +12,32 @@ if (!in_array($step, $allowedSteps)) {
     $step = 'beta_code';
 }
 
+// Check for direct beta invite URL with pre-filled data
+if (isset($_GET['beta_code']) && isset($_GET['first_name']) && isset($_GET['email'])) {
+    $inviteBetaCode = sanitizeInput($_GET['beta_code']);
+    $inviteFirstName = sanitizeInput($_GET['first_name']);
+    $inviteEmail = sanitizeInput($_GET['email']);
+    
+    try {
+        // Validate the beta code from URL
+        $stmt = $pdo->prepare("SELECT * FROM beta_codes WHERE code = ? AND is_active = TRUE AND used_at IS NULL");
+        $stmt->execute([$inviteBetaCode]);
+        $validInviteCode = $stmt->fetch();
+        
+        if ($validInviteCode) {
+            // Store beta code data and go directly to register
+            $_SESSION['temp_beta_code'] = array_merge($validInviteCode, [
+                'first_name' => $inviteFirstName,
+                'email' => $inviteEmail
+            ]);
+            $betaCodeData = $_SESSION['temp_beta_code'];
+            $step = 'register';
+        }
+    } catch (PDOException $e) {
+        error_log("Error validating invite beta code: " . $e->getMessage());
+    }
+}
+
 // If we have temp beta code data and step is register, load it
 if ($step === 'register' && isset($_SESSION['temp_beta_code'])) {
     $betaCodeData = $_SESSION['temp_beta_code'];

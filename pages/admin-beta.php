@@ -1,5 +1,6 @@
 <?php
 requireAdmin();
+require_once __DIR__ . '/../includes/mailgun_api.php';
 
 $error = null;
 $success = null;
@@ -22,7 +23,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute([$code, $firstName ?: null, $email ?: null]);
                 
                 if ($firstName && $email) {
-                    $success = "Generated beta code '$code' for $firstName ($email).";
+                    // Send beta invite email automatically
+                    $mailgun = new MailgunAPI();
+                    
+                    // Build registration URL with pre-filled data
+                    $registrationUrl = "https://" . $_SERVER['HTTP_HOST'] . "/register?" . http_build_query([
+                        'beta_code' => $code,
+                        'first_name' => $firstName,
+                        'email' => $email
+                    ]);
+                    
+                    if ($mailgun->sendBetaInviteEmail($email, $code, $firstName, $registrationUrl)) {
+                        $success = "Generated beta code '$code' for $firstName ($email) and sent invitation email! 📧";
+                    } else {
+                        $success = "Generated beta code '$code' for $firstName ($email), but failed to send email. Please check Mailgun configuration.";
+                    }
                 } else {
                     $success = "Generated beta code '$code' (no pre-filled user data).";
                 }

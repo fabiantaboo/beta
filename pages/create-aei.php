@@ -1128,6 +1128,12 @@ function updateAgeDisplay(value) {
 
 // Handle trait button selection
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize age display with current slider value
+    const ageSlider = document.getElementById('age');
+    if (ageSlider) {
+        updateAgeDisplay(ageSlider.value);
+    }
+    
     // Trait buttons
     document.querySelectorAll('.trait-button input, .interest-button input, .dynamics-button input').forEach(input => {
         input.addEventListener('change', function() {
