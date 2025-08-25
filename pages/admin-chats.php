@@ -18,7 +18,7 @@ try {
             DATE(u.created_at) as join_date
         FROM users u
         LEFT JOIN aeis a ON u.id = a.user_id AND a.is_active = TRUE
-        LEFT JOIN chat_sessions cs ON a.id = cs.aei_id
+        LEFT JOIN chat_sessions cs ON a.id = cs.aei_id AND cs.user_id = u.id
         WHERE u.is_admin = FALSE
         GROUP BY u.id
         ORDER BY last_activity DESC, u.created_at DESC
@@ -34,6 +34,12 @@ try {
 $chatSessions = [];
 if ($selectedUserId) {
     try {
+        // Debug: First check if chat_sessions exist for this user
+        $debugStmt = $pdo->prepare("SELECT COUNT(*) as count FROM chat_sessions WHERE user_id = ?");
+        $debugStmt->execute([$selectedUserId]);
+        $debugCount = $debugStmt->fetchColumn();
+        error_log("DEBUG: Found $debugCount chat sessions for user $selectedUserId");
+        
         $stmt = $pdo->prepare("
             SELECT 
                 cs.*,
@@ -41,7 +47,7 @@ if ($selectedUserId) {
                 COUNT(cm.id) as message_count,
                 MAX(cm.timestamp) as last_message
             FROM chat_sessions cs
-            JOIN aeis a ON cs.aei_id = a.id
+            JOIN aeis a ON cs.aei_id = a.id AND a.user_id = cs.user_id
             LEFT JOIN chat_messages cm ON cs.id = cm.session_id
             WHERE cs.user_id = ?
             GROUP BY cs.id
@@ -49,6 +55,7 @@ if ($selectedUserId) {
         ");
         $stmt->execute([$selectedUserId]);
         $chatSessions = $stmt->fetchAll();
+        error_log("DEBUG: Retrieved " . count($chatSessions) . " chat sessions after JOIN");
     } catch (PDOException $e) {
         error_log("Database error fetching chat sessions: " . $e->getMessage());
         $chatSessions = [];
