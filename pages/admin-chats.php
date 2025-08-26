@@ -5,6 +5,7 @@ $error = null;
 $success = null;
 $selectedUserId = $_GET['user_id'] ?? '';
 $selectedSessionId = $_GET['session_id'] ?? '';
+$fullwidthMode = isset($_GET['fullwidth']) && $_GET['fullwidth'] === '1';
 
 // Get non-admin users with their AEIs and chat sessions (anonymized).
 try {
@@ -100,7 +101,96 @@ if ($selectedSessionId) {
         
         <?php renderAdminAlerts($error, $success); ?>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <?php if ($selectedSessionId && $sessionInfo && $fullwidthMode): ?>
+            <!-- Fullwidth Chat View -->
+            <div class="mb-6 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="?user_id=<?= urlencode($selectedUserId) ?>&session_id=<?= urlencode($selectedSessionId) ?>" 
+                       class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-compress-alt mr-2"></i>
+                        Normal View
+                    </a>
+                    <div class="text-gray-600 dark:text-gray-400">
+                        <i class="fas fa-expand-alt mr-2"></i>
+                        Fullwidth Chat View
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                    <?= htmlspecialchars($sessionInfo['anonymous_name']) ?> & <?= htmlspecialchars($sessionInfo['aei_name']) ?> • <?= count($messages) ?> messages
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                            Chat: <?= htmlspecialchars($sessionInfo['anonymous_name']) ?> & <?= htmlspecialchars($sessionInfo['aei_name']) ?>
+                        </h3>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            Started <?= date('M j, Y g:i A', strtotime($sessionInfo['created_at'])) ?>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="h-[calc(100vh-300px)] overflow-y-auto">
+                    <div class="p-6 space-y-6">
+                        <?php foreach ($messages as $message): ?>
+                            <div class="<?= $message['sender_type'] === 'user' ? 'flex justify-end' : 'flex justify-start' ?>">
+                                <div class="max-w-2xl w-full">
+                                    <div class="<?= $message['sender_type'] === 'user' 
+                                        ? 'bg-ayuni-blue text-white ml-auto' 
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white mr-auto' 
+                                    ?> rounded-2xl px-6 py-4 shadow-sm">
+                                        
+                                        <?php if ($message['image_filename']): ?>
+                                            <div class="mb-3">
+                                                <img src="/uploads/chat_images/<?= htmlspecialchars($message['image_filename']) ?>" 
+                                                     alt="Shared image" 
+                                                     class="max-w-md h-auto rounded-lg">
+                                                <?php if ($message['image_original_name']): ?>
+                                                    <p class="text-xs opacity-70 mt-2"><?= htmlspecialchars($message['image_original_name']) ?></p>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <?php if ($message['message_text']): ?>
+                                            <div class="text-base leading-relaxed">
+                                                <?php
+                                                // Safely display message preserving emojis and formatting
+                                                $text = $message['message_text'];
+                                                // Only escape dangerous HTML, preserve emojis
+                                                $text = htmlspecialchars($text, ENT_NOQUOTES, 'UTF-8', false);
+                                                $text = str_replace(["'", '"'], ['&#039;', '&quot;'], $text);
+                                                // Add markdown-style italic formatting
+                                                $text = preg_replace('/\*([^*]+)\*/', '<em>$1</em>', $text);
+                                                echo nl2br($text);
+                                                ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="flex items-center mt-2 text-sm text-gray-500 <?= $message['sender_type'] === 'user' ? 'justify-end' : 'justify-start' ?>">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="font-medium"><?= $message['sender_type'] === 'user' ? $sessionInfo['anonymous_name'] : $sessionInfo['aei_name'] ?></span>
+                                            <span>•</span>
+                                            <span><?= date('M j, Y g:i A', strtotime($message['created_at'])) ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                        
+                        <?php if (empty($messages)): ?>
+                            <div class="text-center text-gray-500 dark:text-gray-400 py-16">
+                                <i class="fas fa-message text-6xl mb-6 opacity-50"></i>
+                                <p class="text-xl">No messages in this chat</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        <?php else: ?>
+            <!-- Standard 3-Column View -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Users List -->
             <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -189,12 +279,21 @@ if ($selectedSessionId) {
             <?php if ($selectedSessionId && $sessionInfo): ?>
                 <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                     <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                            Chat: <?= htmlspecialchars($sessionInfo['anonymous_name']) ?> & <?= htmlspecialchars($sessionInfo['aei_name']) ?>
-                        </h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            <?= count($messages) ?> messages • Started <?= date('M j, Y g:i A', strtotime($sessionInfo['created_at'])) ?>
-                        </p>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                    Chat: <?= htmlspecialchars($sessionInfo['anonymous_name']) ?> & <?= htmlspecialchars($sessionInfo['aei_name']) ?>
+                                </h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    <?= count($messages) ?> messages • Started <?= date('M j, Y g:i A', strtotime($sessionInfo['created_at'])) ?>
+                                </p>
+                            </div>
+                            <a href="?user_id=<?= urlencode($selectedUserId) ?>&session_id=<?= urlencode($selectedSessionId) ?>&fullwidth=1" 
+                               class="inline-flex items-center px-3 py-2 text-xs bg-ayuni-blue/10 text-ayuni-blue rounded-lg hover:bg-ayuni-blue/20 transition-colors">
+                                <i class="fas fa-expand-alt mr-2"></i>
+                                Fullwidth View
+                            </a>
+                        </div>
                     </div>
                     <div class="max-h-96 overflow-y-auto">
                         <div class="p-4 space-y-4">
@@ -251,7 +350,8 @@ if ($selectedSessionId) {
                     </div>
                 </div>
             <?php endif; ?>
-        </div>
+            </div>
+        <?php endif; ?>
 
         <!-- Instructions when nothing is selected -->
         <?php if (!$selectedUserId): ?>
