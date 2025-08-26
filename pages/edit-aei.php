@@ -286,150 +286,652 @@ function isValueSelected($data, $key, $value) {
             <?php endif; ?>
 
             <!-- Edit Form -->
-            <form method="POST" class="space-y-8">
-                <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
-
-                <!-- Step 1: Basic Information -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <div class="flex items-center mb-6">
-                        <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center mr-4">
-                            <span class="text-white font-bold text-lg">1</span>
-                        </div>
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Basic Information</h2>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">AEI Name *</label>
-                            <input 
-                                type="text" 
-                                id="name" 
-                                name="name" 
-                                value="<?= htmlspecialchars($aei['name'] ?? '') ?>"
-                                required
-                                class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-ayuni-blue transition-all"
-                                placeholder="Enter AEI's name"
-                            />
-                        </div>
-
-                        <div>
-                            <label for="age" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Age</label>
-                            <input 
-                                type="number" 
-                                id="age" 
-                                name="age" 
-                                value="<?= htmlspecialchars($aei['age'] ?? 25) ?>"
-                                min="18" 
-                                max="99"
-                                class="block w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-ayuni-blue transition-all"
-                            />
-                        </div>
-                    </div>
-
-                    <div class="mt-6">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Gender *</label>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <?php 
-                            $genderOptions = ['Female', 'Male', 'Non-binary', 'Other'];
-                            foreach ($genderOptions as $genderOption): 
-                            ?>
-                                <label class="relative flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-all">
-                                    <input 
-                                        type="radio" 
-                                        name="gender" 
-                                        value="<?= htmlspecialchars($genderOption) ?>"
-                                        <?= ($aei['gender'] === $genderOption) ? 'checked' : '' ?>
-                                        class="sr-only"
-                                    />
-                                    <div class="flex items-center">
-                                        <div class="w-5 h-5 border-2 border-gray-300 dark:border-gray-500 rounded-full mr-3 flex items-center justify-center transition-all">
-                                            <div class="w-3 h-3 bg-ayuni-blue rounded-full opacity-0 transition-opacity"></div>
-                                        </div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><?= htmlspecialchars($genderOption) ?></span>
-                                    </div>
-                                </label>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 2: Personality -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <div class="flex items-center mb-6">
-                        <div class="w-10 h-10 bg-gradient-to-br from-ayuni-aqua to-ayuni-blue rounded-full flex items-center justify-center mr-4">
-                            <span class="text-white font-bold text-lg">2</span>
-                        </div>
-                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Personality Traits</h2>
-                    </div>
-
-                    <div class="mb-4">
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Select personality traits that define your AEI's character. You can select multiple traits.</p>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg p-8">
+                <form method="POST" class="space-y-10" id="aei-edit-form">
+                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                    
+                    <!-- Basic Information -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-id-card mr-2 text-ayuni-blue"></i>
+                            Basic Information
+                        </h3>
                         
-                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            <?php 
-                            $personalityOptions = [
-                                'Caring', 'Adventurous', 'Intellectual', 'Playful', 'Mysterious', 'Confident',
-                                'Gentle', 'Passionate', 'Witty', 'Romantic', 'Ambitious', 'Creative',
-                                'Loyal', 'Independent', 'Empathetic', 'Curious', 'Optimistic', 'Sophisticated'
-                            ];
-                            
-                            $selectedTraits = getPersonalityTraits($personalityData);
-                            
-                            foreach ($personalityOptions as $trait): 
-                            ?>
-                                <label class="relative flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-all">
-                                    <input 
-                                        type="checkbox" 
-                                        name="personality_traits[]" 
-                                        value="<?= htmlspecialchars($trait) ?>"
-                                        <?= in_array($trait, $selectedTraits) ? 'checked' : '' ?>
-                                        class="sr-only"
-                                    />
-                                    <div class="flex items-center">
-                                        <div class="w-5 h-5 border-2 border-gray-300 dark:border-gray-500 rounded mr-2 flex items-center justify-center transition-all">
-                                            <i class="fas fa-check text-ayuni-blue text-xs opacity-0 transition-opacity"></i>
-                                        </div>
-                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><?= htmlspecialchars($trait) ?></span>
-                                    </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    AEI Name *
                                 </label>
-                            <?php endforeach; ?>
+                                <input 
+                                    type="text" 
+                                    id="name" 
+                                    name="name" 
+                                    required
+                                    maxlength="100"
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all"
+                                    placeholder="Give your AEI a name..."
+                                    value="<?= htmlspecialchars($aei['name'] ?? '') ?>"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    Gender Identity *
+                                </label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <label class="gender-option flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <input type="radio" name="gender" value="Female" class="sr-only" required <?= ($aei['gender'] ?? '') === 'Female' ? 'checked' : '' ?>>
+                                        <i class="fas fa-venus text-pink-500 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Female</span>
+                                    </label>
+                                    <label class="gender-option flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <input type="radio" name="gender" value="Male" class="sr-only" required <?= ($aei['gender'] ?? '') === 'Male' ? 'checked' : '' ?>>
+                                        <i class="fas fa-mars text-blue-500 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Male</span>
+                                    </label>
+                                    <label class="gender-option flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <input type="radio" name="gender" value="Non-binary" class="sr-only" required <?= ($aei['gender'] ?? '') === 'Non-binary' ? 'checked' : '' ?>>
+                                        <i class="fas fa-genderless text-purple-500 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Non-binary</span>
+                                    </label>
+                                    <label class="gender-option flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        <input type="radio" name="gender" value="Other" class="sr-only" required <?= ($aei['gender'] ?? '') === 'Other' ? 'checked' : '' ?>>
+                                        <i class="fas fa-question text-gray-500 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Other</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                Age: <span id="age-display" class="font-bold text-ayuni-blue"><?= htmlspecialchars($aei['age'] ?? 25) ?></span> years old
+                            </label>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-sm text-gray-500">18</span>
+                                <input 
+                                    type="range" 
+                                    id="age" 
+                                    name="age" 
+                                    min="18" 
+                                    max="80" 
+                                    value="<?= intval($aei['age'] ?? 25) ?>"
+                                    class="flex-1 h-3 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                                    oninput="updateAgeDisplay(this.value)"
+                                />
+                                <span class="text-sm text-gray-500">80</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Save Button -->
-                <div class="text-center">
-                    <button 
-                        type="submit"
-                        class="bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-4 px-8 rounded-xl text-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
-                    >
-                        <i class="fas fa-save mr-2"></i>
-                        Save Changes
-                    </button>
-                </div>
-            </form>
+                    <!-- Personality Traits -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-heart mr-2 text-ayuni-aqua"></i>
+                            Personality Traits
+                        </h3>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                    Core Personality Traits *
+                                    <span class="text-xs text-gray-500 ml-2">(Select at least 1 trait that best describes them)</span>
+                                </label>
+                                <div id="personality-traits" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                    <?php 
+                                    $personalityTraits = [
+                                        'Cheerful', 'Serious', 'Playful', 'Calm', 'Energetic', 'Thoughtful',
+                                        'Confident', 'Shy', 'Optimistic', 'Realistic', 'Creative', 'Logical',
+                                        'Spontaneous', 'Organized', 'Empathetic', 'Independent', 'Loyal', 'Ambitious',
+                                        'Gentle', 'Bold', 'Curious', 'Patient', 'Witty', 'Mysterious',
+                                        'Adventurous', 'Cautious', 'Romantic', 'Practical', 'Artistic', 'Analytical'
+                                    ];
+                                    $selectedTraits = getPersonalityTraits($personalityData);
+                                    foreach ($personalityTraits as $trait): ?>
+                                        <label class="trait-button flex items-center justify-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
+                                            <input type="checkbox" name="personality_traits[]" value="<?= $trait ?>" class="sr-only" <?= in_array($trait, $selectedTraits) ? 'checked' : '' ?>>
+                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><?= $trait ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="custom-tags-container" data-field="personality_custom">
+                                        <div class="tags-display flex flex-wrap gap-2 mb-3" id="personality-tags"></div>
+                                        <input 
+                                            type="text" 
+                                            id="personality-input"
+                                            placeholder="Add custom trait and press Enter..."
+                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
+                                        />
+                                        <input type="hidden" name="personality_custom" id="personality-custom-hidden" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Communication Style -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-comments mr-2 text-green-500"></i>
+                            Communication Style
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">How do they communicate? *</h4>
+                                <div class="space-y-3">
+                                    <?php 
+                                    $commStyles = [
+                                        ['value' => 'Formal and polite', 'icon' => 'fas fa-user-tie', 'color' => 'blue'],
+                                        ['value' => 'Casual and friendly', 'icon' => 'fas fa-smile', 'color' => 'yellow'],
+                                        ['value' => 'Playful and teasing', 'icon' => 'fas fa-laugh', 'color' => 'pink'],
+                                        ['value' => 'Direct and straightforward', 'icon' => 'fas fa-arrow-right', 'color' => 'red']
+                                    ];
+                                    $currentStyle = getValueOrDefault($communicationData, 'style', '');
+                                    foreach ($commStyles as $style):
+                                    ?>
+                                        <label class="comm-style flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <input type="radio" name="communication_style" value="<?= $style['value'] ?>" class="sr-only" <?= $currentStyle === $style['value'] ? 'checked' : '' ?> required>
+                                            <i class="<?= $style['icon'] ?> text-<?= $style['color'] ?>-500 mr-3"></i>
+                                            <span class="text-sm text-gray-700 dark:text-gray-300"><?= $style['value'] ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Speaking habits</h4>
+                                <div class="space-y-3">
+                                    <?php 
+                                    $speakingTraits = [
+                                        'Uses emojis',
+                                        'Loves wordplay',
+                                        'Asks thoughtful questions',
+                                        'Tells stories',
+                                        'Uses metaphors'
+                                    ];
+                                    $selectedSpeaking = getValueOrDefault($communicationData, 'traits', []);
+                                    foreach ($speakingTraits as $trait):
+                                    ?>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" name="speaking_traits[]" value="<?= $trait ?>" class="mr-3 rounded border-gray-300 text-ayuni-blue focus:ring-ayuni-blue" <?= is_array($selectedSpeaking) && in_array($trait, $selectedSpeaking) ? 'checked' : '' ?>>
+                                            <span class="text-sm text-gray-700 dark:text-gray-300"><?= $trait === 'Uses emojis' ? 'Uses emojis 😊' : $trait ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Appearance -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-palette mr-2 text-purple-500"></i>
+                            Appearance
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Hair Color *</label>
+                                <select name="hair_color" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                    <option value="">Select hair color...</option>
+                                    <?php 
+                                    $hairColors = ['Black', 'Brown', 'Blonde', 'Red', 'Auburn', 'Silver', 'White', 'Colorful'];
+                                    $currentHair = getValueOrDefault($appearanceData, 'hair_color', '');
+                                    foreach ($hairColors as $color): ?>
+                                        <option value="<?= $color ?>" <?= $currentHair === $color ? 'selected' : '' ?>><?= $color === 'Colorful' ? 'Colorful/Dyed' : $color ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Eye Color *</label>
+                                <select name="eye_color" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                    <option value="">Select eye color...</option>
+                                    <?php 
+                                    $eyeColors = ['Brown', 'Blue', 'Green', 'Hazel', 'Gray', 'Amber', 'Violet', 'Heterochromia'];
+                                    $currentEye = getValueOrDefault($appearanceData, 'eye_color', '');
+                                    foreach ($eyeColors as $color): ?>
+                                        <option value="<?= $color ?>" <?= $currentEye === $color ? 'selected' : '' ?>><?= $color === 'Heterochromia' ? 'Two different colors' : $color ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Height *</label>
+                                <select name="height" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                    <option value="">Select height...</option>
+                                    <?php 
+                                    $heights = [['value' => 'Petite', 'label' => 'Petite (under 5\'4")'], ['value' => 'Average', 'label' => 'Average (5\'4" - 5\'7")'], ['value' => 'Tall', 'label' => 'Tall (over 5\'7")']];
+                                    $currentHeight = getValueOrDefault($appearanceData, 'height', '');
+                                    foreach ($heights as $height): ?>
+                                        <option value="<?= $height['value'] ?>" <?= $currentHeight === $height['value'] ? 'selected' : '' ?>><?= $height['label'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Build *</label>
+                                <select name="build" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                    <option value="">Select build...</option>
+                                    <?php 
+                                    $builds = ['Slim', 'Average', 'Athletic', 'Curvy', 'Muscular'];
+                                    $currentBuild = getValueOrDefault($appearanceData, 'build', '');
+                                    foreach ($builds as $build): ?>
+                                        <option value="<?= $build ?>" <?= $currentBuild === $build ? 'selected' : '' ?>><?= $build ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Style *</label>
+                                <select name="style" required class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                                    <option value="">Select style...</option>
+                                    <?php 
+                                    $styles = ['Casual', 'Elegant', 'Sporty', 'Gothic', 'Vintage', 'Modern', 'Bohemian', 'Professional'];
+                                    $currentStyle = getValueOrDefault($appearanceData, 'style', '');
+                                    foreach ($styles as $style): ?>
+                                        <option value="<?= $style ?>" <?= $currentStyle === $style ? 'selected' : '' ?>><?= $style ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label for="appearance_custom" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                Additional appearance details
+                                <span class="text-xs text-gray-500 ml-2">(Optional - distinctive features, accessories, etc.)</span>
+                            </label>
+                            <textarea 
+                                id="appearance_custom" 
+                                name="appearance_custom" 
+                                rows="2"
+                                maxlength="200"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
+                                placeholder="e.g., Wears glasses, has a scar on forehead, always carries a book..."
+                            ><?= htmlspecialchars(getValueOrDefault($appearanceData, 'custom', '')) ?></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Background & Interests -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-book mr-2 text-indigo-500"></i>
+                            Background & Interests
+                        </h3>
+                        
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="occupation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                        Occupation or Role *
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="occupation" 
+                                        name="occupation" 
+                                        required
+                                        maxlength="100"
+                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
+                                        placeholder="Student, Artist, Scientist, Chef..."
+                                        value="<?= htmlspecialchars($aei['occupation'] ?? '') ?>"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label for="goals" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                        Goals & Dreams
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="goals" 
+                                        name="goals" 
+                                        maxlength="100"
+                                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
+                                        placeholder="Travel the world, write a novel..."
+                                        value="<?= htmlspecialchars($aei['goals'] ?? '') ?>"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                    Interests & Hobbies *
+                                    <span class="text-xs text-gray-500 ml-2">(Select at least 1 thing they're passionate about)</span>
+                                </label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                    <?php 
+                                    $interestOptions = [
+                                        'Art', 'Music', 'Books', 'Movies', 'Gaming', 'Sports', 'Cooking', 'Travel',
+                                        'Photography', 'Dancing', 'Singing', 'Writing', 'Science', 'Technology',
+                                        'Fashion', 'Fitness', 'Yoga', 'Meditation', 'Nature', 'Animals',
+                                        'History', 'Philosophy', 'Psychology', 'Astronomy', 'Languages', 'Theater'
+                                    ];
+                                    $selectedInterests = is_array($interestsData) ? $interestsData : [];
+                                    foreach ($interestOptions as $interest): ?>
+                                        <label class="interest-button flex items-center justify-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
+                                            <input type="checkbox" name="interest_tags[]" value="<?= $interest ?>" class="sr-only" <?= in_array($interest, $selectedInterests) ? 'checked' : '' ?>>
+                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><?= $interest ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="custom-tags-container" data-field="interest_custom">
+                                        <div class="tags-display flex flex-wrap gap-2 mb-3" id="interest-tags"></div>
+                                        <input 
+                                            type="text" 
+                                            id="interest-input"
+                                            placeholder="Add custom interest and press Enter..."
+                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue"
+                                        />
+                                        <input type="hidden" name="interest_custom" id="interest-custom-hidden" />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="background" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    Personal Background
+                                    <span class="text-xs text-gray-500 ml-2">(Optional - their story, upbringing, key experiences)</span>
+                                </label>
+                                <textarea 
+                                    id="background" 
+                                    name="background" 
+                                    rows="3"
+                                    maxlength="500"
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
+                                    placeholder="A brief story about their background, where they came from, key life experiences..."
+                                ><?= htmlspecialchars($aei['background'] ?? '') ?></textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="quirks" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    Unique Quirks & Habits
+                                    <span class="text-xs text-gray-500 ml-2">(Optional - what makes them memorable?)</span>
+                                </label>
+                                <textarea 
+                                    id="quirks" 
+                                    name="quirks" 
+                                    rows="2"
+                                    maxlength="200"
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
+                                    placeholder="e.g., Always hums when thinking, collects vintage postcards, speaks in multiple languages..."
+                                ><?= htmlspecialchars($aei['quirks'] ?? '') ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Relationship Context -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-heart mr-2 text-red-500"></i>
+                            Your Relationship
+                        </h3>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                    What is your AEI for you? *
+                                </label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="relationship-options">
+                                    <?php 
+                                    $relationshipTypes = [
+                                        ['value' => 'Best Friend', 'icon' => 'fas fa-user-friends', 'color' => 'blue-500', 'desc' => 'Close friendship and trust'],
+                                        ['value' => 'Close Friend', 'icon' => 'fas fa-users', 'color' => 'blue-400', 'desc' => 'Trusted friendship'],
+                                        ['value' => 'Sister', 'icon' => 'fas fa-female', 'color' => 'pink-500', 'desc' => 'She is your sister', 'gender' => 'Female'],
+                                        ['value' => 'Brother', 'icon' => 'fas fa-male', 'color' => 'blue-600', 'desc' => 'He is your brother', 'gender' => 'Male'],
+                                        ['value' => 'Girlfriend', 'icon' => 'fas fa-heart', 'color' => 'red-500', 'desc' => 'She is your girlfriend', 'gender' => 'Female'],
+                                        ['value' => 'Boyfriend', 'icon' => 'fas fa-heart', 'color' => 'red-600', 'desc' => 'He is your boyfriend', 'gender' => 'Male'],
+                                        ['value' => 'Wife', 'icon' => 'fas fa-ring', 'color' => 'gold-500', 'desc' => 'She is your wife', 'gender' => 'Female'],
+                                        ['value' => 'Husband', 'icon' => 'fas fa-ring', 'color' => 'gold-600', 'desc' => 'He is your husband', 'gender' => 'Male'],
+                                        ['value' => 'Mentor', 'icon' => 'fas fa-graduation-cap', 'color' => 'purple-500', 'desc' => 'Teaching relationship'],
+                                        ['value' => 'Colleague', 'icon' => 'fas fa-briefcase', 'color' => 'gray-500', 'desc' => 'Professional relationship'],
+                                        ['value' => 'Companion', 'icon' => 'fas fa-smile', 'color' => 'yellow-500', 'desc' => 'General support']
+                                    ];
+                                    $currentRelType = getValueOrDefault($relationshipData, 'type', '');
+                                    foreach ($relationshipTypes as $relType): 
+                                        if (isset($relType['gender']) && $relType['gender'] !== $aei['gender']) continue;
+                                    ?>
+                                        <label class="relationship-type flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <input type="radio" name="relationship_type" value="<?= $relType['value'] ?>" class="sr-only" <?= $currentRelType === $relType['value'] ? 'checked' : '' ?> required>
+                                            <i class="<?= $relType['icon'] ?> text-<?= $relType['color'] ?> mr-3"></i>
+                                            <div>
+                                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><?= $relType['value'] ?></span>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400"><?= $relType['desc'] ?></p>
+                                            </div>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                    Relationship dynamics
+                                    <span class="text-xs text-gray-500 ml-2">(Select what characterizes your relationship)</span>
+                                </label>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    <?php 
+                                    $relationshipDynamics = [
+                                        'Supportive', 'Playful', 'Deep conversations', 'Shared interests', 
+                                        'Emotional support', 'Adventure together', 'Intellectual discussions', 'Fun and laughter',
+                                        'Honest communication', 'Protective', 'Inspiring', 'Relaxing presence'
+                                    ];
+                                    $selectedDynamics = getValueOrDefault($relationshipData, 'dynamics', []);
+                                    foreach ($relationshipDynamics as $dynamic): ?>
+                                        <label class="dynamics-button flex items-center justify-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
+                                            <input type="checkbox" name="relationship_dynamics[]" value="<?= $dynamic ?>" class="sr-only" <?= is_array($selectedDynamics) && in_array($dynamic, $selectedDynamics) ? 'checked' : '' ?>>
+                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><?= $dynamic ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="relationship_history" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                    How did you meet? 
+                                    <span class="text-xs text-gray-500 ml-2">(Optional - your shared history)</span>
+                                </label>
+                                <textarea 
+                                    id="relationship_history" 
+                                    name="relationship_history" 
+                                    rows="3"
+                                    maxlength="300"
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ayuni-blue focus:border-transparent transition-all resize-none"
+                                    placeholder="Tell the story of how you met, key moments in your relationship, shared experiences..."
+                                ><?= htmlspecialchars(getValueOrDefault($relationshipData, 'history', '')) ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Length Preference -->
+                    <div class="border-b border-gray-200 dark:border-gray-700 pb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
+                            <i class="fas fa-comment mr-2 text-purple-500"></i>
+                            Response Style
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                                    How verbose should your AEI be?
+                                </label>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <?php 
+                                    $responseLengths = [
+                                        ['value' => '1', 'icon' => 'fas fa-compress', 'color' => 'blue', 'label' => 'Short & Sweet', 'desc' => '2-3 sentences, concise'],
+                                        ['value' => '2', 'icon' => 'fas fa-balance-scale', 'color' => 'green', 'label' => 'Balanced', 'desc' => '4-5 sentences, just right'],
+                                        ['value' => '3', 'icon' => 'fas fa-expand', 'color' => 'purple', 'label' => 'Detailed', 'desc' => 'Comprehensive, elaborate']
+                                    ];
+                                    $currentLength = $aei['response_length'] ?? 2;
+                                    foreach ($responseLengths as $length): ?>
+                                        <label class="response-length flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <input type="radio" name="response_length" value="<?= $length['value'] ?>" class="sr-only" <?= $currentLength == $length['value'] ? 'checked' : '' ?>>
+                                            <i class="<?= $length['icon'] ?> text-<?= $length['color'] ?>-500 mr-3"></i>
+                                            <div>
+                                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300"><?= $length['label'] ?></span>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400"><?= $length['desc'] ?></p>
+                                            </div>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-lightbulb text-blue-500 mt-0.5"></i>
+                                    <div>
+                                        <p class="text-sm text-blue-800 dark:text-blue-200 font-medium mb-1">💡 Pro Tip</p>
+                                        <p class="text-xs text-blue-700 dark:text-blue-300">
+                                            You can change this setting anytime in the chat profile. Your AEI will adapt their response length to match your preference, regardless of how much you write.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="flex space-x-4 pt-6">
+                        <a href="/dashboard" class="flex-1 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-4 px-6 rounded-lg text-center hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors">
+                            Cancel
+                        </a>
+                        <button type="submit" class="flex-1 bg-gradient-to-r from-ayuni-aqua to-ayuni-blue text-white font-semibold py-4 px-6 rounded-lg hover:from-ayuni-aqua/90 hover:to-ayuni-blue/90 transition-all duration-200 shadow-sm hover:shadow-md">
+                            <i class="fas fa-save mr-2"></i>
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
         <?php endif; ?>
     </div>
 </div>
 
 <style>
-/* Radio button styling */
-input[type="radio"]:checked + .flex .w-5.h-5 .w-3.h-3 {
-    opacity: 1;
+/* Slider styling */
+.slider {
+    background: linear-gradient(to right, #39D2DF 0%, #546BEC 100%);
 }
 
-input[type="radio"]:checked + .flex .w-5.h-5 {
-    border-color: rgb(84, 107, 236);
-    background-color: rgba(84, 107, 236, 0.1);
+.slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #39D2DF;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-/* Checkbox styling */
-input[type="checkbox"]:checked + .flex .w-5.h-5 i {
-    opacity: 1;
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #39D2DF;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-input[type="checkbox"]:checked + .flex .w-5.h-5 {
-    border-color: rgb(84, 107, 236);
-    background-color: rgba(84, 107, 236, 0.1);
+/* Interactive button styling */
+.trait-button input:checked + span,
+.interest-button input:checked + span,
+.dynamics-button input:checked + span {
+    color: #39D2DF;
+    font-weight: 600;
+}
+
+.trait-button:has(input:checked),
+.interest-button:has(input:checked), 
+.dynamics-button:has(input:checked) {
+    background-color: rgba(57, 210, 223, 0.1);
+    border-color: #39D2DF;
+}
+
+.gender-option:has(input:checked),
+.comm-style:has(input:checked),
+.relationship-type:has(input:checked),
+.response-length:has(input:checked) {
+    background-color: rgba(57, 210, 223, 0.1);
+    border-color: #39D2DF;
+}
+
+/* Tag styling */
+.tag {
+    background: linear-gradient(135deg, #39D2DF, #546BEC);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tag .remove-tag {
+    cursor: pointer;
+    font-weight: bold;
 }
 </style>
+
+<script>
+// Age display update
+function updateAgeDisplay(value) {
+    document.getElementById('age-display').textContent = value;
+}
+
+// Initialize age display on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const ageInput = document.getElementById('age');
+    if (ageInput) {
+        updateAgeDisplay(ageInput.value);
+    }
+});
+
+// Custom tags system
+document.addEventListener('DOMContentLoaded', function() {
+    const containers = document.querySelectorAll('.custom-tags-container');
+    
+    containers.forEach(container => {
+        const field = container.dataset.field;
+        const tagsDisplay = container.querySelector('.tags-display');
+        const input = container.querySelector('input[type="text"]');
+        const hiddenInput = container.querySelector('input[type="hidden"]');
+        
+        let tags = [];
+        
+        function updateTags() {
+            tagsDisplay.innerHTML = tags.map(tag => 
+                `<span class="tag">${tag}<span class="remove-tag" onclick="removeTag('${field}', '${tag}')">&times;</span></span>`
+            ).join('');
+            hiddenInput.value = JSON.stringify(tags);
+        }
+        
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const value = this.value.trim();
+                if (value && !tags.includes(value)) {
+                    tags.push(value);
+                    updateTags();
+                    this.value = '';
+                }
+            }
+        });
+        
+        // Make removeTag globally available
+        window.removeTag = function(field, tag) {
+            const container = document.querySelector(`[data-field="${field}"]`);
+            const tagsArray = JSON.parse(container.querySelector('input[type="hidden"]').value || '[]');
+            const index = tagsArray.indexOf(tag);
+            if (index > -1) {
+                tagsArray.splice(index, 1);
+                container.querySelector('input[type="hidden"]').value = JSON.stringify(tagsArray);
+                container.querySelector('.tags-display').innerHTML = tagsArray.map(t => 
+                    `<span class="tag">${t}<span class="remove-tag" onclick="removeTag('${field}', '${t}')">&times;</span></span>`
+                ).join('');
+            }
+        };
+    });
+});
+</script>
