@@ -90,6 +90,15 @@ try {
     $stmt->execute([$userId]);
     $aeis = $stmt->fetchAll();
     
+    // Calculate edit availability for each AEI
+    foreach ($aeis as &$aei) {
+        $createdAt = new DateTime($aei['created_at']);
+        $now = new DateTime();
+        $hoursSinceCreation = $now->diff($createdAt)->days * 24 + $now->diff($createdAt)->h;
+        $aei['can_edit'] = $hoursSinceCreation < 24;
+        $aei['hours_since_creation'] = $hoursSinceCreation;
+    }
+    
     // If user has no AEIs, redirect to AEI creator
     if (empty($aeis)) {
         redirectTo('create-aei');
@@ -174,7 +183,15 @@ try {
                                 <?php endif; ?>
                                 <div>
                                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white"><?= htmlspecialchars($aei['name']) ?></h3>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400">Created <?= date('M j, Y', strtotime($aei['created_at'])) ?></p>
+                                    <div class="flex items-center space-x-2">
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">Created <?= date('M j, Y', strtotime($aei['created_at'])) ?></p>
+                                        <?php if ($aei['can_edit']): ?>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-ayuni-aqua/10 text-ayuni-aqua border border-ayuni-aqua/20">
+                                                <i class="fas fa-edit text-xs mr-1"></i>
+                                                <?= 24 - $aei['hours_since_creation'] ?>h edit
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -197,6 +214,28 @@ try {
                                             <i class="fas fa-comments mr-3 text-ayuni-blue"></i>
                                             Start Chat
                                         </a>
+                                        
+                                        <?php if ($aei['can_edit']): ?>
+                                            <a 
+                                                href="/edit-aei/<?= urlencode($aei['id']) ?>" 
+                                                class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                            >
+                                                <i class="fas fa-edit mr-3 text-ayuni-aqua"></i>
+                                                Edit AEI
+                                                <span class="ml-auto text-xs text-gray-500 dark:text-gray-400">
+                                                    <?= 24 - $aei['hours_since_creation'] ?>h left
+                                                </span>
+                                            </a>
+                                        <?php else: ?>
+                                            <a 
+                                                href="/edit-aei/<?= urlencode($aei['id']) ?>" 
+                                                class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                            >
+                                                <i class="fas fa-eye mr-3 text-gray-400"></i>
+                                                View Details
+                                            </a>
+                                        <?php endif; ?>
+                                        
                                         <button 
                                             onclick="showDeleteModal('<?= htmlspecialchars($aei['id']) ?>', '<?= htmlspecialchars($aei['name']) ?>')"
                                             class="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"

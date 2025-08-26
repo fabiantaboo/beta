@@ -18,7 +18,7 @@ if (isset($_GET['action'])) {
     }
 }
 
-$allowed_pages = ['home', 'onboarding', 'create-aei', 'choose-avatar', 'chat', 'dashboard', 'profile', 'forgot-password', 'reset-password', 'admin', 'admin-api', 'admin-api-logs', 'admin-mailgun', 'admin-prompts', 'admin-users', 'admin-chats', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-feedback', 'admin-logs', 'admin-decay', 'admin-migration', 'admin-replicate', 'admin-avatar-batch', 'admin-avatar-regenerate', 'memory-setup', 'memory-migration'];
+$allowed_pages = ['home', 'onboarding', 'create-aei', 'edit-aei', 'choose-avatar', 'chat', 'dashboard', 'profile', 'forgot-password', 'reset-password', 'admin', 'admin-api', 'admin-api-logs', 'admin-mailgun', 'admin-prompts', 'admin-users', 'admin-chats', 'admin-beta', 'admin-emotions', 'admin-social', 'admin-proactive', 'admin-feedback', 'admin-logs', 'admin-decay', 'admin-migration', 'admin-replicate', 'admin-avatar-batch', 'admin-avatar-regenerate', 'memory-setup', 'memory-migration'];
 if (!in_array($page, $allowed_pages)) {
     $page = 'home';
 }
@@ -31,6 +31,7 @@ $page_content = ob_get_clean(); // Get the page content
 $page_title = match($page) {
     'onboarding' => 'Welcome to Ayuni',
     'create-aei' => 'Create Your AEI',
+    'edit-aei' => 'Edit Your AEI',
     'choose-avatar' => 'Choose Avatar',
     'chat' => 'Chat with AEI',
     'dashboard' => 'Dashboard',

@@ -64,6 +64,11 @@ class Router {
             return ['page' => 'chat', 'aei' => $matches[1]];
         }
         
+        // Check for edit AEI routes (like edit-aei/aei-id)
+        if (preg_match('/^edit-aei\/(.+)$/', $route, $matches)) {
+            return ['page' => 'edit-aei', 'id' => $matches[1]];
+        }
+        
         // Default to home if no match
         return ['page' => 'home'];
     }
