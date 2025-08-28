@@ -7,7 +7,7 @@ $selectedUserId = $_GET['user_id'] ?? '';
 $selectedSessionId = $_GET['session_id'] ?? '';
 $fullwidthMode = isset($_GET['fullwidth']) && $_GET['fullwidth'] === '1';
 
-// Get non-admin users with their AEIs and chat sessions (anonymized).
+// Get non-admin users with their AEIs and chat sessions (anonymized, excluding private users).
 try {
     $stmt = $pdo->prepare("
         SELECT 
@@ -20,7 +20,7 @@ try {
         FROM users u
         LEFT JOIN aeis a ON u.id = a.user_id AND a.is_active = TRUE
         LEFT JOIN chat_sessions cs ON a.id = cs.aei_id AND cs.user_id = u.id
-        WHERE u.is_admin = FALSE
+        WHERE u.is_admin = FALSE AND (u.privacy_level IS NULL OR u.privacy_level = 'normal')
         GROUP BY u.id
         ORDER BY last_activity DESC, u.created_at DESC
     ");
@@ -61,7 +61,7 @@ $messages = [];
 $sessionInfo = null;
 if ($selectedSessionId) {
     try {
-        // Get session info (anonymized)
+        // Get session info (anonymized, exclude private users)
         $stmt = $pdo->prepare("
             SELECT 
                 cs.*,
@@ -70,7 +70,7 @@ if ($selectedSessionId) {
             FROM chat_sessions cs
             JOIN aeis a ON cs.aei_id = a.id
             JOIN users u ON cs.user_id = u.id
-            WHERE cs.id = ? AND u.is_admin = FALSE
+            WHERE cs.id = ? AND u.is_admin = FALSE AND (u.privacy_level IS NULL OR u.privacy_level = 'normal')
         ");
         $stmt->execute([$selectedSessionId]);
         $sessionInfo = $stmt->fetch();

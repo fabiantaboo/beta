@@ -75,6 +75,9 @@ function createTablesIfNotExist($pdo) {
             user_style VARCHAR(50) NULL,
             user_appearance_custom TEXT NULL,
             
+            -- Privacy settings
+            privacy_level ENUM('normal', 'private') DEFAULT 'normal',
+            
             FOREIGN KEY (beta_code) REFERENCES beta_codes(code)
         )",
         'aeis' => "CREATE TABLE IF NOT EXISTS aeis (
@@ -901,7 +904,7 @@ try {
             'daily_rituals', 'life_goals', 'beliefs', 'partner_qualities', 
             'additional_info', 'timezone', 'preferred_language', 'feedback_channel', 'feedback_contact',
             'user_hair_color', 'user_eye_color', 'user_height', 'user_build', 
-            'user_style', 'user_appearance_custom'
+            'user_style', 'user_appearance_custom', 'privacy_level'
         ];
         $missingUserColumns = array_diff($requiredUserColumns, $userColumns);
         
@@ -981,6 +984,9 @@ try {
                     break;
                 case 'user_appearance_custom':
                     $pdo->exec("ALTER TABLE users ADD COLUMN user_appearance_custom TEXT NULL");
+                    break;
+                case 'privacy_level':
+                    $pdo->exec("ALTER TABLE users ADD COLUMN privacy_level ENUM('normal', 'private') DEFAULT 'normal'");
                     break;
             }
         }

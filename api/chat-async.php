@@ -13,18 +13,36 @@ include_once '../includes/proactive_messaging.php';
 // Prevent output buffering issues
 if (ob_get_level()) ob_end_clean();
 
-// Set headers for Server-Sent Events
+// Set headers for Server-Sent Events with enhanced reliability
 header('Content-Type: text/event-stream');
-header('Cache-Control: no-cache');
+header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Connection: keep-alive');
 header('X-Accel-Buffering: no'); // Disable Nginx buffering
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Cache-Control');
+header('Access-Control-Expose-Headers: *');
+// Prevent timeout during long processing
+set_time_limit(300); // 5 minutes max
+ignore_user_abort(false); // Stop if client disconnects
 
-// Function to send SSE message
+// Function to send SSE message with improved reliability
 function sendSSE($type, $data) {
+    // Check if client is still connected
+    if (connection_aborted()) {
+        return false;
+    }
+    
     echo "event: $type\n";
     echo "data: " . json_encode($data, JSON_UNESCAPED_UNICODE) . "\n\n";
+    
+    // Force immediate output
     if (ob_get_level()) ob_flush();
     flush();
+    
+    // Small delay to ensure message is sent
+    usleep(1000); // 1ms
+    
+    return true;
 }
 
 // Only allow POST requests

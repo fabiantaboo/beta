@@ -15,11 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $firstName = sanitizeInput($_POST['first_name'] ?? '');
             $email = sanitizeInput($_POST['email'] ?? '');
             $isAdmin = isset($_POST['is_admin']) ? 1 : 0;
+            $privacyLevel = $_POST['privacy_level'] ?? 'normal';
             
             if (!empty($userId) && !empty($firstName) && !empty($email)) {
                 try {
-                    $stmt = $pdo->prepare("UPDATE users SET first_name = ?, email = ?, is_admin = ? WHERE id = ?");
-                    $stmt->execute([$firstName, $email, $isAdmin, $userId]);
+                    $stmt = $pdo->prepare("UPDATE users SET first_name = ?, email = ?, is_admin = ?, privacy_level = ? WHERE id = ?");
+                    $stmt->execute([$firstName, $email, $isAdmin, $privacyLevel, $userId]);
                     $success = "User updated successfully.";
                 } catch (PDOException $e) {
                     error_log("Database error updating user: " . $e->getMessage());
@@ -112,6 +113,12 @@ try {
                                                             Admin
                                                         </span>
                                                     <?php endif; ?>
+                                                    <?php if (($user['privacy_level'] ?? 'normal') === 'private'): ?>
+                                                        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300">
+                                                            <i class="fas fa-eye-slash mr-1"></i>
+                                                            Private
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </div>
                                                 <div class="text-sm text-gray-500 dark:text-gray-400">
                                                     <?= htmlspecialchars($user['email']) ?>
@@ -149,7 +156,7 @@ try {
                                     </td>
                                     <td class="px-6 py-4 text-sm">
                                         <div class="flex space-x-2">
-                                            <button onclick="editUser('<?= $user['id'] ?>', '<?= htmlspecialchars($user['first_name']) ?>', '<?= htmlspecialchars($user['email']) ?>', <?= $user['is_admin'] ? 'true' : 'false' ?>)" class="text-ayuni-blue hover:text-ayuni-aqua" title="Edit user">
+                                            <button onclick="editUser('<?= $user['id'] ?>', '<?= htmlspecialchars($user['first_name']) ?>', '<?= htmlspecialchars($user['email']) ?>', <?= $user['is_admin'] ? 'true' : 'false' ?>, '<?= $user['privacy_level'] ?? 'normal' ?>')" class="text-ayuni-blue hover:text-ayuni-aqua" title="Edit user">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <?php if (!$user['is_admin']): ?>
@@ -200,6 +207,15 @@ try {
                         <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Admin privileges</span>
                     </label>
                 </div>
+                
+                <div>
+                    <label for="editPrivacyLevel" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Privacy Level</label>
+                    <select id="editPrivacyLevel" name="privacy_level" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-ayuni-blue">
+                        <option value="normal">Normal</option>
+                        <option value="private">Private (Chat Analytics excluded)</option>
+                    </select>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Private users' chats won't appear in analytics</p>
+                </div>
             </div>
             
             <div class="flex space-x-3 mt-6">
@@ -215,11 +231,12 @@ try {
 </div>
 
 <script>
-function editUser(id, firstName, email, isAdmin) {
+function editUser(id, firstName, email, isAdmin, privacyLevel) {
     document.getElementById('editUserId').value = id;
     document.getElementById('editFirstName').value = firstName;
     document.getElementById('editEmail').value = email;
     document.getElementById('editIsAdmin').checked = isAdmin;
+    document.getElementById('editPrivacyLevel').value = privacyLevel || 'normal';
     document.getElementById('editUserModal').classList.remove('hidden');
 }
 

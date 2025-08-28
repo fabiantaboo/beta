@@ -1288,6 +1288,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Global state for request management
+    let globalRequestStates = new Map();
+    
     // Asynchronous AI message with Server-Sent Events (background processing)
     async function sendAIMessage(message, imageFile = null) {
         return new Promise((resolve, reject) => {
@@ -1314,6 +1317,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Create unique request ID for this message
                 const requestId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 
+                // Initialize global request state
+                globalRequestStates.set(requestId, {
+                    sseWorking: false,
+                    sseCompleted: false,
+                    pollInterval: null,
+                    startTime: Date.now()
+                });
+                
                 console.log(`[${requestId}] Starting async chat request`);
                 
                 // Start request immediately - no waiting for connection
@@ -1332,6 +1343,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         
                         console.log(`[${requestId}] Request sent successfully`);
+                        
+                        // Start immediate polling fallback for tab switches
+                        startImmediatePolling(requestId, resolve, reject);
                         
                         // Process the Server-Sent Events stream
                         const reader = response.body.getReader();
@@ -1379,8 +1393,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 }
                             } catch (streamError) {
                                 console.error(`[${requestId}] Stream processing error:`, streamError);
-                                hideTyping();
-                                reject(new Error('Connection interrupted'));
+                                // Don't immediately reject - let polling take over
+                                console.log(`[${requestId}] Stream failed, polling will handle completion`);
                             } finally {
                                 reader.releaseLock();
                             }
@@ -1390,88 +1404,37 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                     } catch (fetchError) {
                         console.error(`[${requestId}] Request failed:`, fetchError);
-                        hideTyping();
-                        reject(fetchError);
+                        // Don't immediately reject - polling might still work
+                        console.log(`[${requestId}] Fetch failed, polling will handle completion`);
                     }
                 };
                 
                 // Start the async request
                 sendRequest();
                 
-                // BACKUP SYSTEM: Poll for completed messages ONLY if SSE fails completely
-                let sseWorking = false;
-                let sseCompleted = false;
-                
-                const pollForCompletion = () => {
-                    // Only start polling if SSE hasn't worked AND request hasn't completed
-                    if (document.hidden && !sseWorking && !sseCompleted) {
-                        console.log(`[${requestId}] Starting backup polling - SSE appears to have failed`);
-                        const pollInterval = setInterval(async () => {
-                            if (!document.hidden && !sseCompleted) {
-                                try {
-                                    const pollResponse = await fetch('/api/chat-poll.php', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ 
-                                            request_id: requestId,
-                                            csrf_token: csrfToken 
-                                        })
-                                    });
-                                    
-                                    if (pollResponse.ok) {
-                                        const pollData = await pollResponse.json();
-                                        
-                                        if (pollData.status === 'completed' && pollData.message) {
-                                            clearInterval(pollInterval);
-                                            hideTyping();
-                                            console.log(`[${requestId}] Backup polling retrieved message:`, pollData.message.id);
-                                            
-                                            // Add the message that was missed
-                                            handleSSEEvent('aei_message', pollData.message, requestId, resolve, reject);
-                                            
-                                            // Also send debug data if available (for admins)
-                                            if (pollData.debug_data) {
-                                                handleSSEEvent('debug_data', pollData.debug_data, requestId, resolve, reject);
-                                            }
-                                            
-                                            handleSSEEvent('complete', { success: true }, requestId, resolve, reject);
-                                        } else if (pollData.status === 'error') {
-                                            clearInterval(pollInterval);
-                                            reject(new Error(pollData.error || 'Polling failed'));
-                                        }
-                                    }
-                                } catch (pollError) {
-                                    console.log(`[${requestId}] Backup polling error:`, pollError);
-                                }
-                            }
-                        }, 2000); // Check every 2 seconds when visible (less aggressive)
-                        
-                        // Clean up poller after 3 minutes (shorter timeout)
-                        setTimeout(() => {
-                            clearInterval(pollInterval);
-                            console.log(`[${requestId}] Backup polling timeout after 3 minutes`);
-                        }, 180000);
+                // Clean up function
+                const cleanup = () => {
+                    const state = globalRequestStates.get(requestId);
+                    if (state && state.pollInterval) {
+                        clearInterval(state.pollInterval);
                     }
+                    globalRequestStates.delete(requestId);
+                    document.removeEventListener('visibilitychange', visibilityHandler);
                 };
                 
-                // Don't start polling immediately - wait to see if SSE works
+                // Visibility change handler
                 const visibilityHandler = () => {
-                    if (document.hidden && !sseWorking && !sseCompleted) {
-                        // Delay polling start to give SSE a chance
-                        setTimeout(() => {
-                            if (!sseWorking && !sseCompleted) {
-                                pollForCompletion();
-                            }
-                        }, 5000); // Wait 5 seconds before starting backup polling
+                    const state = globalRequestStates.get(requestId);
+                    if (!state) return;
+                    
+                    // If tab becomes visible and we haven't completed yet, check immediately
+                    if (!document.hidden && !state.sseCompleted) {
+                        console.log(`[${requestId}] Tab became visible, checking for missed messages`);
+                        checkForCompletion(requestId, resolve, reject);
                     }
                 };
                 
                 document.addEventListener('visibilitychange', visibilityHandler);
-                
-                // Clean up event listener
-                const cleanup = () => {
-                    document.removeEventListener('visibilitychange', visibilityHandler);
-                };
                 
                 // Override resolve/reject to cleanup
                 const originalResolve = resolve;
@@ -1495,12 +1458,94 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Start immediate polling for reliable message delivery
+    function startImmediatePolling(requestId, resolve, reject) {
+        const state = globalRequestStates.get(requestId);
+        if (!state) return;
+        
+        // Start polling immediately with short intervals
+        state.pollInterval = setInterval(() => {
+            checkForCompletion(requestId, resolve, reject);
+        }, 1000); // Check every 1 second
+        
+        // Clean up after 5 minutes maximum
+        setTimeout(() => {
+            const currentState = globalRequestStates.get(requestId);
+            if (currentState && currentState.pollInterval && !currentState.sseCompleted) {
+                clearInterval(currentState.pollInterval);
+                console.log(`[${requestId}] Polling timeout after 5 minutes`);
+                hideTyping();
+                reject(new Error('Request timeout'));
+            }
+        }, 300000);
+    }
+    
+    // Check for completion via polling API
+    async function checkForCompletion(requestId, resolve, reject) {
+        const state = globalRequestStates.get(requestId);
+        if (!state || state.sseCompleted) return;
+        
+        try {
+            const pollResponse = await fetch('/api/chat-poll.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    request_id: requestId,
+                    csrf_token: csrfToken 
+                })
+            });
+            
+            if (pollResponse.ok) {
+                const pollData = await pollResponse.json();
+                
+                if (pollData.status === 'completed' && pollData.message) {
+                    // Stop polling
+                    if (state.pollInterval) {
+                        clearInterval(state.pollInterval);
+                        state.pollInterval = null;
+                    }
+                    
+                    state.sseCompleted = true;
+                    hideTyping();
+                    console.log(`[${requestId}] Polling retrieved message:`, pollData.message.id);
+                    
+                    // Add the message that was missed
+                    handleSSEEvent('aei_message', pollData.message, requestId, resolve, reject);
+                    
+                    // Also send debug data if available (for admins)
+                    if (pollData.debug_data) {
+                        handleSSEEvent('debug_data', pollData.debug_data, requestId, resolve, reject);
+                    }
+                    
+                    handleSSEEvent('complete', { success: true }, requestId, resolve, reject);
+                } else if (pollData.status === 'error') {
+                    if (state.pollInterval) {
+                        clearInterval(state.pollInterval);
+                        state.pollInterval = null;
+                    }
+                    reject(new Error(pollData.error || 'Polling failed'));
+                }
+            }
+        } catch (pollError) {
+            console.log(`[${requestId}] Polling error:`, pollError);
+        }
+    }
+    
     // Handle Server-Sent Events
     function handleSSEEvent(eventType, data, requestId, resolve, reject) {
         console.log(`[${requestId}] SSE Event: ${eventType}`, data);
         
         // Mark SSE as working when we receive any event
-        if (typeof sseWorking !== 'undefined') sseWorking = true;
+        const state = globalRequestStates.get(requestId);
+        if (state) {
+            state.sseWorking = true;
+            // Stop polling when SSE is working
+            if (state.pollInterval && eventType !== 'status') {
+                clearInterval(state.pollInterval);
+                state.pollInterval = null;
+                console.log(`[${requestId}] SSE working, stopped polling`);
+            }
+        }
         
         switch (eventType) {
             case 'status':
@@ -1551,7 +1596,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             case 'complete':
                 console.log(`[${requestId}] Chat complete`);
-                if (typeof sseCompleted !== 'undefined') sseCompleted = true;
+                const completeState = globalRequestStates.get(requestId);
+                if (completeState) {
+                    completeState.sseCompleted = true;
+                    // Stop any remaining polling
+                    if (completeState.pollInterval) {
+                        clearInterval(completeState.pollInterval);
+                        completeState.pollInterval = null;
+                    }
+                }
                 hideTyping();
                 resolve(data);
                 break;
