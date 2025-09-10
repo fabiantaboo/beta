@@ -22,18 +22,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 error_log("Database error updating API key: " . $e->getMessage());
                 $error = "Failed to update API key.";
             }
+        } elseif ($action === 'update_openrouter_key') {
+            $openrouterKey = sanitizeInput($_POST['openrouter_key'] ?? '');
+            
+            try {
+                // Update or insert the OpenRouter API key
+                $stmt = $pdo->prepare("INSERT INTO api_settings (setting_key, setting_value) VALUES ('openrouter_api_key', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
+                $stmt->execute([$openrouterKey]);
+                $success = "OpenRouter API key updated successfully.";
+            } catch (PDOException $e) {
+                error_log("Database error updating OpenRouter key: " . $e->getMessage());
+                $error = "Failed to update OpenRouter API key.";
+            }
         }
     }
 }
 
-// Get current API key
+// Get current API keys
 try {
     $stmt = $pdo->prepare("SELECT setting_value FROM api_settings WHERE setting_key = 'anthropic_api_key'");
     $stmt->execute();
     $apiKeyResult = $stmt->fetch();
     $currentApiKey = $apiKeyResult ? $apiKeyResult['setting_value'] : '';
+    
+    $stmt = $pdo->prepare("SELECT setting_value FROM api_settings WHERE setting_key = 'openrouter_api_key'");
+    $stmt->execute();
+    $openrouterResult = $stmt->fetch();
+    $currentOpenRouterKey = $openrouterResult ? $openrouterResult['setting_value'] : '';
 } catch (PDOException $e) {
     $currentApiKey = '';
+    $currentOpenRouterKey = '';
 }
 ?>
 
@@ -98,6 +116,71 @@ try {
                                 <p class="text-xs text-red-600 dark:text-red-400">
                                     <i class="fas fa-exclamation-triangle mr-1"></i>
                                     No API key configured - AI chat will not work
+                                </p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- OpenRouter API Configuration for Social System -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">OpenRouter API Configuration (Social System)</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Configure the API key for Google Gemini 2.0 Flash integration (used only for social interactions)</p>
+            </div>
+            <div class="p-6">
+                <form method="POST" class="space-y-6">
+                    <input type="hidden" name="csrf_token" value="<?= generateCSRFToken() ?>">
+                    <input type="hidden" name="action" value="update_openrouter_key">
+                    
+                    <div>
+                        <label for="openrouter_key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                            <i class="fas fa-key mr-2 text-green-600"></i>
+                            OpenRouter API Key
+                        </label>
+                        <div class="flex space-x-3">
+                            <div class="relative flex-1">
+                                <input 
+                                    type="password" 
+                                    id="openrouter_key" 
+                                    name="openrouter_key" 
+                                    value="<?= htmlspecialchars($currentOpenRouterKey) ?>"
+                                    class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent"
+                                    placeholder="sk-or-v1-..."
+                                />
+                                <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="togglePassword('openrouter_key')">
+                                    <i id="openrouter_key_icon" class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <button 
+                                type="submit" 
+                                class="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-medium hover:from-green-500/90 hover:to-green-600/90 transition-colors"
+                            >
+                                <i class="fas fa-save mr-2"></i>
+                                Save
+                            </button>
+                        </div>
+                        
+                        <div class="mt-3 space-y-2">
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Used exclusively for AEI social system interactions. Get your API key from <a href="https://openrouter.ai/keys" target="blank" class="text-green-600 hover:underline">openrouter.ai/keys</a>
+                            </p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <i class="fas fa-robot mr-1"></i>
+                                Model: Google Gemini 2.0 Flash (Free tier supported)
+                            </p>
+                            <?php if ($currentOpenRouterKey): ?>
+                                <p class="text-xs text-green-600 dark:text-green-400">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    OpenRouter key is configured (<?= strlen($currentOpenRouterKey) > 0 ? 'Key length: ' . strlen($currentOpenRouterKey) . ' characters' : 'No key set' ?>)
+                                </p>
+                            <?php else: ?>
+                                <p class="text-xs text-yellow-600 dark:text-yellow-400">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    No OpenRouter key configured - Social system will fall back to Anthropic API
                                 </p>
                             <?php endif; ?>
                         </div>

@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/anthropic_api.php';
+require_once __DIR__ . '/openrouter_api.php';
 require_once __DIR__ . '/functions.php';
 
 class SocialContactManager {
@@ -90,7 +91,7 @@ class SocialContactManager {
             $systemPrompt = "You are a character generator. Create realistic, diverse social contacts. Respond only with valid JSON.";
             $messages = [['role' => 'user', 'content' => $prompt]];
             
-            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
+            $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
             
             // Enhanced JSON parsing with error details
             $contactData = json_decode($response, true);
@@ -260,7 +261,7 @@ class SocialContactManager {
             
             $systemPrompt = "You are a life simulation assistant. Generate realistic, gradual life developments. Keep changes believable and not too dramatic.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
+            $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
             
             $development = json_decode($response, true);
             if (!$development) {
@@ -456,7 +457,7 @@ class SocialContactManager {
             
             $systemPrompt = "You are a social interaction generator. Create realistic, contextual communications between friends/family. Keep the tone natural and appropriate to the relationship.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
+            $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
             
             // Enhanced JSON parsing with error recovery
             $interaction = json_decode($response, true);
@@ -569,7 +570,7 @@ class SocialContactManager {
             
             $systemPrompt = "You are an empathetic AEI generating authentic responses to social interactions. Be genuine and emotionally appropriate.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
+            $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
             
             $aeiDialog = json_decode($response, true);
             if (!$aeiDialog) {
@@ -1121,7 +1122,7 @@ class SocialContactManager {
             
             $systemPrompt = "Generate realistic social media posts that reflect the person's current life situation and personality.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $systemPrompt, 8000);
+            $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
             
             $postData = json_decode($response, true);
             if (!$postData) {
