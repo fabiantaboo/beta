@@ -51,7 +51,7 @@ function callOpenRouterForSocial($messages, $systemPrompt, $maxTokens = 8000) {
     }
     
     $payload = [
-        'model' => 'google/gemini-2.0-flash-exp:free',  // Using free tier Gemini 2.0 Flash
+        'model' => 'google/gemini-2.0-flash-001',  // Using Gemini 2.0 Flash
         'messages' => $formattedMessages,
         'max_tokens' => $maxTokens,
         'temperature' => 1.0,

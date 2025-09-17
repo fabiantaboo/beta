@@ -136,27 +136,31 @@ class BackgroundSocialProcessor {
     }
     
     /**
-     * Get all AEIs with social contacts
+     * Get all AEIs with social contacts (excluding AEIs inactive for 14+ days)
      */
     private function getAEIsWithSocialContacts() {
         try {
-            // First try to get AEIs with existing social contacts
+            // Get AEIs with social contacts, excluding those without chat activity for 14+ days
             $stmt = $this->pdo->prepare("
-                SELECT DISTINCT a.id, a.name, 
+                SELECT DISTINCT a.id, a.name,
                        COALESCE(a.social_initialized, FALSE) as social_initialized,
-                       COUNT(c.id) as contact_count
+                       COUNT(c.id) as contact_count,
+                       MAX(m.created_at) as last_chat_activity
                 FROM aeis a
                 LEFT JOIN aei_social_contacts c ON a.id = c.aei_id AND c.is_active = TRUE
-                WHERE a.is_active = TRUE 
+                LEFT JOIN chat_sessions cs ON a.id = cs.aei_id
+                LEFT JOIN chat_messages m ON cs.id = m.session_id
+                WHERE a.is_active = TRUE
                 GROUP BY a.id, a.name, a.social_initialized
-                HAVING contact_count > 0 OR social_initialized = FALSE
+                HAVING (contact_count > 0 OR social_initialized = FALSE)
+                   AND (last_chat_activity IS NULL OR last_chat_activity >= DATE_SUB(NOW(), INTERVAL 14 DAY))
                 ORDER BY contact_count DESC, a.name
             ");
             $stmt->execute();
             $result = $stmt->fetchAll();
-            
-            error_log("getAEIsWithSocialContacts found " . count($result) . " AEIs for processing");
-            
+
+            error_log("getAEIsWithSocialContacts found " . count($result) . " AEIs for processing (excluding 14+ day inactive AEIs)");
+
             return $result;
         } catch (PDOException $e) {
             error_log("Error getting AEIs with social contacts: " . $e->getMessage());
