@@ -92,33 +92,26 @@ class SocialContactManager {
             $messages = [['role' => 'user', 'content' => $prompt]];
             
             $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
-            
+
+            // Check if API call failed completely
+            if ($response === null) {
+                throw new Exception("Social System API failed to respond for AEI $aeiId ($relationshipType)");
+            }
+
             // Enhanced JSON parsing with error details
             $contactData = json_decode($response, true);
             $jsonError = json_last_error();
-            
+
             if ($jsonError !== JSON_ERROR_NONE || !$contactData) {
                 $errorDetails = [
                     'json_error' => json_last_error_msg(),
-                    'raw_response' => $response,
+                    'raw_response' => substr($response, 0, 500),
                     'aei_id' => $aeiId,
                     'relationship_type' => $relationshipType
                 ];
-                
-                error_log("LLM JSON Parsing Error in generateContact: " . json_encode($errorDetails));
-                
-                // Attempt to extract JSON from response if wrapped in text
-                $cleanedResponse = $this->extractJSONFromResponse($response);
-                if ($cleanedResponse) {
-                    $contactData = json_decode($cleanedResponse, true);
-                    if ($contactData) {
-                        error_log("Successfully recovered JSON after cleaning for AEI $aeiId");
-                    }
-                }
-                
-                if (!$contactData) {
-                    throw new Exception("LLM Response JSON Parsing Failed: " . json_last_error_msg() . " | Response: " . substr($response, 0, 200));
-                }
+
+                error_log("JSON Parsing Failed in generateContact: " . json_encode($errorDetails));
+                throw new Exception("Failed to parse contact JSON for AEI $aeiId ($relationshipType): " . json_last_error_msg());
             }
             
             // Validate required fields
@@ -162,27 +155,6 @@ class SocialContactManager {
         }
     }
     
-    /**
-     * Attempt to extract JSON from potentially wrapped response
-     */
-    private function extractJSONFromResponse($response) {
-        // Try to find JSON within the response
-        if (preg_match('/\{.*\}/s', $response, $matches)) {
-            return $matches[0];
-        }
-        
-        // Try to find JSON between ```json blocks
-        if (preg_match('/```json\s*(\{.*\})\s*```/s', $response, $matches)) {
-            return $matches[1];
-        }
-        
-        // Try to find JSON between ``` blocks
-        if (preg_match('/```\s*(\{.*\})\s*```/s', $response, $matches)) {
-            return $matches[1];
-        }
-        
-        return null;
-    }
     
     /**
      * Store contact in database
@@ -262,7 +234,13 @@ class SocialContactManager {
             $systemPrompt = "You are a life simulation assistant. Generate realistic, gradual life developments. Keep changes believable and not too dramatic.";
             $messages = [['role' => 'user', 'content' => $prompt]];
             $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
-            
+
+            // Check if API call failed completely
+            if ($response === null) {
+                error_log("Social System API failed for evolveContactLife - contactId: $contactId");
+                return false;
+            }
+
             $development = json_decode($response, true);
             if (!$development) {
                 error_log("Failed to parse development JSON: " . $response);
@@ -346,7 +324,12 @@ class SocialContactManager {
             $conversationSystemPrompt = $systemPrompt ?: "You are {$aei['name']}, a thoughtful person who cares about your relationships.";
             $messages = [['role' => 'user', 'content' => $prompt]];
             $response = callSocialSystemAPI($messages, $conversationSystemPrompt, 8000);
-            
+
+            // Check if API call failed completely
+            if ($response === null) {
+                throw new Exception("Social System API failed for AEI-initiated interaction: {$aei['name']} -> {$contact['name']}");
+            }
+
             // Enhanced JSON parsing with error recovery
             $interaction = json_decode($response, true);
             $jsonError = json_last_error();
@@ -360,21 +343,9 @@ class SocialContactManager {
                     'contact_name' => $contact['name'],
                     'aei_name' => $aei['name']
                 ];
-                
-                error_log("LLM JSON Parsing Error in generateAEIToContactInteraction: " . json_encode($errorDetails));
-                
-                // Try to recover JSON
-                $cleanedResponse = $this->extractJSONFromResponse($response);
-                if ($cleanedResponse) {
-                    $interaction = json_decode($cleanedResponse, true);
-                    if ($interaction) {
-                        error_log("Successfully recovered interaction JSON for AEI {$aei['name']} -> Contact {$contact['name']}");
-                    }
-                }
-                
-                if (!$interaction) {
-                    throw new Exception("LLM Response JSON Parsing Failed for AEI-initiated interaction: " . json_last_error_msg() . " | Response: " . substr($response, 0, 200));
-                }
+
+                error_log("JSON Parsing Failed in generateAEIToContactInteraction: " . json_encode($errorDetails));
+                throw new Exception("Failed to parse AEI-initiated interaction JSON for {$aei['name']} -> {$contact['name']}: " . json_last_error_msg());
             }
             
             // Validate interaction structure
@@ -458,7 +429,12 @@ class SocialContactManager {
             $systemPrompt = "You are a social interaction generator. Create realistic, contextual communications between friends/family. Keep the tone natural and appropriate to the relationship.";
             $messages = [['role' => 'user', 'content' => $prompt]];
             $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
-            
+
+            // Check if API call failed completely
+            if ($response === null) {
+                throw new Exception("Social System API failed for contact-initiated interaction: {$contact['name']} -> {$aei['name']}");
+            }
+
             // Enhanced JSON parsing with error recovery
             $interaction = json_decode($response, true);
             $jsonError = json_last_error();
@@ -472,21 +448,9 @@ class SocialContactManager {
                     'contact_name' => $contact['name'],
                     'aei_name' => $aei['name']
                 ];
-                
-                error_log("LLM JSON Parsing Error in generateContactToAEIInteraction: " . json_encode($errorDetails));
-                
-                // Try to recover JSON
-                $cleanedResponse = $this->extractJSONFromResponse($response);
-                if ($cleanedResponse) {
-                    $interaction = json_decode($cleanedResponse, true);
-                    if ($interaction) {
-                        error_log("Successfully recovered interaction JSON for Contact {$contact['name']} -> AEI {$aei['name']}");
-                    }
-                }
-                
-                if (!$interaction) {
-                    throw new Exception("LLM Response JSON Parsing Failed for interaction: " . json_last_error_msg() . " | Response: " . substr($response, 0, 200));
-                }
+
+                error_log("JSON Parsing Failed in generateContactToAEIInteraction: " . json_encode($errorDetails));
+                throw new Exception("Failed to parse contact-initiated interaction JSON for {$contact['name']} -> {$aei['name']}: " . json_last_error_msg());
             }
             
             // Validate interaction structure
@@ -571,7 +535,13 @@ class SocialContactManager {
             $systemPrompt = "You are an empathetic AEI generating authentic responses to social interactions. Be genuine and emotionally appropriate.";
             $messages = [['role' => 'user', 'content' => $prompt]];
             $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
-            
+
+            // Check if API call failed completely
+            if ($response === null) {
+                error_log("Social System API failed for AEI response generation");
+                return false;
+            }
+
             $aeiDialog = json_decode($response, true);
             if (!$aeiDialog) {
                 error_log("Failed to parse AEI dialog JSON: " . $response);
@@ -877,7 +847,13 @@ class SocialContactManager {
             $conversationSystemPrompt = $systemPrompt ?: "You are {$aei['name']}, a thoughtful person who cares about relationships. Continue the conversation naturally.";
             $messages = [['role' => 'user', 'content' => $prompt]];
             $response = callSocialSystemAPI($messages, $conversationSystemPrompt, 8000);
-            
+
+            // Check if API call failed completely
+            if ($response === null) {
+                error_log("Social System API failed for AEI dialog response");
+                return null;
+            }
+
             $parsed = json_decode($response, true);
             if (!$parsed) {
                 error_log("Failed to parse AEI dialog JSON response: " . $response);
@@ -926,7 +902,13 @@ class SocialContactManager {
             $conversationSystemPrompt = "You are {$contact['name']}, a " . implode(', ', $personalityTraits) . " person. Continue the conversation naturally.";
             $messages = [['role' => 'user', 'content' => $prompt]];
             $response = callSocialSystemAPI($messages, $conversationSystemPrompt, 8000);
-            
+
+            // Check if API call failed completely
+            if ($response === null) {
+                error_log("Social System API failed for contact dialog response");
+                return null;
+            }
+
             return trim($response);
             
         } catch (Exception $e) {
@@ -1123,7 +1105,13 @@ class SocialContactManager {
             $systemPrompt = "Generate realistic social media posts that reflect the person's current life situation and personality.";
             $messages = [['role' => 'user', 'content' => $prompt]];
             $response = callSocialSystemAPI($messages, $systemPrompt, 8000);
-            
+
+            // Check if API call failed completely
+            if ($response === null) {
+                error_log("Social System API failed for social media post generation");
+                return false;
+            }
+
             $postData = json_decode($response, true);
             if (!$postData) {
                 return false;
