@@ -222,7 +222,7 @@ class SocialContactManager {
     }
     
     /**
-     * Evolves a contact's "life" in background using existing callAnthropicAPI()
+     * Evolves a contact's "life" in background using callSocialSystemAPI()
      */
     public function evolveContactLife($contactId) {
         try {
@@ -345,7 +345,7 @@ class SocialContactManager {
             // Use the full system prompt from real chat for authentic personality
             $conversationSystemPrompt = $systemPrompt ?: "You are {$aei['name']}, a thoughtful person who cares about your relationships.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $conversationSystemPrompt, 8000);
+            $response = callSocialSystemAPI($messages, $conversationSystemPrompt, 8000);
             
             // Enhanced JSON parsing with error recovery
             $interaction = json_decode($response, true);
@@ -873,10 +873,10 @@ class SocialContactManager {
             Keep it natural and conversational, staying true to your personality and communication style.
             ";
             
-            // Use the full system prompt from real chat for authentic personality  
+            // Use the full system prompt from real chat for authentic personality
             $conversationSystemPrompt = $systemPrompt ?: "You are {$aei['name']}, a thoughtful person who cares about relationships. Continue the conversation naturally.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $conversationSystemPrompt, 8000);
+            $response = callSocialSystemAPI($messages, $conversationSystemPrompt, 8000);
             
             $parsed = json_decode($response, true);
             if (!$parsed) {
@@ -925,7 +925,7 @@ class SocialContactManager {
             
             $conversationSystemPrompt = "You are {$contact['name']}, a " . implode(', ', $personalityTraits) . " person. Continue the conversation naturally.";
             $messages = [['role' => 'user', 'content' => $prompt]];
-            $response = callAnthropicAPI($messages, $conversationSystemPrompt, 8000);
+            $response = callSocialSystemAPI($messages, $conversationSystemPrompt, 8000);
             
             return trim($response);
             

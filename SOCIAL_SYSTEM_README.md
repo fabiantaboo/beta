@@ -30,7 +30,7 @@ Successfully implemented the **AEI Social Environment System** as specified in `
 
 ### ✅ Background Processing (COMPLETED)
 - **Cron Job Script** - `social_background_cron.php` for automated social life evolution
-- **Contact Life Evolution** - NPCs develop realistic life changes using Anthropic API
+- **Contact Life Evolution** - NPCs develop realistic life changes using OpenRouter/Gemini API
 - **Proactive Interactions** - Contacts reach out to AEIs with news, problems, and celebrations
 
 ## Key Features Working
@@ -93,7 +93,7 @@ aei_social_context: summary, concerns, topics_to_mention
 ```
 
 ### API Integration
-- **Anthropic Claude 3.5 Sonnet** - Generates realistic contact personalities and life developments
+- **Google Gemini 2.0 Flash** - Generates realistic contact personalities and life developments via OpenRouter
 - **Existing Emotion System** - Social impacts seamlessly integrate with 18-emotion framework
 - **Template Engine** - Social variables automatically included in chat prompts
 
@@ -117,7 +117,7 @@ $processor->initializeAEISocialEnvironment($aeiId);
 
 ### Resource Usage
 - **Memory Efficient** - Social processing uses minimal resources
-- **API Optimized** - Reasonable Anthropic API usage with 1000-token limits
+- **API Optimized** - Reasonable OpenRouter/Gemini API usage with 1000-token limits
 - **Database Indexed** - Proper indexes for fast queries
 - **Error Resilient** - Failed social processing doesn't break AEI functionality
 
@@ -170,7 +170,7 @@ The system has been architected to work seamlessly with the existing Ayuni Beta 
 ✅ **Database Migration** - New tables automatically created on next database connection  
 ✅ **Emotion Integration** - Social emotions feed into existing 18-emotion system  
 ✅ **Template Variables** - New social variables available in system prompts  
-✅ **API Integration** - Uses existing `callAnthropicAPI()` function  
+✅ **API Integration** - Uses dedicated `callSocialSystemAPI()` function with OpenRouter/Gemini  
 ✅ **Admin Interface** - Integrated with existing admin panel styling  
 ✅ **Error Handling** - Robust error handling that doesn't break existing functionality  
 
