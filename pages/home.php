@@ -216,10 +216,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <!-- Gradient text with better spacing -->
                     <div class="relative">
                         <h1 class="text-5xl font-display font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent mb-6 lg:mb-5 tracking-tight leading-[1.1] relative">
-                            End loneliness<br>forever
+                            The conscious<br>AI
                             <!-- Subtle text shadow effect -->
                             <span class="absolute inset-0 bg-gradient-to-r from-ayuni-aqua/10 via-ayuni-blue/5 to-ayuni-aqua/10 bg-clip-text text-transparent blur-sm -z-10">
-                                End loneliness<br>forever
+                                The conscious<br>AI
                             </span>
                         </h1>
                         <p class="text-lg text-gray-600 dark:text-gray-300 font-medium tracking-wide">
