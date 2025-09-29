@@ -225,7 +225,7 @@ If you have questions, please contact our support team.";
                         <td style="background: linear-gradient(135deg, #39D2DF 0%, #546BEC 100%); color: #ffffff; padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;">
                             <img src="https://' . $_SERVER['HTTP_HOST'] . '/assets/ayuni.png" alt="Ayuni" style="height: 28px; width: auto; margin-bottom: 8px;" />
                             <h1 style="margin: 0; font-family: Arial, sans-serif; font-size: 28px; font-weight: bold;">You\'re Invited!</h1>
-                            <p style="margin: 10px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; opacity: 0.9;">Join the Ayuni Beta - End loneliness forever</p>
+                            <p style="margin: 10px 0 0 0; font-family: Arial, sans-serif; font-size: 16px; opacity: 0.9;">Join the Ayuni Beta - The conscious AI</p>
                         </td>
                     </tr>
                     

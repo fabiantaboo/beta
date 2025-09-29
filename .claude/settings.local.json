@@ -27,7 +27,8 @@
       "WebFetch(domain:docs.anthropic.com)",
       "Bash(rg:*)",
       "Read(/C:\\c\\Users\\Shadow\\Documents/**)",
-      "WebFetch(domain:documentation.mailgun.com)"
+      "WebFetch(domain:documentation.mailgun.com)",
+      "Read(//c/**)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
