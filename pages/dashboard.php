@@ -91,12 +91,12 @@ try {
     $aeis = $stmt->fetchAll();
     
     // Calculate edit availability for each AEI
-    foreach ($aeis as &$aei) {
+    foreach ($aeis as $index => $aei) {
         $createdAt = new DateTime($aei['created_at']);
         $now = new DateTime();
         $hoursSinceCreation = $now->diff($createdAt)->days * 24 + $now->diff($createdAt)->h;
-        $aei['can_edit'] = $hoursSinceCreation < 24;
-        $aei['hours_since_creation'] = $hoursSinceCreation;
+        $aeis[$index]['can_edit'] = $hoursSinceCreation < 24;
+        $aeis[$index]['hours_since_creation'] = $hoursSinceCreation;
     }
     
     // If user has no AEIs, redirect to AEI creator
