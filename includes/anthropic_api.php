@@ -248,7 +248,7 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
     }
     
     $payload = [
-        'model' => 'claude-3-5-sonnet-20241022',
+        'model' => 'claude-sonnet-4-20250514',
         'max_tokens' => $maxTokens,
         'temperature' => 1.0,
         'system' => $systemPrompt,
@@ -320,10 +320,10 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
                     if ($logData) {
                         $processingTime = (microtime(true) - $logData['start_time']) * 1000;
                         logApiRequest(
-                            $logData['user_id'] ?? null, $logData['aei_id'] ?? null, 
+                            $logData['user_id'] ?? null, $logData['aei_id'] ?? null,
                             $logData['session_id'] ?? null, $logData['message_id'] ?? null,
                             $payload, null, $systemPrompt, $logData['user_message'] ?? '', null,
-                            'claude-3-5-sonnet-20241022', 0, (int)$processingTime, 'error', 'API_OVERLOAD_MAX_RETRIES'
+                            'claude-sonnet-4-20250514', 0, (int)$processingTime, 'error', 'API_OVERLOAD_MAX_RETRIES'
                         );
                     }
                     throw new Exception("API_OVERLOAD_MAX_RETRIES");
@@ -333,10 +333,10 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
                 if ($logData) {
                     $processingTime = (microtime(true) - $logData['start_time']) * 1000;
                     logApiRequest(
-                        $logData['user_id'] ?? null, $logData['aei_id'] ?? null, 
+                        $logData['user_id'] ?? null, $logData['aei_id'] ?? null,
                         $logData['session_id'] ?? null, $logData['message_id'] ?? null,
                         $payload, $errorData ?? null, $systemPrompt, $logData['user_message'] ?? '', null,
-                        'claude-3-5-sonnet-20241022', 0, (int)$processingTime, 'error', $errorMessage
+                        'claude-sonnet-4-20250514', 0, (int)$processingTime, 'error', $errorMessage
                     );
                 }
                 throw new Exception("API Error (HTTP $httpCode): " . $errorMessage);
@@ -362,7 +362,7 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
             
             logApiRequest(
                 $logData['user_id'] ?? null,
-                $logData['aei_id'] ?? null, 
+                $logData['aei_id'] ?? null,
                 $logData['session_id'] ?? null,
                 $logData['message_id'] ?? null,
                 $payload,
@@ -370,7 +370,7 @@ function callAnthropicAPI($messages, $systemPrompt, $maxTokens = 8000, $imageDat
                 $systemPrompt,
                 $logData['user_message'] ?? '',
                 $responseText,
-                'claude-3-5-sonnet-20241022',
+                'claude-sonnet-4-20250514',
                 $tokensUsed,
                 (int)$processingTime
             );
@@ -486,7 +486,7 @@ Do not include any explanation or additional text - ONLY the JSON object.";
     ];
     
     $payload = [
-        'model' => 'claude-3-5-sonnet-20241022',
+        'model' => 'claude-sonnet-4-20250514',
         'max_tokens' => 500,
         'temperature' => 0.5,
         'system' => $systemPrompt,
@@ -692,13 +692,13 @@ function generateAIResponse($userMessage, $aei, $user, $sessionId, $includeDebug
             $debugData['base_system_prompt'] = $baseSystemPrompt;
             $debugData['emotion_context'] = $emotionContext;
             $debugData['full_system_prompt'] = $systemPrompt;
-            $debugData['api_model'] = 'claude-3-5-sonnet-20241022';
+            $debugData['api_model'] = 'claude-sonnet-4-20250514';
             $debugData['max_tokens'] = 8000;
             $debugData['timestamp'] = date('Y-m-d H:i:s');
             
             // Capture the complete API request payload
             $debugData['api_request_payload'] = [
-                'model' => 'claude-3-5-sonnet-20241022',
+                'model' => 'claude-sonnet-4-20250514',
                 'max_tokens' => 8000,
                 'system' => $systemPrompt,
                 'messages' => $chatHistory
@@ -992,7 +992,7 @@ Be creative but realistic. Make sure all selected traits and interests are from 
     ];
     
     $payload = [
-        'model' => 'claude-3-5-sonnet-20241022',
+        'model' => 'claude-sonnet-4-20250514',
         'max_tokens' => 4000,
         'temperature' => 0.5,
         'system' => $systemPrompt,

@@ -199,7 +199,7 @@ try {
                     <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                         <h4 class="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">Model Configuration</h4>
                         <ul class="text-sm text-blue-700 dark:text-blue-400 space-y-1">
-                            <li><strong>Model:</strong> claude-3-5-sonnet-20241022</li>
+                            <li><strong>Model:</strong> claude-sonnet-4-20250514</li>
                             <li><strong>Max Tokens:</strong> 1000 per response</li>
                             <li><strong>API Version:</strong> 2023-06-01</li>
                             <li><strong>Timeout:</strong> 30 seconds</li>
